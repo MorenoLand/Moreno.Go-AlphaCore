@@ -323,6 +323,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.guildMOTD(*active, message.Data)
+		case packet.MSGSaveGuildEmblem:
+			if active == nil {
+				return
+			}
+			response, err = s.guildSaveEmblem(active, message.Data)
 		case packet.CMSGJoinChannel:
 			if active == nil {
 				return

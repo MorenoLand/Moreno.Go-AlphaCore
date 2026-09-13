@@ -198,6 +198,7 @@ const (
 	CMSGSetLookingForGroup        Opcode = 0x01f1
 	CMSGAuthSession               Opcode = 0x01de
 	SMSGAuthResponse              Opcode = 0x01df
+	MSGSaveGuildEmblem            Opcode = 0x01e2
 	SMSGCompressedUpdateObject    Opcode = 0x01e7
 )
 
@@ -390,6 +391,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGSetLookingForGroup:        "CMSG_SET_LOOKING_FOR_GROUP",
 	CMSGAuthSession:               "CMSG_AUTH_SESSION",
 	SMSGAuthResponse:              "SMSG_AUTH_RESPONSE",
+	MSGSaveGuildEmblem:            "MSG_SAVE_GUILD_EMBLEM",
 	SMSGCompressedUpdateObject:    "SMSG_COMPRESSED_UPDATE_OBJECT",
 }
 

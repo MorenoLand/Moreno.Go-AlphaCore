@@ -110,6 +110,11 @@ func (s *Store) UpdateGuildMOTD(guildID int64, motd string) error {
 	return err
 }
 
+func (s *Store) UpdateGuildEmblem(guildID, style, color, borderStyle, borderColor, backgroundColor int64) error {
+	_, err := s.db.Exec(`UPDATE guild SET emblem_style = ?, emblem_color = ?, border_style = ?, border_color = ?, background_color = ? WHERE guild_id = ?`, style, color, borderStyle, borderColor, backgroundColor, guildID)
+	return err
+}
+
 func (s *Store) DeleteGuild(guildID int64) error {
 	_, err := s.db.Exec(`DELETE FROM guild WHERE guild_id = ?`, guildID)
 	return err

@@ -280,6 +280,10 @@ func (s *WorldServer) guildQuery(data []byte) ([]byte, error) {
 		}
 		state = s.guilds.loaded(guild, members)
 	}
+	return guildQueryState(state)
+}
+
+func guildQueryState(state *guildState) ([]byte, error) {
 	name, err := packet.StringBytes(state.Guild.Name)
 	if err != nil {
 		return nil, err
