@@ -56,6 +56,10 @@ func TestBinderAndDeathbind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	stored, found, err := characters.CharacterByGUID(guid)
+	if err != nil || !found || active.Health != 1 || stored.Health != 1 {
+		t.Fatalf("health active=%d stored=%d found=%v err=%v", active.Health, stored.Health, found, err)
+	}
 	worldPacket, err := packet.Parse(world)
 	if err != nil || worldPacket.Opcode != packet.SMSGNewWorld || math.Float32frombits(binary.LittleEndian.Uint32(worldPacket.Data[1:])) != 1 || math.Float32frombits(binary.LittleEndian.Uint32(worldPacket.Data[5:])) != 2 || math.Float32frombits(binary.LittleEndian.Uint32(worldPacket.Data[9:])) != 3 {
 		t.Fatalf("repop=%#v err=%v", worldPacket, err)

@@ -169,6 +169,11 @@ func (s *Store) UpdatePosition(guid, accountID, realmID int64, x, y, z, o float3
 	return err
 }
 
+func (s *Store) UpdateHealth(guid, accountID, realmID, health int64) error {
+	_, err := s.db.Exec(`UPDATE characters SET health = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, health, guid, accountID, realmID)
+	return err
+}
+
 func (s *Store) UpdateMoney(guid, accountID, realmID, money int64) error {
 	_, err := s.db.Exec(`UPDATE characters SET money = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, money, guid, accountID, realmID)
 	return err

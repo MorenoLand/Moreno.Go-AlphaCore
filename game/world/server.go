@@ -317,6 +317,16 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.repop(active)
+		case packet.CMSGResurrectResponse:
+			if active == nil {
+				return
+			}
+			responses, err = s.resurrectResponse(*active, message.Data)
+		case packet.CMSGReclaimCorpse:
+			if active == nil {
+				return
+			}
+			responses, err = s.reclaimCorpse(*active, message.Data)
 		case packet.CMSGGameObjectQuery:
 			if active == nil {
 				return

@@ -75,7 +75,25 @@ func (s *WorldServer) repop(active *realm.Character) ([]byte, error) {
 	if err != nil || !found {
 		return nil, err
 	}
+	active.Health = 1
+	if err := s.Characters.UpdateHealth(active.GUID, active.AccountID, active.RealmID, active.Health); err != nil {
+		return nil, err
+	}
 	return s.teleportPlayer(active, bind.Map, bind.X, bind.Y, bind.Z, active.Orientation)
+}
+
+func (s *WorldServer) resurrectResponse(active realm.Character, data []byte) ([][]byte, error) {
+	if len(data) < 9 || active.Health > 0 {
+		return nil, nil
+	}
+	return nil, nil
+}
+
+func (s *WorldServer) reclaimCorpse(active realm.Character, data []byte) ([][]byte, error) {
+	if len(data) < 8 {
+		return nil, nil
+	}
+	return nil, nil
 }
 
 func (s *WorldServer) binderAt(active realm.Character, guid uint64) (worlddb.CreatureSpawn, worlddb.CreatureTemplate, bool, error) {
