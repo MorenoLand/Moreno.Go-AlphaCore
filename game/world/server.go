@@ -37,6 +37,8 @@ type WorldServer struct {
 	vendors           map[uint64]*vendorData
 	gameObjectMu      sync.Mutex
 	gameObjects       map[uint64]gameObjectState
+	tradeMu           sync.Mutex
+	trades            map[int64]*tradeState
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -357,6 +359,46 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.petitionTurnIn(*active, message.Data)
+		case packet.CMSGInitiateTrade:
+			if active == nil {
+				return
+			}
+			responses, err = s.initiateTrade(*active, message.Data)
+		case packet.CMSGBeginTrade:
+			if active == nil {
+				return
+			}
+			responses, err = s.beginTrade(*active)
+		case packet.CMSGAcceptTrade:
+			if active == nil {
+				return
+			}
+			responses, err = s.acceptTrade(*active)
+		case packet.CMSGUnacceptTrade:
+			if active == nil {
+				return
+			}
+			responses, err = s.unacceptTrade(*active)
+		case packet.CMSGCancelTrade:
+			if active == nil {
+				return
+			}
+			responses, err = s.cancelTrade(*active)
+		case packet.CMSGSetTradeItem:
+			if active == nil {
+				return
+			}
+			responses, err = s.setTradeItem(*active, message.Data)
+		case packet.CMSGClearTradeItem:
+			if active == nil {
+				return
+			}
+			responses, err = s.clearTradeItem(*active, message.Data)
+		case packet.CMSGSetTradeGold:
+			if active == nil {
+				return
+			}
+			responses, err = s.setTradeGold(*active, message.Data)
 		case packet.CMSGCreatureQuery:
 			if active == nil {
 				return

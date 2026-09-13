@@ -87,6 +87,16 @@ const (
 	SMSGQuestQueryResponse        Opcode = 0x005d
 	CMSGGameObjectQuery           Opcode = 0x005e
 	CMSGGameObjectUse             Opcode = 0x00b1
+	CMSGInitiateTrade             Opcode = 0x0109
+	CMSGBeginTrade                Opcode = 0x010a
+	CMSGAcceptTrade               Opcode = 0x010d
+	CMSGUnacceptTrade             Opcode = 0x010e
+	CMSGCancelTrade               Opcode = 0x010f
+	CMSGSetTradeItem              Opcode = 0x0110
+	CMSGClearTradeItem            Opcode = 0x0111
+	CMSGSetTradeGold              Opcode = 0x0112
+	SMSGTradeStatus               Opcode = 0x0113
+	SMSGTradeStatusExtended       Opcode = 0x0114
 	CMSGPetitionShowlist          Opcode = 0x01ad
 	SMSGPetitionShowlist          Opcode = 0x01ae
 	CMSGPetitionBuy               Opcode = 0x01af
@@ -373,6 +383,16 @@ var opcodeNames = map[Opcode]string{
 	SMSGQuestQueryResponse:        "SMSG_QUEST_QUERY_RESPONSE",
 	CMSGGameObjectQuery:           "CMSG_GAMEOBJECT_QUERY",
 	CMSGGameObjectUse:             "CMSG_GAMEOBJ_USE",
+	CMSGInitiateTrade:             "CMSG_INITIATE_TRADE",
+	CMSGBeginTrade:                "CMSG_BEGIN_TRADE",
+	CMSGAcceptTrade:               "CMSG_ACCEPT_TRADE",
+	CMSGUnacceptTrade:             "CMSG_UNACCEPT_TRADE",
+	CMSGCancelTrade:               "CMSG_CANCEL_TRADE",
+	CMSGSetTradeItem:              "CMSG_SET_TRADE_ITEM",
+	CMSGClearTradeItem:            "CMSG_CLEAR_TRADE_ITEM",
+	CMSGSetTradeGold:              "CMSG_SET_TRADE_GOLD",
+	SMSGTradeStatus:               "SMSG_TRADE_STATUS",
+	SMSGTradeStatusExtended:       "SMSG_TRADE_STATUS_EXTENDED",
 	CMSGPetitionShowlist:          "CMSG_PETITION_SHOWLIST",
 	SMSGPetitionShowlist:          "SMSG_PETITION_SHOWLIST",
 	CMSGPetitionBuy:               "CMSG_PETITION_BUY",

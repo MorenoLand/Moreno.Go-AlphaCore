@@ -43,6 +43,17 @@ func (s *Store) UpdateItemLocation(guid, owner, bag, slot int64) error {
 	return err
 }
 
+func (s *Store) TransferItem(guid, owner, newOwner, bag, slot int64) error {
+	result, err := s.db.Exec(`UPDATE character_inventory SET owner = ?, bag = ?, slot = ? WHERE guid = ? AND owner = ?`, newOwner, bag, slot, guid, owner)
+	if err != nil {
+		return fmt.Errorf("transfer inventory item: %w", err)
+	}
+	if changed, _ := result.RowsAffected(); changed != 1 {
+		return fmt.Errorf("transfer inventory item was changed")
+	}
+	return nil
+}
+
 func (s *Store) UpdateItemStack(guid, owner, stack int64) error {
 	_, err := s.db.Exec(`UPDATE character_inventory SET stackcount = ? WHERE guid = ? AND owner = ?`, stack, guid, owner)
 	return err
