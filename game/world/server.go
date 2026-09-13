@@ -9,6 +9,7 @@ import (
 	"math"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"Moreno.AlphaCore/database/auth"
@@ -32,6 +33,8 @@ type WorldServer struct {
 	groups            groupRegistry
 	channels          channelRegistry
 	guilds            guildRegistry
+	vendorMu          sync.Mutex
+	vendors           map[uint64]*vendorData
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {

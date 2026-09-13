@@ -92,3 +92,55 @@ func TestVendorErrorsDistinguishNonVendor(t *testing.T) {
 		t.Fatalf("sell failure=%#v err=%v", sellFailure, err)
 	}
 }
+
+func TestVendorLimitedStock(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Buyer", Money: 1000})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO item_template (entry, name, display_id, buy_price, buy_count, max_durability, stackable) VALUES (200, 'Test Item', 12, 10, 1, 40, 20); INSERT INTO creature_template (entry, display_id1, name, npc_flags, vendor_id) VALUES (100, 20, 'Vendor', 1, 0); INSERT INTO npc_vendor (entry, item, maxcount, incrtime, slot) VALUES (100, 200, 2, 3600, 0); INSERT INTO spawns_creatures (spawn_id, spawn_entry1, map, position_x, position_y, position_z) VALUES (1, 100, 0, 1, 1, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, WorldData: worlddb.NewStore(databases)}
+	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Buyer", Money: 1000, Map: 0}
+	vendorGUID := uint64(0xf110000000000001)
+	listData := make([]byte, 8)
+	binary.LittleEndian.PutUint64(listData, vendorGUID)
+	responses, err := server.listInventory(active, listData)
+	if err != nil || len(responses) != 2 {
+		t.Fatalf("list responses=%d err=%v", len(responses), err)
+	}
+	list, err := packet.Parse(responses[1])
+	if err != nil || binary.LittleEndian.Uint32(list.Data[21:]) != 2 {
+		t.Fatalf("list=%#v err=%v", list, err)
+	}
+	buyData := make([]byte, 14)
+	binary.LittleEndian.PutUint64(buyData, vendorGUID)
+	binary.LittleEndian.PutUint32(buyData[8:], 200)
+	buyData[12] = 1
+	responses, err = server.buyItem(&active, buyData, false)
+	if err != nil || len(responses) != 4 {
+		t.Fatalf("buy responses=%d err=%v", len(responses), err)
+	}
+	stock, err := packet.Parse(responses[3])
+	if err != nil || stock.Opcode != packet.SMSGBuyItem || binary.LittleEndian.Uint32(stock.Data[8:]) != 1 || binary.LittleEndian.Uint32(stock.Data[12:]) != 1 || binary.LittleEndian.Uint32(stock.Data[16:]) != 1 {
+		t.Fatalf("stock=%#v err=%v", stock, err)
+	}
+	if _, err := server.buyItem(&active, buyData, false); err != nil {
+		t.Fatal(err)
+	}
+	responses, err = server.buyItem(&active, buyData, false)
+	if err != nil || len(responses) != 1 {
+		t.Fatalf("sold out responses=%d err=%v", len(responses), err)
+	}
+	soldOut, err := packet.Parse(responses[0])
+	if err != nil || soldOut.Opcode != packet.SMSGBuyFailed || soldOut.Data[len(soldOut.Data)-1] != 1 {
+		t.Fatalf("sold out=%#v err=%v", soldOut, err)
+	}
+}

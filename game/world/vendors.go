@@ -2,6 +2,7 @@ package world
 
 import (
 	"encoding/binary"
+	"time"
 
 	"Moreno.AlphaCore/database/realm"
 	worlddb "Moreno.AlphaCore/database/world"
@@ -9,6 +10,111 @@ import (
 )
 
 const maxShopDistance float32 = 5.5555553
+
+type vendorData struct {
+	items   []worlddb.VendorItem
+	limited map[int64]*limitedVendorItem
+}
+
+type limitedVendorItem struct {
+	maxCount, available, incrTime int64
+	unlockAt                      time.Time
+}
+
+func (s *WorldServer) ensureVendorDataLocked(guid uint64, entry int64, template bool) (*vendorData, error) {
+	if s.vendors == nil {
+		s.vendors = make(map[uint64]*vendorData)
+	}
+	if data, found := s.vendors[guid]; found {
+		return data, nil
+	}
+	items, err := s.WorldData.VendorItems(entry, template)
+	if err != nil {
+		return nil, err
+	}
+	data := &vendorData{items: items, limited: make(map[int64]*limitedVendorItem)}
+	for _, item := range items {
+		if item.MaxCount > 0 {
+			data.limited[item.Item] = &limitedVendorItem{maxCount: item.MaxCount, available: item.MaxCount, incrTime: item.IncrTime}
+		}
+	}
+	s.vendors[guid] = data
+	return data, nil
+}
+
+func (data *vendorData) refresh(now time.Time) {
+	for entry, item := range data.limited {
+		if !item.unlockAt.IsZero() && !now.Before(item.unlockAt) {
+			item.available = item.maxCount
+			item.unlockAt = time.Time{}
+		}
+		data.limited[entry] = item
+	}
+}
+
+func (data *vendorData) maxCount(item worlddb.VendorItem) int64 {
+	if limited, found := data.limited[item.Item]; found {
+		return limited.available
+	}
+	if item.MaxCount <= 0 {
+		return int64(^uint32(0))
+	}
+	return item.MaxCount
+}
+
+func (s *WorldServer) vendorInventory(guid uint64, entry int64, template bool) ([]worlddb.VendorItem, error) {
+	s.vendorMu.Lock()
+	defer s.vendorMu.Unlock()
+	data, err := s.ensureVendorDataLocked(guid, entry, template)
+	if err != nil {
+		return nil, err
+	}
+	data.refresh(time.Now())
+	items := make([]worlddb.VendorItem, len(data.items))
+	copy(items, data.items)
+	for index := range items {
+		items[index].MaxCount = data.maxCount(items[index])
+	}
+	return items, nil
+}
+
+func (s *WorldServer) vendorItemState(guid uint64, entry, itemEntry int64, template bool) (int64, int64, bool, bool, error) {
+	s.vendorMu.Lock()
+	defer s.vendorMu.Unlock()
+	data, err := s.ensureVendorDataLocked(guid, entry, template)
+	if err != nil {
+		return 0, 0, false, false, err
+	}
+	data.refresh(time.Now())
+	for index, item := range data.items {
+		if item.Item != itemEntry {
+			continue
+		}
+		limited, isLimited := data.limited[itemEntry]
+		locked := isLimited && !limited.unlockAt.IsZero()
+		return int64(index + 1), data.maxCount(item), isLimited, locked, nil
+	}
+	return 0, 0, false, false, nil
+}
+
+func (s *WorldServer) consumeVendorItem(guid uint64, entry, itemEntry, count int64, template bool) (int64, bool, error) {
+	s.vendorMu.Lock()
+	defer s.vendorMu.Unlock()
+	data, err := s.ensureVendorDataLocked(guid, entry, template)
+	if err != nil {
+		return 0, false, err
+	}
+	data.refresh(time.Now())
+	limited, isLimited := data.limited[itemEntry]
+	if !isLimited {
+		return 0, false, nil
+	}
+	limited.available -= count
+	if limited.available == 0 {
+		limited.unlockAt = time.Now().Add(time.Duration(limited.incrTime) * time.Second)
+	}
+	return limited.available, true, nil
+}
 
 func (s *WorldServer) listInventory(active realm.Character, data []byte) ([][]byte, error) {
 	if s.WorldData == nil || len(data) < 8 {
@@ -22,7 +128,7 @@ func (s *WorldServer) listInventory(active realm.Character, data []byte) ([][]by
 	if err != nil || !found {
 		return nil, err
 	}
-	items, err := s.WorldData.VendorItems(creature.Entry, creature.VendorID > 0)
+	items, err := s.vendorInventory(guid, creature.Entry, creature.VendorID > 0)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +199,7 @@ func (s *WorldServer) buyItem(active *realm.Character, data []byte, inSlot bool)
 	if inSlot {
 		minimum = 22
 	}
-	if active == nil || len(data) < minimum || s.Characters == nil {
+	if active == nil || len(data) < minimum || s.Characters == nil || s.WorldData == nil {
 		return nil, nil
 	}
 	vendorGUID, itemEntry := binary.LittleEndian.Uint64(data), binary.LittleEndian.Uint32(data[8:])
@@ -115,19 +221,15 @@ func (s *WorldServer) buyItem(active *realm.Character, data []byte, inSlot bool)
 	if creature.NPCFlags&1 == 0 {
 		return s.buyFailure(*active, itemEntry, vendorGUID, 11, count)
 	}
-	items, err := s.WorldData.VendorItems(creature.Entry, creature.VendorID > 0)
+	vendorSlot, _, _, locked, err := s.vendorItemState(vendorGUID, creature.Entry, int64(itemEntry), creature.VendorID > 0)
 	if err != nil {
 		return nil, err
 	}
-	listed := false
-	for _, item := range items {
-		if item.Item == int64(itemEntry) {
-			listed = true
-			break
-		}
-	}
-	if !listed {
+	if vendorSlot == 0 {
 		return s.buyFailure(*active, itemEntry, vendorGUID, 11, count)
+	}
+	if locked {
+		return s.buyFailure(*active, itemEntry, vendorGUID, 1, count)
 	}
 	template, found, err := s.WorldData.ItemTemplate(int64(itemEntry))
 	if err != nil {
@@ -166,7 +268,7 @@ func (s *WorldServer) buyItem(active *realm.Character, data []byte, inSlot bool)
 					return nil, err
 				}
 				s.updatePlayer(*active)
-				return s.purchaseResponses(*active, item, int64(itemEntry), realCount, 23)
+				return s.purchaseWithVendor(*active, item, int64(itemEntry), realCount, 23, vendorGUID, creature.Entry, vendorSlot, creature.VendorID > 0, count)
 			}
 		}
 		slot, err = s.Characters.FirstEmptySlot(active.GUID, 23, 23, 39)
@@ -191,7 +293,7 @@ func (s *WorldServer) buyItem(active *realm.Character, data []byte, inSlot bool)
 		return nil, err
 	}
 	s.updatePlayer(*active)
-	return s.purchaseResponses(*active, item, int64(itemEntry), realCount, bag)
+	return s.purchaseWithVendor(*active, item, int64(itemEntry), realCount, bag, vendorGUID, creature.Entry, vendorSlot, creature.VendorID > 0, count)
 }
 
 func (s *WorldServer) sellItem(active *realm.Character, data []byte) ([][]byte, error) {
@@ -281,6 +383,26 @@ func (s *WorldServer) purchaseResponses(active realm.Character, item realm.Inven
 		return nil, err
 	}
 	return append(responses, money), nil
+}
+
+func (s *WorldServer) purchaseWithVendor(active realm.Character, item realm.InventoryItem, entry, count, bag int64, vendorGUID uint64, vendorEntry, vendorSlot int64, template bool, stockCount int64) ([][]byte, error) {
+	maxCount, limited, err := s.consumeVendorItem(vendorGUID, vendorEntry, entry, stockCount, template)
+	if err != nil {
+		return nil, err
+	}
+	responses, err := s.purchaseResponses(active, item, entry, count, bag)
+	if err != nil || !limited {
+		return responses, err
+	}
+	body := append(encodeGUID(int64(vendorGUID)), encodeUint32(vendorSlot)...)
+	body = append(body, encodeUint32(maxCount)...)
+	body = append(body, encodeUint32(stockCount)...)
+	update, err := packet.Encode(packet.SMSGBuyItem, body)
+	if err != nil {
+		return nil, err
+	}
+	s.broadcastPlayer(active, update)
+	return append(responses, update), nil
 }
 
 func itemPushResult(item realm.InventoryItem, entry, bag int64) ([]byte, error) {

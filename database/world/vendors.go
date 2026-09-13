@@ -3,7 +3,7 @@ package world
 import "fmt"
 
 type VendorItem struct {
-	Item, MaxCount, Slot int64
+	Item, MaxCount, IncrTime, Slot int64
 }
 
 func (s *Store) VendorItems(entry int64, template bool) ([]VendorItem, error) {
@@ -11,7 +11,7 @@ func (s *Store) VendorItems(entry int64, template bool) ([]VendorItem, error) {
 	if template {
 		table = "npc_vendor_template"
 	}
-	rows, err := s.db.Query(`SELECT item, maxcount, slot FROM `+table+` WHERE entry = ? ORDER BY slot, item`, entry)
+	rows, err := s.db.Query(`SELECT item, maxcount, incrtime, slot FROM `+table+` WHERE entry = ? ORDER BY slot, item`, entry)
 	if err != nil {
 		return nil, fmt.Errorf("query vendor items: %w", err)
 	}
@@ -19,7 +19,7 @@ func (s *Store) VendorItems(entry int64, template bool) ([]VendorItem, error) {
 	items := make([]VendorItem, 0)
 	for rows.Next() {
 		var item VendorItem
-		if err := rows.Scan(&item.Item, &item.MaxCount, &item.Slot); err != nil {
+		if err := rows.Scan(&item.Item, &item.MaxCount, &item.IncrTime, &item.Slot); err != nil {
 			return nil, fmt.Errorf("scan vendor item: %w", err)
 		}
 		items = append(items, item)
