@@ -319,6 +319,9 @@ CREATE TABLE IF NOT EXISTS gameobject_template (
     type INTEGER NOT NULL DEFAULT 0,
     displayId INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
+    faction INTEGER NOT NULL DEFAULT 0,
+    flags INTEGER NOT NULL DEFAULT 0,
+    size REAL NOT NULL DEFAULT 1,
     data0 INTEGER NOT NULL DEFAULT 0,
     data1 INTEGER NOT NULL DEFAULT 0,
     data2 INTEGER NOT NULL DEFAULT 0,
@@ -420,6 +423,23 @@ CREATE TABLE IF NOT EXISTS spawns_creatures (
     health_percent REAL NOT NULL DEFAULT 100,
     mana_percent REAL NOT NULL DEFAULT 100,
     movement_type INTEGER NOT NULL DEFAULT 0,
+    spawn_flags INTEGER NOT NULL DEFAULT 0,
+    ignored INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS spawns_gameobjects (
+    spawn_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    spawn_entry INTEGER NOT NULL DEFAULT 0,
+    spawn_map INTEGER NOT NULL DEFAULT 0,
+    spawn_positionX REAL NOT NULL DEFAULT 0,
+    spawn_positionY REAL NOT NULL DEFAULT 0,
+    spawn_positionZ REAL NOT NULL DEFAULT 0,
+    spawn_orientation REAL NOT NULL DEFAULT 0,
+    spawn_rotation0 REAL NOT NULL DEFAULT 0,
+    spawn_rotation1 REAL NOT NULL DEFAULT 0,
+    spawn_rotation2 REAL NOT NULL DEFAULT 0,
+    spawn_rotation3 REAL NOT NULL DEFAULT 0,
+    spawn_animprogress INTEGER NOT NULL DEFAULT 0,
+    spawn_state INTEGER NOT NULL DEFAULT 0,
     spawn_flags INTEGER NOT NULL DEFAULT 0,
     ignored INTEGER NOT NULL DEFAULT 0
 );

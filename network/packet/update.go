@@ -167,6 +167,40 @@ func EncodeUnitCreate(guid uint64, fields []uint32, movement Movement) ([]byte, 
 	return Encode(SMSGUpdateObject, body)
 }
 
+func EncodeGameObjectCreate(guid uint64, fields []uint32, movement Movement) ([]byte, error) {
+	if len(fields) != 20 {
+		return nil, fmt.Errorf("gameobject field count: got %d, want 20", len(fields))
+	}
+	var data bytes.Buffer
+	write := func(value any) { binary.Write(&data, binary.LittleEndian, value) }
+	data.WriteByte(UpdateCreateObject)
+	write(guid)
+	data.WriteByte(5)
+	write(uint64(0))
+	write([4]float32{})
+	write([4]float32{movement.X, movement.Y, movement.Z, movement.O})
+	write(float32(0))
+	write(movement.MovementFlags)
+	write(uint32(0))
+	write(float32(1))
+	write(float32(1))
+	write(float32(1))
+	write(float32(1))
+	write(uint32(0))
+	write(uint32(0))
+	write(uint32(0))
+	write(uint64(0))
+	data.WriteByte(1)
+	write(uint32(0xfffff))
+	for _, value := range fields {
+		write(value)
+	}
+	body := make([]byte, 4+data.Len())
+	binary.LittleEndian.PutUint32(body, 1)
+	copy(body[4:], data.Bytes())
+	return Encode(SMSGUpdateObject, body)
+}
+
 func SetUint64(values []uint32, index int, value uint64) {
 	values[index] = uint32(value)
 	values[index+1] = uint32(value >> 32)

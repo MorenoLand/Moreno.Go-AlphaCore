@@ -65,6 +65,9 @@ type GameObjectTemplate struct {
 	Type      int64
 	DisplayID int64
 	Name      string
+	Faction   int64
+	Flags     int64
+	Scale     float32
 	Data      [10]int64
 }
 
@@ -140,11 +143,11 @@ func (s *Store) CreatureTemplate(entry int64) (CreatureTemplate, bool, error) {
 
 func (s *Store) GameObjectTemplate(entry int64) (GameObjectTemplate, bool, error) {
 	var gameObject GameObjectTemplate
-	values := []interface{}{&gameObject.Entry, &gameObject.Type, &gameObject.DisplayID, &gameObject.Name}
+	values := []interface{}{&gameObject.Entry, &gameObject.Type, &gameObject.DisplayID, &gameObject.Name, &gameObject.Faction, &gameObject.Flags, &gameObject.Scale}
 	for index := range gameObject.Data {
 		values = append(values, &gameObject.Data[index])
 	}
-	err := s.db.QueryRow(`SELECT entry, type, displayId, name, data0, data1, data2, data3, data4, data5, data6, data7, data8, data9 FROM gameobject_template WHERE entry = ?`, entry).Scan(values...)
+	err := s.db.QueryRow(`SELECT entry, type, displayId, name, faction, flags, size, data0, data1, data2, data3, data4, data5, data6, data7, data8, data9 FROM gameobject_template WHERE entry = ?`, entry).Scan(values...)
 	if err == sql.ErrNoRows {
 		return GameObjectTemplate{}, false, nil
 	}
