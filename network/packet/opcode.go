@@ -58,6 +58,10 @@ const (
 	CMSGNewSpellSlot              Opcode = 0x0120
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
+	CMSGStandStateChange          Opcode = 0x00f4
+	CMSGTextEmote                 Opcode = 0x00f7
+	SMSGEmote                     Opcode = 0x00f6
+	SMSGTextEmote                 Opcode = 0x00f8
 	SMSGUpdateObject              Opcode = 0x00a9
 	CMSGQueryTime                 Opcode = 0x01bf
 	SMSGQueryTimeResponse         Opcode = 0x01c0
@@ -125,6 +129,10 @@ var opcodeNames = map[Opcode]string{
 	CMSGNewSpellSlot:              "CMSG_NEW_SPELL_SLOT",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",
+	CMSGStandStateChange:          "CMSG_STANDSTATECHANGE",
+	CMSGTextEmote:                 "CMSG_TEXT_EMOTE",
+	SMSGEmote:                     "SMSG_EMOTE",
+	SMSGTextEmote:                 "SMSG_TEXT_EMOTE",
 	SMSGUpdateObject:              "SMSG_UPDATE_OBJECT",
 	CMSGPing:                      "CMSG_PING",
 	SMSGPong:                      "SMSG_PONG",

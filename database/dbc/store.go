@@ -23,6 +23,11 @@ type Area struct {
 	ParentAreaNum int64
 }
 
+type EmoteText struct {
+	ID      int64
+	EmoteID int64
+}
+
 type Store struct{ db *sql.DB }
 
 func NewStore(databases *database.Databases) *Store { return &Store{db: databases.DB(database.DBC)} }
@@ -61,4 +66,16 @@ func (s *Store) AreaByAreaNumber(number, mapID int64) (Area, bool, error) {
 		return Area{}, false, fmt.Errorf("query area by number: %w", err)
 	}
 	return area, true, nil
+}
+
+func (s *Store) EmoteText(id int64) (EmoteText, bool, error) {
+	var emote EmoteText
+	err := s.db.QueryRow(`SELECT ID, EmoteID FROM EmotesText WHERE ID = ?`, id).Scan(&emote.ID, &emote.EmoteID)
+	if err == sql.ErrNoRows {
+		return EmoteText{}, false, nil
+	}
+	if err != nil {
+		return EmoteText{}, false, fmt.Errorf("query emote text: %w", err)
+	}
+	return emote, true, nil
 }

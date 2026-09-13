@@ -12,6 +12,7 @@ type playerRegistry struct {
 	groupStatus map[int64]uint32
 	selection   map[int64]uint64
 	target      map[int64]uint64
+	standState  map[int64]uint32
 }
 
 func (s *WorldServer) registerPlayer(character realm.Character) {
@@ -21,6 +22,7 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.groupStatus = make(map[int64]uint32)
 		s.players.selection = make(map[int64]uint64)
 		s.players.target = make(map[int64]uint64)
+		s.players.standState = make(map[int64]uint32)
 	}
 	s.players.players[character.GUID] = character
 	s.players.mu.Unlock()
@@ -40,6 +42,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.groupStatus, guid)
 	delete(s.players.selection, guid)
 	delete(s.players.target, guid)
+	delete(s.players.standState, guid)
 	s.players.mu.Unlock()
 }
 
@@ -74,6 +77,15 @@ func (s *WorldServer) setPlayerTarget(guid int64, value uint64) {
 		s.players.target = make(map[int64]uint64)
 	}
 	s.players.target[guid] = value
+	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) setStandState(guid int64, value uint32) {
+	s.players.mu.Lock()
+	if s.players.standState == nil {
+		s.players.standState = make(map[int64]uint32)
+	}
+	s.players.standState[guid] = value
 	s.players.mu.Unlock()
 }
 

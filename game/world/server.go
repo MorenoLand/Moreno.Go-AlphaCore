@@ -224,6 +224,16 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			s.setTarget(*active, message.Data)
+		case packet.CMSGStandStateChange:
+			if active == nil || len(message.Data) < 4 {
+				return
+			}
+			s.setStandState(active.GUID, binary.LittleEndian.Uint32(message.Data))
+		case packet.CMSGTextEmote:
+			if active == nil {
+				return
+			}
+			responses, err = s.textEmote(*active, message.Data)
 		case packet.CMSGMessageChat:
 			if active == nil {
 				return
