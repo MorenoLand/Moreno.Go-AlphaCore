@@ -92,6 +92,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 			return
 		}
 		response = nil
+		responses := make([][]byte, 0, 1)
 		switch message.Opcode {
 		case packet.CMSGCharEnum:
 			response, err = s.characterList(account.ID)
@@ -123,6 +124,36 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.nameQuery(message.Data)
+		case packet.CMSGItemQuerySingle:
+			if active == nil {
+				return
+			}
+			response, err = s.itemQuerySingle(message.Data)
+		case packet.CMSGItemQueryMultiple:
+			if active == nil {
+				return
+			}
+			responses, err = s.itemQueryMultiple(message.Data)
+		case packet.CMSGPageTextQuery:
+			if active == nil {
+				return
+			}
+			responses, err = s.pageTextQuery(*active, message.Data)
+		case packet.CMSGQuestQuery:
+			if active == nil {
+				return
+			}
+			responses, err = s.questQuery(message.Data)
+		case packet.CMSGGameObjectQuery:
+			if active == nil {
+				return
+			}
+			response, err = s.gameObjectQuery(message.Data)
+		case packet.CMSGCreatureQuery:
+			if active == nil {
+				return
+			}
+			response, err = s.creatureQuery(message.Data)
 		case packet.CMSGWho:
 			if active == nil {
 				return
@@ -183,8 +214,13 @@ func (s *WorldServer) handle(connection net.Conn) {
 		if err != nil {
 			return
 		}
-		if response != nil && sockets.WriteAll(connection, response) != nil {
-			return
+		if response != nil {
+			responses = append(responses, response)
+		}
+		for _, response := range responses {
+			if sockets.WriteAll(connection, response) != nil {
+				return
+			}
 		}
 	}
 }

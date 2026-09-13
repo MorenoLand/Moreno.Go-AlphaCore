@@ -20,12 +20,6 @@ type StartingAction struct {
 	Action int64
 }
 
-type ItemTemplate struct {
-	Entry         int64
-	DisplayID     int64
-	InventoryType int64
-}
-
 func (s *Store) ClassStats(class, level uint8) (ClassStats, bool, error) {
 	var stats ClassStats
 	err := s.db.QueryRow(`SELECT basehp, basemana FROM player_classlevelstats WHERE "class" = ? AND level = ?`, class, level).Scan(&stats.BaseHealth, &stats.BaseMana)
@@ -87,16 +81,4 @@ func (s *Store) StartingActions(race, class uint8) ([]StartingAction, error) {
 		actions = append(actions, action)
 	}
 	return actions, rows.Err()
-}
-
-func (s *Store) ItemTemplate(entry int64) (ItemTemplate, bool, error) {
-	var item ItemTemplate
-	err := s.db.QueryRow(`SELECT entry, display_id, inventory_type FROM item_template WHERE entry = ?`, entry).Scan(&item.Entry, &item.DisplayID, &item.InventoryType)
-	if err == sql.ErrNoRows {
-		return ItemTemplate{}, false, nil
-	}
-	if err != nil {
-		return ItemTemplate{}, false, fmt.Errorf("query item template: %w", err)
-	}
-	return item, true, nil
 }
