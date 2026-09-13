@@ -29,6 +29,7 @@ type WorldServer struct {
 	AutoCreateAccount bool
 	ServerSeed        []byte
 	players           playerRegistry
+	groups            groupRegistry
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -113,6 +114,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 					if err == nil {
 						s.registerPlayer(character)
 						writer = s.attachPlayer(character.GUID, connection)
+						err = s.loadGroup(character)
 					}
 				}
 			}
@@ -186,6 +188,44 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.friendDelete(*active, message.Data, true)
+		case packet.CMSGGroupInvite:
+			if active == nil {
+				return
+			}
+			responses, err = s.groupInvite(*active, message.Data)
+		case packet.CMSGGroupAccept:
+			if active == nil {
+				return
+			}
+			err = s.groupAccept(*active)
+		case packet.CMSGGroupDecline:
+			if active == nil {
+				return
+			}
+			s.groupDecline(*active)
+		case packet.CMSGGroupUninvite:
+			if active == nil {
+				return
+			}
+			responses, err = s.groupUninviteName(*active, message.Data)
+		case packet.CMSGGroupUninviteGUID:
+			if active == nil {
+				return
+			}
+			if len(message.Data) < 8 {
+				continue
+			}
+			responses, err = s.groupUninvite(*active, int64(binary.LittleEndian.Uint64(message.Data)))
+		case packet.CMSGGroupSetLeader:
+			if active == nil {
+				return
+			}
+			responses, err = s.groupSetLeader(*active, message.Data)
+		case packet.CMSGGroupDisband:
+			if active == nil {
+				return
+			}
+			responses, err = s.groupDisband(*active)
 		case packet.CMSGPlayedTime:
 			if active == nil {
 				return

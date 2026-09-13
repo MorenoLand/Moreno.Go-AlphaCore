@@ -135,6 +135,20 @@ CREATE TABLE IF NOT EXISTS character_social (
     FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (other_guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
 );
+CREATE TABLE IF NOT EXISTS "group" (
+    group_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    leader_guid INTEGER NOT NULL,
+    loot_method INTEGER NOT NULL DEFAULT 0,
+    loot_master INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (leader_guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE IF NOT EXISTS group_member (
+    group_id INTEGER NOT NULL,
+    guid INTEGER NOT NULL,
+    PRIMARY KEY (group_id, guid),
+    FOREIGN KEY (group_id) REFERENCES "group" (group_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
 `
 
 const worldSchema = commonSchema + `

@@ -51,6 +51,21 @@ const (
 	SMSGIgnoreList                Opcode = 0x006b
 	CMSGAddIgnore                 Opcode = 0x006c
 	CMSGDelIgnore                 Opcode = 0x006d
+	CMSGGroupInvite               Opcode = 0x006e
+	SMSGGroupInvite               Opcode = 0x006f
+	CMSGGroupAccept               Opcode = 0x0072
+	CMSGGroupDecline              Opcode = 0x0073
+	SMSGGroupDecline              Opcode = 0x0074
+	CMSGGroupUninvite             Opcode = 0x0075
+	CMSGGroupUninviteGUID         Opcode = 0x0076
+	SMSGGroupUninvite             Opcode = 0x0077
+	CMSGGroupSetLeader            Opcode = 0x0078
+	SMSGGroupSetLeader            Opcode = 0x0079
+	CMSGGroupDisband              Opcode = 0x007b
+	SMSGGroupDestroyed            Opcode = 0x007c
+	SMSGGroupList                 Opcode = 0x007d
+	SMSGPartyMemberStats          Opcode = 0x007e
+	SMSGPartyCommandResult        Opcode = 0x007f
 	SMSGInitializeFactions        Opcode = 0x0115
 	CMSGSetActionButton           Opcode = 0x011b
 	SMSGActionButtons             Opcode = 0x011c
@@ -134,6 +149,21 @@ var opcodeNames = map[Opcode]string{
 	SMSGIgnoreList:                "SMSG_IGNORE_LIST",
 	CMSGAddIgnore:                 "CMSG_ADD_IGNORE",
 	CMSGDelIgnore:                 "CMSG_DEL_IGNORE",
+	CMSGGroupInvite:               "CMSG_GROUP_INVITE",
+	SMSGGroupInvite:               "SMSG_GROUP_INVITE",
+	CMSGGroupAccept:               "CMSG_GROUP_ACCEPT",
+	CMSGGroupDecline:              "CMSG_GROUP_DECLINE",
+	SMSGGroupDecline:              "SMSG_GROUP_DECLINE",
+	CMSGGroupUninvite:             "CMSG_GROUP_UNINVITE",
+	CMSGGroupUninviteGUID:         "CMSG_GROUP_UNINVITE_GUID",
+	SMSGGroupUninvite:             "SMSG_GROUP_UNINVITE",
+	CMSGGroupSetLeader:            "CMSG_GROUP_SET_LEADER",
+	SMSGGroupSetLeader:            "SMSG_GROUP_SET_LEADER",
+	CMSGGroupDisband:              "CMSG_GROUP_DISBAND",
+	SMSGGroupDestroyed:            "SMSG_GROUP_DESTROYED",
+	SMSGGroupList:                 "SMSG_GROUP_LIST",
+	SMSGPartyMemberStats:          "SMSG_PARTY_MEMBER_STATS",
+	SMSGPartyCommandResult:        "SMSG_PARTY_COMMAND_RESULT",
 	SMSGInitializeFactions:        "SMSG_INITIALIZE_FACTIONS",
 	CMSGSetActionButton:           "CMSG_SET_ACTION_BUTTON",
 	SMSGActionButtons:             "SMSG_ACTION_BUTTONS",
