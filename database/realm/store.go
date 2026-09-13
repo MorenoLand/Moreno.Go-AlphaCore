@@ -48,6 +48,11 @@ type Character struct {
 	Power5        int64
 }
 
+type InventoryItem struct {
+	Slot         int64
+	ItemTemplate int64
+}
+
 type Store struct{ db *sql.DB }
 
 const characterColumns = `guid, account_id, realm_id, name, race, "class", gender, level, xp, money, skin, face, hairstyle, haircolour, facialhair, bankslots, talentpoints, skillpoints, position_x, position_y, position_z, map, orientation, COALESCE(taximask, ''), COALESCE(explored_areas, ''), online, totaltime, leveltime, extra_flags, zone, COALESCE(taxi_path, ''), drunk, health, power1, power2, power3, power4, power5`
@@ -162,4 +167,31 @@ func (s *Store) UpdatePosition(guid, accountID, realmID int64, x, y, z, o float3
 func (s *Store) UpdateZone(guid, accountID, realmID, zone int64) error {
 	_, err := s.db.Exec(`UPDATE characters SET zone = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, zone, guid, accountID, realmID)
 	return err
+}
+
+func (s *Store) AddInventoryItem(owner, itemTemplate, slot, amount int64) error {
+	_, err := s.db.Exec(`INSERT INTO character_inventory (owner, bag, slot, item_template, stackcount, enchantments) VALUES (?, 0, ?, ?, ?, '')`, owner, slot, itemTemplate, amount)
+	return err
+}
+
+func (s *Store) AddSpell(owner, spell int64) error {
+	_, err := s.db.Exec(`INSERT OR IGNORE INTO character_spells (guid, spell, active, disabled) VALUES (?, ?, 1, 0)`, owner, spell)
+	return err
+}
+
+func (s *Store) Inventory(owner int64) ([]InventoryItem, error) {
+	rows, err := s.db.Query(`SELECT slot, item_template FROM character_inventory WHERE owner = ? AND bag = 0 AND slot BETWEEN 0 AND 19`, owner)
+	if err != nil {
+		return nil, fmt.Errorf("query character inventory: %w", err)
+	}
+	defer rows.Close()
+	var items []InventoryItem
+	for rows.Next() {
+		var item InventoryItem
+		if err := rows.Scan(&item.Slot, &item.ItemTemplate); err != nil {
+			return nil, fmt.Errorf("scan character inventory: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
 }

@@ -196,7 +196,37 @@ func (s *WorldServer) characterCreate(accountID int64, data []byte) ([]byte, err
 			} else if !found {
 				result = 0x29
 			} else {
-				_, err = s.Characters.Create(realm.Character{AccountID: accountID, RealmID: 1, Name: name, Race: raw[0], Class: raw[1], Gender: raw[2], Skin: raw[3], Face: raw[4], Hairstyle: raw[5], Haircolour: raw[6], Facialhair: raw[7], Level: 1, PositionX: location.PositionX, PositionY: location.PositionY, PositionZ: location.PositionZ, Map: location.Map, Orientation: location.Orientation, Zone: location.Zone, Health: 1})
+				stats, statsFound, statsErr := s.WorldData.ClassStats(raw[1], 1)
+				if statsErr != nil {
+					return nil, statsErr
+				}
+				if !statsFound {
+					result = 0x29
+					return packet.Encode(packet.SMSGCharCreate, []byte{result})
+				}
+				character := realm.Character{AccountID: accountID, RealmID: 1, Name: name, Race: raw[0], Class: raw[1], Gender: raw[2], Skin: raw[3], Face: raw[4], Hairstyle: raw[5], Haircolour: raw[6], Facialhair: raw[7], Level: 1, PositionX: location.PositionX, PositionY: location.PositionY, PositionZ: location.PositionZ, Map: location.Map, Orientation: location.Orientation, Zone: location.Zone, Health: stats.BaseHealth, Power1: stats.BaseMana}
+				guid, createErr := s.Characters.Create(character)
+				if createErr != nil {
+					return nil, createErr
+				}
+				items, itemsErr := s.WorldData.StartingItems(raw[0], raw[1])
+				if itemsErr != nil {
+					return nil, itemsErr
+				}
+				for slot, item := range items {
+					if err = s.Characters.AddInventoryItem(guid, item.ItemID, int64(23+slot), item.Amount); err != nil {
+						return nil, err
+					}
+				}
+				spells, spellsErr := s.WorldData.StartingSpells(raw[0], raw[1])
+				if spellsErr != nil {
+					return nil, spellsErr
+				}
+				for _, spell := range spells {
+					if err = s.Characters.AddSpell(guid, spell); err != nil {
+						return nil, err
+					}
+				}
 				if err != nil {
 					return nil, err
 				}
@@ -342,7 +372,32 @@ func (s *WorldServer) characterList(accountID int64) ([]byte, error) {
 			value = append(value, encoded...)
 		}
 		value = append(value, make([]byte, 16)...)
-		value = append(value, make([]byte, 100)...)
+		inventory, err := s.Characters.Inventory(character.GUID)
+		if err != nil {
+			return nil, err
+		}
+		items := make(map[int64]worlddb.ItemTemplate, len(inventory))
+		if s.WorldData != nil {
+			for _, item := range inventory {
+				template, found, queryErr := s.WorldData.ItemTemplate(item.ItemTemplate)
+				if queryErr != nil {
+					return nil, queryErr
+				}
+				if found {
+					items[item.Slot] = template
+				}
+			}
+		}
+		for slot := int64(0); slot < 20; slot++ {
+			var displayID, inventoryType int64
+			if item, found := items[slot]; found {
+				displayID, inventoryType = item.DisplayID, item.InventoryType
+			}
+			encoded := make([]byte, 5)
+			binary.LittleEndian.PutUint32(encoded, uint32(displayID))
+			encoded[4] = byte(inventoryType)
+			value = append(value, encoded...)
+		}
 		data = append(data, value...)
 	}
 	return packet.Encode(packet.SMSGCharEnum, data)

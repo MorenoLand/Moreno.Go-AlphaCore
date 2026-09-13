@@ -20,6 +20,9 @@ func TestCharacterCreateListDelete(t *testing.T) {
 	if _, err := databases.DB(database.World).Exec(`INSERT INTO playercreateinfo (id, race, "class", map, zone, position_x, position_y, position_z, orientation) VALUES (1, 1, 1, 0, 12, -8949.95, -132.493, 83.5312, 0)`); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO player_classlevelstats ("class", level, basehp, basemana) VALUES (1, 1, 20, 0)`); err != nil {
+		t.Fatal(err)
+	}
 	server := &WorldServer{Characters: realmdb.NewStore(databases), WorldData: worlddb.NewStore(databases)}
 	data := append([]byte("Testone\x00"), []byte{1, 1, 0, 0, 0, 0, 0, 0, 0}...)
 	response, err := server.characterCreate(1, data)

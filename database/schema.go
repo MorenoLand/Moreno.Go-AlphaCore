@@ -86,6 +86,33 @@ CREATE TABLE IF NOT EXISTS character_addons_settings (
     updated_at INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
 );
+CREATE TABLE IF NOT EXISTS character_inventory (
+    guid INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner INTEGER NOT NULL DEFAULT 0,
+    creator INTEGER NOT NULL DEFAULT 0,
+    bag INTEGER NOT NULL DEFAULT 0,
+    slot INTEGER NOT NULL DEFAULT 0,
+    item_template INTEGER NOT NULL DEFAULT 0,
+    stackcount INTEGER NOT NULL DEFAULT 1,
+    SpellCharges1 INTEGER NOT NULL DEFAULT -1,
+    SpellCharges2 INTEGER NOT NULL DEFAULT -1,
+    SpellCharges3 INTEGER NOT NULL DEFAULT -1,
+    SpellCharges4 INTEGER NOT NULL DEFAULT -1,
+    SpellCharges5 INTEGER NOT NULL DEFAULT -1,
+    item_flags INTEGER NOT NULL DEFAULT 0,
+    duration INTEGER NOT NULL DEFAULT 0,
+    enchantments TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (owner) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS character_inventory_owner_idx ON character_inventory (owner);
+CREATE TABLE IF NOT EXISTS character_spells (
+    guid INTEGER NOT NULL,
+    spell INTEGER NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    disabled INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (guid, spell),
+    FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
 `
 
 const worldSchema = commonSchema + `
@@ -103,6 +130,33 @@ CREATE TABLE IF NOT EXISTS playercreateinfo (
     position_z REAL NOT NULL DEFAULT 0,
     orientation REAL NOT NULL DEFAULT 0,
     PRIMARY KEY (race, "class", id)
+);
+CREATE TABLE IF NOT EXISTS player_classlevelstats (
+    "class" INTEGER NOT NULL,
+    level INTEGER NOT NULL,
+    basehp INTEGER NOT NULL DEFAULT 0,
+    basemana INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY ("class", level)
+);
+CREATE TABLE IF NOT EXISTS playercreateinfo_item (
+    id INTEGER NOT NULL,
+    race INTEGER NOT NULL DEFAULT 0,
+    "class" INTEGER NOT NULL DEFAULT 0,
+    itemid INTEGER NOT NULL DEFAULT 0,
+    amount INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (id)
+);
+CREATE TABLE IF NOT EXISTS playercreateinfo_spell (
+    race INTEGER NOT NULL DEFAULT 0,
+    "class" INTEGER NOT NULL DEFAULT 0,
+    Spell INTEGER NOT NULL DEFAULT 0,
+    Note TEXT,
+    PRIMARY KEY (race, "class", Spell)
+);
+CREATE TABLE IF NOT EXISTS item_template (
+    entry INTEGER PRIMARY KEY NOT NULL,
+    display_id INTEGER NOT NULL DEFAULT 0,
+    inventory_type INTEGER NOT NULL DEFAULT 0
 );
 `
 
