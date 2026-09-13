@@ -158,6 +158,16 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.bankerActivate(*active, message.Data)
+		case packet.CMSGTrainerList:
+			if active == nil {
+				return
+			}
+			responses, err = s.trainerList(*active, message.Data)
+		case packet.CMSGTrainerBuySpell:
+			if active == nil {
+				return
+			}
+			responses, err = s.trainerBuy(active, message.Data)
 		case packet.CMSGBinderActivate:
 			if active == nil {
 				return

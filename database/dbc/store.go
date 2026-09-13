@@ -154,6 +154,15 @@ func (s *Store) TaxiPath(from, to int64) (TaxiPath, bool, error) {
 	return path, true, nil
 }
 
+func (s *Store) SpellExists(id int64) (bool, error) {
+	var value int
+	err := s.db.QueryRow(`SELECT 1 FROM Spell WHERE ID = ?`, id).Scan(&value)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	return err == nil, err
+}
+
 func (s *Store) EmoteText(id int64) (EmoteText, bool, error) {
 	var emote EmoteText
 	err := s.db.QueryRow(`SELECT ID, EmoteID FROM EmotesText WHERE ID = ?`, id).Scan(&emote.ID, &emote.EmoteID)

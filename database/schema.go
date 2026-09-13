@@ -388,7 +388,10 @@ CREATE TABLE IF NOT EXISTS creature_template (
     damage_variance REAL NOT NULL DEFAULT 0.14,
     base_attack_time INTEGER NOT NULL DEFAULT 2000,
     ranged_attack_time INTEGER NOT NULL DEFAULT 2000,
-    vendor_id INTEGER NOT NULL DEFAULT 0
+    vendor_id INTEGER NOT NULL DEFAULT 0,
+    trainer_id INTEGER NOT NULL DEFAULT 0,
+    trainer_class INTEGER NOT NULL DEFAULT 0,
+    trainer_type INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS npc_vendor (
     entry INTEGER NOT NULL DEFAULT 0,
@@ -407,6 +410,25 @@ CREATE TABLE IF NOT EXISTS npc_vendor_template (
     itemflags INTEGER NOT NULL DEFAULT 0,
     slot INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (entry, item)
+);
+CREATE TABLE IF NOT EXISTS trainer_template (
+    template_entry INTEGER NOT NULL DEFAULT 0,
+    spell INTEGER NOT NULL DEFAULT 0,
+    playerspell INTEGER NOT NULL DEFAULT 0,
+    spellcost INTEGER NOT NULL DEFAULT 0,
+    talentpointcost INTEGER NOT NULL DEFAULT 0,
+    skillpointcost INTEGER NOT NULL DEFAULT 0,
+    reqskill INTEGER NOT NULL DEFAULT 0,
+    reqskillvalue INTEGER NOT NULL DEFAULT 0,
+    reqlevel INTEGER NOT NULL DEFAULT 0,
+    req_spell_1 INTEGER NOT NULL DEFAULT 0,
+    req_spell_2 INTEGER NOT NULL DEFAULT 0,
+    req_spell_3 INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (template_entry, spell)
+);
+CREATE TABLE IF NOT EXISTS npc_trainer_greeting (
+    entry INTEGER PRIMARY KEY NOT NULL,
+    content_default TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS gameobject_template (
     entry INTEGER PRIMARY KEY NOT NULL,
@@ -681,6 +703,10 @@ CREATE TABLE IF NOT EXISTS TaxiPathNode (
     LocY REAL NOT NULL DEFAULT 0,
     LocZ REAL NOT NULL DEFAULT 0,
     Flags INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS Spell (
+    ID INTEGER PRIMARY KEY NOT NULL,
+    BaseLevel INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS EmotesText (
     ID INTEGER PRIMARY KEY NOT NULL,
