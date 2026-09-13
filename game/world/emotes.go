@@ -29,6 +29,7 @@ func (s *WorldServer) textEmote(active realm.Character, data []byte) ([][]byte, 
 	if err != nil {
 		return nil, err
 	}
+	s.broadcastPlayer(active, textPacket)
 	responses := [][]byte{textPacket}
 	switch emote.EmoteID {
 	case 13:
@@ -45,6 +46,7 @@ func (s *WorldServer) textEmote(active realm.Character, data []byte) ([][]byte, 
 		if err != nil {
 			return nil, err
 		}
+		s.broadcastPlayer(active, visualPacket)
 		responses = append(responses, visualPacket)
 	}
 	return responses, nil

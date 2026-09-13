@@ -66,6 +66,7 @@ func (s *WorldServer) accept(ctx context.Context, listener net.Listener) {
 func (s *WorldServer) handle(connection net.Conn) {
 	defer connection.Close()
 	var active *realm.Character
+	var writer *playerConnection
 	logoutPending := false
 	defer func() {
 		if active != nil {
@@ -111,6 +112,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 					err = s.Characters.SetOnline(character.GUID, account.ID, 1, true)
 					if err == nil {
 						s.registerPlayer(character)
+						writer = s.attachPlayer(character.GUID, connection)
 					}
 				}
 			}
@@ -238,7 +240,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 			if active == nil {
 				return
 			}
-			response, err = s.chat(active.GUID, message.Data)
+			responses, err = s.chat(*active, message.Data)
 		case packet.CMSGZoneUpdate:
 			if active == nil {
 				return
@@ -297,7 +299,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 			responses = append(responses, response)
 		}
 		for _, response := range responses {
-			if sockets.WriteAll(connection, response) != nil {
+			if writer != nil && writer.write(response) != nil || writer == nil && sockets.WriteAll(connection, response) != nil {
 				return
 			}
 		}

@@ -13,6 +13,7 @@ type playerRegistry struct {
 	selection   map[int64]uint64
 	target      map[int64]uint64
 	standState  map[int64]uint32
+	connections map[int64]*playerConnection
 }
 
 func (s *WorldServer) registerPlayer(character realm.Character) {
@@ -23,6 +24,7 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.selection = make(map[int64]uint64)
 		s.players.target = make(map[int64]uint64)
 		s.players.standState = make(map[int64]uint32)
+		s.players.connections = make(map[int64]*playerConnection)
 	}
 	s.players.players[character.GUID] = character
 	s.players.mu.Unlock()
@@ -43,6 +45,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.selection, guid)
 	delete(s.players.target, guid)
 	delete(s.players.standState, guid)
+	delete(s.players.connections, guid)
 	s.players.mu.Unlock()
 }
 

@@ -2,7 +2,9 @@ package world
 
 import (
 	"encoding/binary"
+	"strings"
 
+	"Moreno.AlphaCore/database/realm"
 	"Moreno.AlphaCore/network/packet"
 )
 
@@ -31,28 +33,64 @@ func (s *WorldServer) nameQuery(data []byte) ([]byte, error) {
 	return packet.Encode(packet.SMSGNameQueryResponse, response)
 }
 
-func (s *WorldServer) chat(characterID int64, data []byte) ([]byte, error) {
+func (s *WorldServer) chat(active realm.Character, data []byte) ([][]byte, error) {
 	if len(data) < 8 {
 		return nil, nil
 	}
 	chatType := data[0]
-	if chatType != 0 && chatType != 4 && chatType != 7 {
+	if chatType != 0 && chatType != 4 && chatType != 5 && chatType != 7 {
 		return nil, nil
 	}
-	message, err := packet.ReadString(data, 8, 0)
+	messageOffset := 8
+	var target realm.Character
+	if chatType == 5 {
+		targetName, err := packet.ReadString(data, messageOffset, 0)
+		if err != nil {
+			return nil, nil
+		}
+		messageOffset += len(targetName) + 1
+		var found bool
+		target, found = s.playerByName(strings.TrimSpace(targetName))
+		if !found {
+			return nil, nil
+		}
+	}
+	message, err := packet.ReadString(data, messageOffset, 0)
 	if err != nil || message == "" {
 		return nil, err
 	}
+	language := binary.LittleEndian.Uint32(data[4:8])
+	if chatType == 5 {
+		inform, err := messageChatPacket(6, language, target.GUID, message)
+		if err != nil {
+			return nil, err
+		}
+		received, err := messageChatPacket(5, language, active.GUID, message)
+		if err != nil {
+			return nil, err
+		}
+		s.sendPlayer(target.GUID, received)
+		return [][]byte{inform}, nil
+	}
+	response, err := messageChatPacket(chatType, language, active.GUID, message)
+	if err != nil {
+		return nil, err
+	}
+	s.broadcastPlayer(active, response)
+	return [][]byte{response}, nil
+}
+
+func messageChatPacket(chatType byte, language uint32, guid int64, message string) ([]byte, error) {
 	text, err := packet.StringBytes(message)
 	if err != nil {
 		return nil, err
 	}
 	response := make([]byte, 0, 1+4+8+len(text)+1)
 	response = append(response, chatType)
-	response = append(response, data[4:8]...)
-	guid := make([]byte, 8)
-	binary.LittleEndian.PutUint64(guid, uint64(characterID))
-	response = append(response, guid...)
+	languageBytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(languageBytes, language)
+	response = append(response, languageBytes...)
+	response = append(response, encodeGUID(guid)...)
 	response = append(response, text...)
 	response = append(response, 0)
 	return packet.Encode(packet.SMSGMessageChat, response)
