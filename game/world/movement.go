@@ -17,13 +17,21 @@ func (s *WorldServer) updateMovement(active *realm.Character, opcode packet.Opco
 	z := math.Float32frombits(binary.LittleEndian.Uint32(data[32:36]))
 	o := math.Float32frombits(binary.LittleEndian.Uint32(data[36:40]))
 	dx, dy, dz := float64(active.PositionX-x), float64(active.PositionY-y), float64(active.PositionZ-z)
-	if dx*dx+dy*dy+dz*dz > 4096 {
+	if active.TaxiPath == "" && dx*dx+dy*dy+dz*dz > 4096 {
 		return nil
 	}
 	active.PositionX, active.PositionY, active.PositionZ, active.Orientation = x, y, z, o
 	if s.Characters != nil {
 		if err := s.Characters.UpdatePosition(active.GUID, active.AccountID, active.RealmID, x, y, z, o); err != nil {
 			return err
+		}
+	}
+	if active.TaxiPath != "" && s.taxiAtDestination(*active, x, y, z) {
+		active.TaxiPath = ""
+		if s.Characters != nil {
+			if err := s.Characters.UpdateTaxiPath(active.GUID, active.AccountID, active.RealmID, ""); err != nil {
+				return err
+			}
 		}
 	}
 	s.updatePlayer(*active)

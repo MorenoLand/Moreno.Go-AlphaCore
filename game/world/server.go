@@ -285,6 +285,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.taxiNodeStatus(*active, message.Data)
+		case packet.CMSGActivateTaxi:
+			if active == nil {
+				return
+			}
+			responses, err = s.activateTaxi(active, message.Data)
 		case packet.CMSGTaxiEnableAllNodes:
 			if active == nil {
 				return

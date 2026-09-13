@@ -54,6 +54,7 @@ const (
 	MSGMoveSetFacing              Opcode = 0x00d7
 	MSGMoveSetPitch               Opcode = 0x00d8
 	MSGMoveWorldportAck           Opcode = 0x00d9
+	SMSGMonsterMove               Opcode = 0x00da
 	SMSGForceSpeedChange          Opcode = 0x00df
 	CMSGForceSpeedChangeAck       Opcode = 0x00e0
 	SMSGForceSwimSpeedChange      Opcode = 0x00e1
@@ -316,6 +317,7 @@ var opcodeNames = map[Opcode]string{
 	MSGMoveSetFacing:              "MSG_MOVE_SET_FACING",
 	MSGMoveSetPitch:               "MSG_MOVE_SET_PITCH",
 	MSGMoveWorldportAck:           "MSG_MOVE_WORLDPORT_ACK",
+	SMSGMonsterMove:               "SMSG_MONSTER_MOVE",
 	CMSGAreaTrigger:               "CMSG_AREATRIGGER",
 	SMSGForceSpeedChange:          "SMSG_FORCE_SPEED_CHANGE",
 	CMSGForceSpeedChangeAck:       "CMSG_FORCE_SPEED_CHANGE_ACK",

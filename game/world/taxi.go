@@ -2,6 +2,10 @@ package world
 
 import (
 	"encoding/binary"
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
 
 	"Moreno.AlphaCore/database/dbc"
 	"Moreno.AlphaCore/database/realm"
@@ -9,6 +13,123 @@ import (
 )
 
 const taxiNodeMaskBits = 64
+
+const (
+	taxiOK             uint32  = 0
+	taxiNoSuchPath     uint32  = 2
+	taxiNotEnoughMoney uint32  = 3
+	taxiTooFarAway     uint32  = 4
+	taxiNoVendorNearby uint32  = 5
+	taxiNotVisited     uint32  = 6
+	taxiSameNode       uint32  = 11
+	taxiFlightSpeed    float32 = 32
+)
+
+func (s *WorldServer) activateTaxi(active *realm.Character, data []byte) ([][]byte, error) {
+	if active == nil || len(data) < 16 || s.DBC == nil || s.WorldData == nil {
+		return nil, nil
+	}
+	guid, start, destination := binary.LittleEndian.Uint64(data), int64(binary.LittleEndian.Uint32(data[8:])), int64(binary.LittleEndian.Uint32(data[12:]))
+	result := taxiOK
+	_, flightMaster, found, err := s.creatureAt(*active, guid, maxShopDistance)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		result = taxiTooFarAway
+	} else if flightMaster.NPCFlags&0x4 == 0 {
+		result = taxiNoVendorNearby
+	} else if start == destination {
+		result = taxiSameNode
+	} else if !taxiMaskHas(taxiMask(active.Taximask), start) || !taxiMaskHas(taxiMask(active.Taximask), destination) {
+		result = taxiNotVisited
+	}
+	var path dbc.TaxiPath
+	if result == taxiOK {
+		path, found, err = s.DBC.TaxiPath(start, destination)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			result = taxiNoSuchPath
+		}
+	}
+	var nodes []dbc.TaxiPathNode
+	if result == taxiOK {
+		nodes, err = s.DBC.TaxiPathNodes(path.ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(nodes) == 0 {
+			result = 1
+		} else if active.Money < path.Cost {
+			result = taxiNotEnoughMoney
+		}
+	}
+	reply, err := packet.Encode(packet.SMSGActivateTaxiReply, encodeUint32(int64(result)))
+	if err != nil {
+		return nil, err
+	}
+	responses := [][]byte{reply}
+	if result != taxiOK {
+		return responses, nil
+	}
+	active.Money -= path.Cost
+	if s.Characters != nil {
+		if err := s.Characters.UpdateMoney(active.GUID, active.AccountID, active.RealmID, active.Money); err != nil {
+			return nil, err
+		}
+	}
+	active.TaxiPath = taxiPathString(nodes, start, destination, taxiMountDisplay(*active), int64(len(nodes)))
+	if s.Characters != nil {
+		if err := s.Characters.UpdateTaxiPath(active.GUID, active.AccountID, active.RealmID, active.TaxiPath); err != nil {
+			return nil, err
+		}
+	}
+	s.updatePlayer(*active)
+	points := make([]packet.Point, 0, len(nodes))
+	lastX, lastY, lastZ := active.PositionX, active.PositionY, active.PositionZ
+	distance := float32(0)
+	for _, node := range nodes {
+		dx, dy, dz := node.X-lastX, node.Y-lastY, node.Z-lastZ
+		distance += float32(math.Sqrt(float64(dx*dx + dy*dy + dz*dz)))
+		points = append(points, packet.Point{X: node.X, Y: node.Y, Z: node.Z})
+		lastX, lastY, lastZ = node.X, node.Y, node.Z
+	}
+	move, err := packet.EncodeMonsterMove(uint64(active.GUID), active.PositionX, active.PositionY, active.PositionZ, uint32(distance/taxiFlightSpeed*1000), 0x200, points)
+	if err != nil {
+		return nil, err
+	}
+	return append(responses, move), nil
+}
+
+func taxiMountDisplay(active realm.Character) int64 {
+	if active.Race == 2 || active.Race == 5 || active.Race == 6 || active.Race == 8 {
+		return 2157
+	}
+	return 1149
+}
+
+func taxiPathString(nodes []dbc.TaxiPathNode, start, destination, mount, remaining int64) string {
+	return fmt.Sprintf("%f,%f,%f,%d,%d,%d,%d", nodes[0].X, nodes[0].Y, nodes[0].Z, start, destination, mount, remaining)
+}
+
+func (s *WorldServer) taxiAtDestination(active realm.Character, x, y, z float32) bool {
+	parts := strings.Split(active.TaxiPath, ",")
+	if len(parts) < 7 || s.DBC == nil {
+		return false
+	}
+	destination, err := strconv.ParseInt(parts[4], 10, 64)
+	if err != nil {
+		return false
+	}
+	node, found, err := s.DBC.TaxiNode(destination)
+	if err != nil || !found {
+		return false
+	}
+	dx, dy, dz := node.X-x, node.Y-y, node.Z-z
+	return dx*dx+dy*dy+dz*dz <= maxShopDistance*maxShopDistance
+}
 
 func (s *WorldServer) taxiQueryNodes(active *realm.Character, data []byte) ([][]byte, error) {
 	if active == nil || len(data) < 8 || s.DBC == nil || s.WorldData == nil {
