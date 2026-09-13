@@ -149,6 +149,26 @@ CREATE TABLE IF NOT EXISTS group_member (
     FOREIGN KEY (group_id) REFERENCES "group" (group_id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
 );
+CREATE TABLE IF NOT EXISTS guild (
+    guild_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    realm_id INTEGER NOT NULL DEFAULT 1,
+    name TEXT NOT NULL DEFAULT '' UNIQUE,
+    motd TEXT NOT NULL DEFAULT '',
+    creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    emblem_style INTEGER NOT NULL DEFAULT -1,
+    emblem_color INTEGER NOT NULL DEFAULT -1,
+    border_style INTEGER NOT NULL DEFAULT -1,
+    border_color INTEGER NOT NULL DEFAULT -1,
+    background_color INTEGER NOT NULL DEFAULT -1
+);
+CREATE TABLE IF NOT EXISTS guild_member (
+    guild_id INTEGER NOT NULL,
+    guid INTEGER NOT NULL,
+    rank INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (guild_id, guid),
+    FOREIGN KEY (guild_id) REFERENCES guild (guild_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
 `
 
 const worldSchema = commonSchema + `

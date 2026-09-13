@@ -51,6 +51,8 @@ const (
 	SMSGIgnoreList                Opcode = 0x006b
 	CMSGAddIgnore                 Opcode = 0x006c
 	CMSGDelIgnore                 Opcode = 0x006d
+	CMSGGuildQuery                Opcode = 0x0054
+	SMSGGuildQueryResponse        Opcode = 0x0055
 	CMSGGroupInvite               Opcode = 0x006e
 	SMSGGroupInvite               Opcode = 0x006f
 	CMSGGroupAccept               Opcode = 0x0072
@@ -66,6 +68,25 @@ const (
 	SMSGGroupList                 Opcode = 0x007d
 	SMSGPartyMemberStats          Opcode = 0x007e
 	SMSGPartyCommandResult        Opcode = 0x007f
+	CMSGGuildCreate               Opcode = 0x0081
+	CMSGGuildInvite               Opcode = 0x0082
+	SMSGGuildInvite               Opcode = 0x0083
+	CMSGGuildAccept               Opcode = 0x0084
+	CMSGGuildDecline              Opcode = 0x0085
+	SMSGGuildDecline              Opcode = 0x0086
+	CMSGGuildInfo                 Opcode = 0x0087
+	SMSGGuildInfo                 Opcode = 0x0088
+	CMSGGuildRoster               Opcode = 0x0089
+	SMSGGuildRoster               Opcode = 0x008a
+	CMSGGuildPromote              Opcode = 0x008b
+	CMSGGuildDemote               Opcode = 0x008c
+	CMSGGuildLeave                Opcode = 0x008d
+	CMSGGuildRemove               Opcode = 0x008e
+	CMSGGuildDisband              Opcode = 0x008f
+	CMSGGuildLeader               Opcode = 0x0090
+	CMSGGuildMOTD                 Opcode = 0x0091
+	SMSGGuildEvent                Opcode = 0x0092
+	SMSGGuildCommandResult        Opcode = 0x0093
 	CMSGJoinChannel               Opcode = 0x0097
 	CMSGLeaveChannel              Opcode = 0x0098
 	SMSGChannelNotify             Opcode = 0x0099
@@ -167,6 +188,8 @@ var opcodeNames = map[Opcode]string{
 	SMSGIgnoreList:                "SMSG_IGNORE_LIST",
 	CMSGAddIgnore:                 "CMSG_ADD_IGNORE",
 	CMSGDelIgnore:                 "CMSG_DEL_IGNORE",
+	CMSGGuildQuery:                "CMSG_GUILD_QUERY",
+	SMSGGuildQueryResponse:        "SMSG_GUILD_QUERY_RESPONSE",
 	CMSGGroupInvite:               "CMSG_GROUP_INVITE",
 	SMSGGroupInvite:               "SMSG_GROUP_INVITE",
 	CMSGGroupAccept:               "CMSG_GROUP_ACCEPT",
@@ -182,6 +205,25 @@ var opcodeNames = map[Opcode]string{
 	SMSGGroupList:                 "SMSG_GROUP_LIST",
 	SMSGPartyMemberStats:          "SMSG_PARTY_MEMBER_STATS",
 	SMSGPartyCommandResult:        "SMSG_PARTY_COMMAND_RESULT",
+	CMSGGuildCreate:               "CMSG_GUILD_CREATE",
+	CMSGGuildInvite:               "CMSG_GUILD_INVITE",
+	SMSGGuildInvite:               "SMSG_GUILD_INVITE",
+	CMSGGuildAccept:               "CMSG_GUILD_ACCEPT",
+	CMSGGuildDecline:              "CMSG_GUILD_DECLINE",
+	SMSGGuildDecline:              "SMSG_GUILD_DECLINE",
+	CMSGGuildInfo:                 "CMSG_GUILD_INFO",
+	SMSGGuildInfo:                 "SMSG_GUILD_INFO",
+	CMSGGuildRoster:               "CMSG_GUILD_ROSTER",
+	SMSGGuildRoster:               "SMSG_GUILD_ROSTER",
+	CMSGGuildPromote:              "CMSG_GUILD_PROMOTE",
+	CMSGGuildDemote:               "CMSG_GUILD_DEMOTE",
+	CMSGGuildLeave:                "CMSG_GUILD_LEAVE",
+	CMSGGuildRemove:               "CMSG_GUILD_REMOVE",
+	CMSGGuildDisband:              "CMSG_GUILD_DISBAND",
+	CMSGGuildLeader:               "CMSG_GUILD_LEADER",
+	CMSGGuildMOTD:                 "CMSG_GUILD_MOTD",
+	SMSGGuildEvent:                "SMSG_GUILD_EVENT",
+	SMSGGuildCommandResult:        "SMSG_GUILD_COMMAND_RESULT",
 	CMSGJoinChannel:               "CMSG_JOIN_CHANNEL",
 	CMSGLeaveChannel:              "CMSG_LEAVE_CHANNEL",
 	SMSGChannelNotify:             "SMSG_CHANNEL_NOTIFY",

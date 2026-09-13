@@ -31,6 +31,7 @@ type WorldServer struct {
 	players           playerRegistry
 	groups            groupRegistry
 	channels          channelRegistry
+	guilds            guildRegistry
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -116,6 +117,9 @@ func (s *WorldServer) handle(connection net.Conn) {
 						s.registerPlayer(character)
 						writer = s.attachPlayer(character.GUID, connection)
 						err = s.loadGroup(character)
+						if err == nil {
+							err = s.loadGuild(character)
+						}
 					}
 				}
 			}
@@ -227,6 +231,73 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.groupDisband(*active)
+		case packet.CMSGGuildQuery:
+			response, err = s.guildQuery(message.Data)
+		case packet.CMSGGuildCreate:
+			if active == nil {
+				return
+			}
+			responses, err = s.guildCreate(*active, message.Data, account.GMLevel)
+		case packet.CMSGGuildInvite:
+			if active == nil {
+				return
+			}
+			responses, err = s.guildInvite(*active, message.Data)
+		case packet.CMSGGuildAccept:
+			if active == nil {
+				return
+			}
+			err = s.guildAccept(*active)
+		case packet.CMSGGuildDecline:
+			if active == nil {
+				return
+			}
+			s.guildDecline(*active)
+		case packet.CMSGGuildInfo:
+			if active == nil {
+				return
+			}
+			response, err = s.guildInfo(*active)
+		case packet.CMSGGuildRoster:
+			if active == nil {
+				return
+			}
+			response, err = s.guildRoster(*active)
+		case packet.CMSGGuildLeave:
+			if active == nil {
+				return
+			}
+			responses, err = s.guildLeave(*active)
+		case packet.CMSGGuildPromote:
+			if active == nil {
+				return
+			}
+			responses, err = s.guildPromote(*active, message.Data, false)
+		case packet.CMSGGuildDemote:
+			if active == nil {
+				return
+			}
+			responses, err = s.guildPromote(*active, message.Data, true)
+		case packet.CMSGGuildRemove:
+			if active == nil {
+				return
+			}
+			responses, err = s.guildRemove(*active, message.Data)
+		case packet.CMSGGuildDisband:
+			if active == nil {
+				return
+			}
+			responses, err = s.guildDisbandPlayer(*active)
+		case packet.CMSGGuildLeader:
+			if active == nil {
+				return
+			}
+			responses, err = s.guildSetLeader(*active, message.Data)
+		case packet.CMSGGuildMOTD:
+			if active == nil {
+				return
+			}
+			response, err = s.guildMOTD(*active, message.Data)
 		case packet.CMSGJoinChannel:
 			if active == nil {
 				return
