@@ -328,6 +328,21 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			err = s.newSpellSlot(*active, message.Data)
+		case packet.CMSGMountSpecialAnim:
+			if active == nil {
+				return
+			}
+			err = s.mountSpecialAnim(*active)
+		case packet.CMSGPlayerMacro:
+			if active == nil {
+				return
+			}
+			response, err = s.playerMacro(*active, message.Data)
+		case packet.CMSGSetWeaponMode:
+			if active == nil || len(message.Data) < 4 {
+				return
+			}
+			s.setWeaponMode(active.GUID, binary.LittleEndian.Uint32(message.Data))
 		case packet.MSGLookingForGroup:
 			if active == nil {
 				return

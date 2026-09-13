@@ -157,6 +157,8 @@ const (
 	SMSGActionButtons             Opcode = 0x011c
 	SMSGInitialSpells             Opcode = 0x011d
 	CMSGNewSpellSlot              Opcode = 0x0120
+	CMSGMountSpecialAnim          Opcode = 0x0164
+	SMSGMountSpecialAnim          Opcode = 0x0165
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
 	CMSGStandStateChange          Opcode = 0x00f4
@@ -180,6 +182,9 @@ const (
 	SMSGQueryTimeResponse         Opcode = 0x01c0
 	CMSGPlayedTime                Opcode = 0x01bd
 	SMSGPlayedTime                Opcode = 0x01be
+	CMSGSetWeaponMode             Opcode = 0x01d1
+	CMSGPlayerMacro               Opcode = 0x01d4
+	SMSGPlayerMacro               Opcode = 0x01d5
 	CMSGZoneUpdate                Opcode = 0x01e5
 	CMSGPing                      Opcode = 0x01cd
 	SMSGPong                      Opcode = 0x01ce
@@ -342,6 +347,8 @@ var opcodeNames = map[Opcode]string{
 	SMSGActionButtons:             "SMSG_ACTION_BUTTONS",
 	SMSGInitialSpells:             "SMSG_INITIAL_SPELLS",
 	CMSGNewSpellSlot:              "CMSG_NEW_SPELL_SLOT",
+	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",
+	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",
 	CMSGStandStateChange:          "CMSG_STANDSTATECHANGE",
@@ -365,6 +372,9 @@ var opcodeNames = map[Opcode]string{
 	SMSGPong:                      "SMSG_PONG",
 	CMSGPlayedTime:                "CMSG_PLAYED_TIME",
 	SMSGPlayedTime:                "SMSG_PLAYED_TIME",
+	CMSGSetWeaponMode:             "CMSG_SETWEAPONMODE",
+	CMSGPlayerMacro:               "CMSG_PLAYER_MACRO",
+	SMSGPlayerMacro:               "SMSG_PLAYER_MACRO",
 	MSGRandomRoll:                 "MSG_RANDOM_ROLL",
 	MSGLookingForGroup:            "MSG_LOOKING_FOR_GROUP",
 	CMSGSetLookingForGroup:        "CMSG_SET_LOOKING_FOR_GROUP",
