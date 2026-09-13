@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"Moreno.AlphaCore/database/realm"
+	"Moreno.AlphaCore/network/packet"
 )
 
 type playerRegistry struct {
@@ -102,6 +103,25 @@ func (s *WorldServer) setWeaponMode(guid int64, value uint32) {
 	}
 	s.players.weaponMode[guid] = value
 	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) bytes1(guid int64) uint32 {
+	s.players.mu.RLock()
+	mode, stand := s.players.weaponMode[guid], s.players.standState[guid]
+	s.players.mu.RUnlock()
+	if mode == 0 {
+		mode = 1
+	}
+	return mode<<24 | stand
+}
+
+func (s *WorldServer) bytes1Update(active realm.Character) ([]byte, error) {
+	update, err := packet.EncodeFieldUpdate(uint64(active.GUID), 172, s.bytes1(active.GUID))
+	if err != nil {
+		return nil, err
+	}
+	s.broadcastPlayer(active, update)
+	return update, nil
 }
 
 func (s *WorldServer) onlinePlayers() []realm.Character {

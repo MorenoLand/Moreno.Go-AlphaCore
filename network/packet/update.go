@@ -16,6 +16,30 @@ const (
 	UpdateCreateObject byte = 2
 )
 
+func EncodeFieldUpdate(guid uint64, field int, value uint32) ([]byte, error) {
+	if field < 0 || field >= PlayerFieldCount {
+		return nil, fmt.Errorf("update field index: %d", field)
+	}
+	var data bytes.Buffer
+	write := func(value any) { binary.Write(&data, binary.LittleEndian, value) }
+	data.WriteByte(UpdatePartial)
+	write(guid)
+	blockCount := (field / 32) + 1
+	data.WriteByte(byte(blockCount))
+	for block := 0; block < blockCount; block++ {
+		mask := uint32(0)
+		if block == field/32 {
+			mask = 1 << uint(field%32)
+		}
+		write(mask)
+	}
+	write(value)
+	body := make([]byte, 4+data.Len())
+	binary.LittleEndian.PutUint32(body, 1)
+	copy(body[4:], data.Bytes())
+	return Encode(SMSGUpdateObject, body)
+}
+
 type Movement struct {
 	X, Y, Z, O          float32
 	WalkSpeed, RunSpeed float32

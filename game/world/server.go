@@ -373,6 +373,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			s.setWeaponMode(active.GUID, binary.LittleEndian.Uint32(message.Data))
+			response, err = s.bytes1Update(*active)
 		case packet.MSGLookingForGroup:
 			if active == nil {
 				return
@@ -408,6 +409,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			s.setStandState(active.GUID, binary.LittleEndian.Uint32(message.Data))
+			response, err = s.bytes1Update(*active)
 		case packet.CMSGTextEmote:
 			if active == nil {
 				return
