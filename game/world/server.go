@@ -153,6 +153,16 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.listInventory(*active, message.Data)
+		case packet.CMSGBankerActivate:
+			if active == nil {
+				return
+			}
+			response, err = s.bankerActivate(*active, message.Data)
+		case packet.MSGTabardVendorActivate:
+			if active == nil {
+				return
+			}
+			response, err = s.tabardVendorActivate(*active, message.Data)
 		case packet.CMSGBuyItem:
 			if active == nil {
 				return

@@ -190,6 +190,10 @@ const (
 	SMSGQuestLogFull              Opcode = 0x0191
 	CMSGQuestConfirmAccept        Opcode = 0x0196
 	SMSGQuestConfirmAccept        Opcode = 0x0197
+	CMSGBinderActivate            Opcode = 0x01a7
+	SMSGPlayerBindError           Opcode = 0x01a8
+	CMSGBankerActivate            Opcode = 0x01a9
+	SMSGShowBank                  Opcode = 0x01aa
 	SMSGQuestGiverQuestDetails    Opcode = 0x0184
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
@@ -228,6 +232,7 @@ const (
 	CMSGAuthSession               Opcode = 0x01de
 	SMSGAuthResponse              Opcode = 0x01df
 	MSGSaveGuildEmblem            Opcode = 0x01e2
+	MSGTabardVendorActivate       Opcode = 0x01e3
 	CMSGBug                       Opcode = 0x01bb
 	SMSGCompressedUpdateObject    Opcode = 0x01e7
 )
@@ -417,6 +422,10 @@ var opcodeNames = map[Opcode]string{
 	SMSGQuestLogFull:              "SMSG_QUESTLOG_FULL",
 	CMSGQuestConfirmAccept:        "CMSG_QUEST_CONFIRM_ACCEPT",
 	SMSGQuestConfirmAccept:        "SMSG_QUEST_CONFIRM_ACCEPT",
+	CMSGBinderActivate:            "CMSG_BINDER_ACTIVATE",
+	SMSGPlayerBindError:           "SMSG_PLAYERBINDERROR",
+	CMSGBankerActivate:            "CMSG_BANKER_ACTIVATE",
+	SMSGShowBank:                  "SMSG_SHOW_BANK",
 	SMSGQuestGiverQuestDetails:    "SMSG_QUESTGIVER_QUEST_DETAILS",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",
@@ -451,6 +460,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGAuthSession:               "CMSG_AUTH_SESSION",
 	SMSGAuthResponse:              "SMSG_AUTH_RESPONSE",
 	MSGSaveGuildEmblem:            "MSG_SAVE_GUILD_EMBLEM",
+	MSGTabardVendorActivate:       "MSG_TABARDVENDOR_ACTIVATE",
 	CMSGBug:                       "CMSG_BUG",
 	SMSGCompressedUpdateObject:    "SMSG_COMPRESSED_UPDATE_OBJECT",
 }
