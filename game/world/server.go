@@ -236,6 +236,36 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.textEmote(*active, message.Data)
+		case packet.CMSGDestroyItem:
+			if active == nil {
+				return
+			}
+			responses, err = s.destroyItem(*active, message.Data)
+		case packet.CMSGSplitItem:
+			if active == nil {
+				return
+			}
+			response, err = s.splitItem(*active, message.Data)
+		case packet.CMSGAutostoreBagItem:
+			if active == nil {
+				return
+			}
+			response, err = s.autostoreItem(*active, message.Data)
+		case packet.CMSGAutoequipItem:
+			if active == nil {
+				return
+			}
+			response, err = s.autoequipItem(*active, message.Data)
+		case packet.CMSGSwapInvItem:
+			if active == nil {
+				return
+			}
+			err = s.swapInventory(*active, message.Data)
+		case packet.CMSGSwapItem:
+			if active == nil {
+				return
+			}
+			err = s.swapItems(*active, message.Data)
 		case packet.CMSGMessageChat:
 			if active == nil {
 				return

@@ -62,6 +62,14 @@ const (
 	CMSGTextEmote                 Opcode = 0x00f7
 	SMSGEmote                     Opcode = 0x00f6
 	SMSGTextEmote                 Opcode = 0x00f8
+	SMSGDestroyObject             Opcode = 0x00aa
+	CMSGAutoequipItem             Opcode = 0x00fd
+	CMSGAutostoreBagItem          Opcode = 0x00fe
+	CMSGSwapItem                  Opcode = 0x00ff
+	CMSGSwapInvItem               Opcode = 0x0100
+	CMSGSplitItem                 Opcode = 0x0101
+	CMSGDestroyItem               Opcode = 0x0104
+	SMSGInventoryChangeFailure    Opcode = 0x0105
 	SMSGUpdateObject              Opcode = 0x00a9
 	CMSGQueryTime                 Opcode = 0x01bf
 	SMSGQueryTimeResponse         Opcode = 0x01c0
@@ -133,6 +141,14 @@ var opcodeNames = map[Opcode]string{
 	CMSGTextEmote:                 "CMSG_TEXT_EMOTE",
 	SMSGEmote:                     "SMSG_EMOTE",
 	SMSGTextEmote:                 "SMSG_TEXT_EMOTE",
+	SMSGDestroyObject:             "SMSG_DESTROY_OBJECT",
+	CMSGAutoequipItem:             "CMSG_AUTOEQUIP_ITEM",
+	CMSGAutostoreBagItem:          "CMSG_AUTOSTORE_BAG_ITEM",
+	CMSGSwapItem:                  "CMSG_SWAP_ITEM",
+	CMSGSwapInvItem:               "CMSG_SWAP_INV_ITEM",
+	CMSGSplitItem:                 "CMSG_SPLIT_ITEM",
+	CMSGDestroyItem:               "CMSG_DESTROYITEM",
+	SMSGInventoryChangeFailure:    "SMSG_INVENTORY_CHANGE_FAILURE",
 	SMSGUpdateObject:              "SMSG_UPDATE_OBJECT",
 	CMSGPing:                      "CMSG_PING",
 	SMSGPong:                      "SMSG_PONG",
