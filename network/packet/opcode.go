@@ -214,6 +214,20 @@ const (
 	SMSGQuestGiverQuestDetails    Opcode = 0x0184
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
+	CMSGAttackSwing               Opcode = 0x0134
+	CMSGAttackStop                Opcode = 0x0135
+	SMSGAttackStart               Opcode = 0x0136
+	SMSGAttackStop                Opcode = 0x0137
+	SMSGAttackSwingNotInRange     Opcode = 0x0138
+	SMSGAttackSwingBadFacing      Opcode = 0x0139
+	SMSGAttackSwingNotStanding    Opcode = 0x013a
+	SMSGAttackSwingDeadTarget     Opcode = 0x013b
+	SMSGAttackSwingCantAttack     Opcode = 0x013c
+	SMSGAttackerStateUpdate       Opcode = 0x013d
+	SMSGVictimStateUpdateObsolete Opcode = 0x013e
+	SMSGDamageDone                Opcode = 0x013f
+	SMSGDamageTaken               Opcode = 0x0140
+	SMSGCancelCombat              Opcode = 0x0141
 	CMSGStandStateChange          Opcode = 0x00f4
 	CMSGTextEmote                 Opcode = 0x00f7
 	SMSGEmote                     Opcode = 0x00f6
@@ -474,6 +488,20 @@ var opcodeNames = map[Opcode]string{
 	SMSGQuestGiverQuestDetails:    "SMSG_QUESTGIVER_QUEST_DETAILS",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",
+	CMSGAttackSwing:               "CMSG_ATTACKSWING",
+	CMSGAttackStop:                "CMSG_ATTACKSTOP",
+	SMSGAttackStart:               "SMSG_ATTACKSTART",
+	SMSGAttackStop:                "SMSG_ATTACKSTOP",
+	SMSGAttackSwingNotInRange:     "SMSG_ATTACKSWING_NOTINRANGE",
+	SMSGAttackSwingBadFacing:      "SMSG_ATTACKSWING_BADFACING",
+	SMSGAttackSwingNotStanding:    "SMSG_ATTACKSWING_NOTSTANDING",
+	SMSGAttackSwingDeadTarget:     "SMSG_ATTACKSWING_DEADTARGET",
+	SMSGAttackSwingCantAttack:     "SMSG_ATTACKSWING_CANT_ATTACK",
+	SMSGAttackerStateUpdate:       "SMSG_ATTACKERSTATEUPDATE",
+	SMSGVictimStateUpdateObsolete: "SMSG_VICTIMSTATEUPDATE_OBSOLETE",
+	SMSGDamageDone:                "SMSG_DAMAGE_DONE",
+	SMSGDamageTaken:               "SMSG_DAMAGE_TAKEN",
+	SMSGCancelCombat:              "SMSG_CANCEL_COMBAT",
 	CMSGStandStateChange:          "CMSG_STANDSTATECHANGE",
 	CMSGTextEmote:                 "CMSG_TEXT_EMOTE",
 	SMSGEmote:                     "SMSG_EMOTE",

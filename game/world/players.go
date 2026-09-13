@@ -8,14 +8,15 @@ import (
 )
 
 type playerRegistry struct {
-	mu          sync.RWMutex
-	players     map[int64]realm.Character
-	groupStatus map[int64]uint32
-	selection   map[int64]uint64
-	target      map[int64]uint64
-	standState  map[int64]uint32
-	weaponMode  map[int64]uint32
-	connections map[int64]*playerConnection
+	mu           sync.RWMutex
+	players      map[int64]realm.Character
+	groupStatus  map[int64]uint32
+	selection    map[int64]uint64
+	target       map[int64]uint64
+	standState   map[int64]uint32
+	weaponMode   map[int64]uint32
+	combatTarget map[int64]uint64
+	connections  map[int64]*playerConnection
 }
 
 func (s *WorldServer) registerPlayer(character realm.Character) {
@@ -27,6 +28,7 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.target = make(map[int64]uint64)
 		s.players.standState = make(map[int64]uint32)
 		s.players.weaponMode = make(map[int64]uint32)
+		s.players.combatTarget = make(map[int64]uint64)
 		s.players.connections = make(map[int64]*playerConnection)
 	}
 	s.players.players[character.GUID] = character
@@ -49,8 +51,25 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.target, guid)
 	delete(s.players.standState, guid)
 	delete(s.players.weaponMode, guid)
+	delete(s.players.combatTarget, guid)
 	delete(s.players.connections, guid)
 	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) setCombatTarget(guid int64, target uint64) {
+	s.players.mu.Lock()
+	if s.players.combatTarget == nil {
+		s.players.combatTarget = make(map[int64]uint64)
+	}
+	s.players.combatTarget[guid] = target
+	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) combatTarget(guid int64) uint64 {
+	s.players.mu.RLock()
+	target := s.players.combatTarget[guid]
+	s.players.mu.RUnlock()
+	return target
 }
 
 func (s *WorldServer) getGroupStatus(guid int64) uint32 {

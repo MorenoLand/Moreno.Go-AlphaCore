@@ -541,6 +541,16 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			s.setTarget(*active, message.Data)
+		case packet.CMSGAttackSwing:
+			if active == nil {
+				return
+			}
+			responses, err = s.attack(*active, message.Data)
+		case packet.CMSGAttackStop:
+			if active == nil {
+				return
+			}
+			responses, err = s.attackStop(*active)
 		case packet.CMSGStandStateChange:
 			if active == nil || len(message.Data) < 4 {
 				return
