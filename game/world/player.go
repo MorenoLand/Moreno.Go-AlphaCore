@@ -83,6 +83,10 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
+	bind, bindFound, err := s.Characters.Deathbind(character.GUID)
+	if err != nil {
+		return nil, err
+	}
 	inventory, err := s.Characters.WorldInventory(character.GUID)
 	if err != nil {
 		return nil, err
@@ -104,6 +108,13 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 		return nil, err
 	}
 	packets := [][]byte{factionPacket, spellsPacket, actionPacket}
+	if bindFound && bind.CreatureBinderGUID > 0 {
+		bindPacket, err := deathbindPointPacket(bind)
+		if err != nil {
+			return nil, err
+		}
+		packets = append(packets, bindPacket)
+	}
 	packets = append(packets, itemQueryPackets...)
 	for index, item := range items {
 		instance := instances[index]
