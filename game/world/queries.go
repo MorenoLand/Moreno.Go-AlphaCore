@@ -49,6 +49,10 @@ func (s *WorldServer) itemQueryMultiple(data []byte) ([][]byte, error) {
 			items = append(items, item)
 		}
 	}
+	return itemQueryPackets(items)
+}
+
+func itemQueryPackets(items []worlddb.ItemTemplate) ([][]byte, error) {
 	packets := make([][]byte, 0, 1)
 	queryData := make([]byte, 0)
 	written := 0

@@ -43,6 +43,12 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	if err := characters.SetSpellButton(guid, 42, -1); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO item_template (entry, name, display_id, inventory_type) VALUES (25, 'Test Blade', 1542, 21)`); err != nil {
+		t.Fatal(err)
+	}
+	if err := characters.AddInventoryItem(guid, 25, 23, 1); err != nil {
+		t.Fatal(err)
+	}
 	server := &WorldServer{Accounts: accounts, Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases), SupportedClient: 3368, ServerSeed: []byte{1, 2, 3, 4}}
 	client, connection := net.Pipe()
 	done := make(chan struct{})
@@ -79,10 +85,13 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	}
 	message, _ = packet.Encode(packet.MSGMoveWorldportAck, nil)
 	client.Write(message)
-	for index, expected := range []packet.Opcode{packet.SMSGInitializeFactions, packet.SMSGInitialSpells, packet.SMSGActionButtons, packet.SMSGCompressedUpdateObject} {
+	for index, expected := range []packet.Opcode{packet.SMSGInitializeFactions, packet.SMSGInitialSpells, packet.SMSGActionButtons, packet.SMSGItemQueryMultipleResponse, packet.SMSGCompressedUpdateObject, packet.SMSGCompressedUpdateObject} {
 		response, err = sockets.ReadPacket(stream)
 		if err != nil || response.Opcode != expected {
 			t.Fatalf("initial[%d]=%#v err=%v", index, response, err)
+		}
+		if expected == packet.SMSGItemQueryMultipleResponse && (len(response.Data) == 0 || response.Data[0] != 1) {
+			t.Fatalf("initial item query=%#v", response.Data)
 		}
 		if expected == packet.SMSGInitialSpells && (len(response.Data) != 9 || binary.LittleEndian.Uint16(response.Data[1:]) != 1 || binary.LittleEndian.Uint16(response.Data[3:]) != 42 || int16(binary.LittleEndian.Uint16(response.Data[5:])) != -1) {
 			t.Fatalf("initial spells=%#v", response.Data)

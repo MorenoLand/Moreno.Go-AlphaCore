@@ -7,6 +7,7 @@ import (
 
 	"Moreno.AlphaCore/database/dbc"
 	"Moreno.AlphaCore/database/realm"
+	worlddb "Moreno.AlphaCore/database/world"
 	"Moreno.AlphaCore/network/packet"
 )
 
@@ -82,6 +83,36 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
+	inventory, err := s.Characters.WorldInventory(character.GUID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]worlddb.ItemTemplate, 0, len(inventory))
+	instances := make([]realm.InventoryItem, 0, len(inventory))
+	for _, instance := range inventory {
+		item, found, err := s.WorldData.ItemTemplate(instance.ItemTemplate)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			items = append(items, item)
+			instances = append(instances, instance)
+		}
+	}
+	itemQueryPackets, err := itemQueryPackets(items)
+	if err != nil {
+		return nil, err
+	}
+	packets := [][]byte{factionPacket, spellsPacket, actionPacket}
+	packets = append(packets, itemQueryPackets...)
+	for index, item := range items {
+		instance := instances[index]
+		itemPacket, err := packet.EncodeItemCreate(uint64(instance.GUID)|0x4000000000000000, uint32(item.Entry), uint64(instance.Owner), uint64(instance.Creator), uint32(instance.StackCount), int32(instance.Duration), uint32(instance.Flags), instance.SpellCharges, packet.Movement{X: character.PositionX, Y: character.PositionY, Z: character.PositionZ, O: character.Orientation})
+		if err != nil {
+			return nil, err
+		}
+		packets = append(packets, itemPacket)
+	}
 	race := dbc.Race{ID: int64(character.Race)}
 	if s.DBC != nil {
 		if value, found, queryErr := s.DBC.Race(character.Race); queryErr != nil {
@@ -95,7 +126,8 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
-	return joinPackets(factionPacket, spellsPacket, actionPacket, createPacket), nil
+	packets = append(packets, createPacket)
+	return joinPackets(packets...), nil
 }
 
 func buildPlayerFields(character realm.Character, race dbc.Race) []uint32 {

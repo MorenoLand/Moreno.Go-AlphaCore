@@ -66,6 +66,61 @@ func EncodePlayerCreate(guid uint64, values []uint32, movement Movement) ([]byte
 	return Encode(SMSGUpdateObject, body)
 }
 
+func EncodeItemCreate(guid uint64, entry uint32, owner, creator uint64, stack uint32, duration int32, flags uint32, charges [5]int64, movement Movement) ([]byte, error) {
+	var data bytes.Buffer
+	write := func(value any) { binary.Write(&data, binary.LittleEndian, value) }
+	data.WriteByte(UpdateCreateObject)
+	write(guid)
+	data.WriteByte(1)
+	write(uint64(0))
+	write([4]float32{})
+	write([4]float32{movement.X, movement.Y, movement.Z, movement.O})
+	write(float32(0))
+	write(movement.MovementFlags)
+	write(uint32(0))
+	write(float32(1))
+	write(float32(1))
+	write(float32(1))
+	write(float32(1))
+	write(uint32(1))
+	write(uint32(1))
+	write(uint32(0))
+	write(uint64(0))
+	values := make([]uint32, 36)
+	SetUint64(values, 0, guid)
+	values[2] = 3
+	values[3] = entry
+	values[4] = math.Float32bits(1)
+	SetUint64(values, 6, owner)
+	SetUint64(values, 10, creator)
+	values[12] = stack
+	values[13] = uint32(duration)
+	hasCharges := false
+	for _, charge := range charges {
+		if charge != 0 {
+			hasCharges = true
+		}
+	}
+	for index, charge := range charges {
+		if hasCharges {
+			values[14+index] = uint32(charge)
+		} else {
+			values[14+index] = ^uint32(0)
+		}
+	}
+	values[19] = flags
+	data.WriteByte(2)
+	write(uint32(0xffffffff))
+	write(uint32(0xf))
+	for _, value := range values {
+		write(value)
+	}
+	body := make([]byte, 4+data.Len())
+	binary.LittleEndian.PutUint32(body, 1)
+	copy(body[4:], data.Bytes())
+	return Encode(SMSGUpdateObject, body)
+}
+
 func SetUint64(values []uint32, index int, value uint64) {
 	values[index] = uint32(value)
 	values[index+1] = uint32(value >> 32)

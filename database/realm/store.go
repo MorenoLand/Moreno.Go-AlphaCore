@@ -49,8 +49,8 @@ type Character struct {
 }
 
 type InventoryItem struct {
-	Slot         int64
-	ItemTemplate int64
+	GUID, Owner, Creator, Bag, Slot, ItemTemplate, StackCount, Duration, Flags int64
+	SpellCharges                                                               [5]int64
 }
 
 type Spell struct {
@@ -268,6 +268,27 @@ func (s *Store) Inventory(owner int64) ([]InventoryItem, error) {
 		var item InventoryItem
 		if err := rows.Scan(&item.Slot, &item.ItemTemplate); err != nil {
 			return nil, fmt.Errorf("scan character inventory: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func (s *Store) WorldInventory(owner int64) ([]InventoryItem, error) {
+	rows, err := s.db.Query(`SELECT guid, owner, creator, bag, slot, item_template, stackcount, duration, item_flags, SpellCharges1, SpellCharges2, SpellCharges3, SpellCharges4, SpellCharges5 FROM character_inventory WHERE owner = ? AND bag = 0 AND slot BETWEEN 0 AND 39 ORDER BY slot, guid`, owner)
+	if err != nil {
+		return nil, fmt.Errorf("query world inventory: %w", err)
+	}
+	defer rows.Close()
+	var items []InventoryItem
+	for rows.Next() {
+		var item InventoryItem
+		values := []interface{}{&item.GUID, &item.Owner, &item.Creator, &item.Bag, &item.Slot, &item.ItemTemplate, &item.StackCount, &item.Duration, &item.Flags}
+		for index := range item.SpellCharges {
+			values = append(values, &item.SpellCharges[index])
+		}
+		if err := rows.Scan(values...); err != nil {
+			return nil, fmt.Errorf("scan world inventory: %w", err)
 		}
 		items = append(items, item)
 	}
