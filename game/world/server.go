@@ -168,6 +168,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.bankerActivate(*active, message.Data)
+		case packet.CMSGBuyBankSlot:
+			if active == nil {
+				return
+			}
+			responses, err = s.buyBankSlot(active, message.Data)
 		case packet.CMSGTrainerList:
 			if active == nil {
 				return

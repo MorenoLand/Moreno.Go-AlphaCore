@@ -238,6 +238,8 @@ const (
 	SMSGPlayerBindError           Opcode = 0x01a8
 	CMSGBankerActivate            Opcode = 0x01a9
 	SMSGShowBank                  Opcode = 0x01aa
+	CMSGBuyBankSlot               Opcode = 0x01ab
+	SMSGBuyBankSlotResult         Opcode = 0x01ac
 	CMSGTrainerList               Opcode = 0x01a2
 	SMSGTrainerList               Opcode = 0x01a3
 	CMSGTrainerBuySpell           Opcode = 0x01a4
@@ -544,6 +546,8 @@ var opcodeNames = map[Opcode]string{
 	SMSGPlayerBindError:           "SMSG_PLAYERBINDERROR",
 	CMSGBankerActivate:            "CMSG_BANKER_ACTIVATE",
 	SMSGShowBank:                  "SMSG_SHOW_BANK",
+	CMSGBuyBankSlot:               "CMSG_BUY_BANK_SLOT",
+	SMSGBuyBankSlotResult:         "SMSG_BUY_BANK_SLOT_RESULT",
 	CMSGTrainerList:               "CMSG_TRAINER_LIST",
 	SMSGTrainerList:               "SMSG_TRAINER_LIST",
 	CMSGTrainerBuySpell:           "CMSG_TRAINER_BUY_SPELL",
