@@ -50,18 +50,28 @@ type Character struct {
 
 type Store struct{ db *sql.DB }
 
+const characterColumns = `guid, account_id, realm_id, name, race, "class", gender, level, xp, money, skin, face, hairstyle, haircolour, facialhair, bankslots, talentpoints, skillpoints, position_x, position_y, position_z, map, orientation, COALESCE(taximask, ''), COALESCE(explored_areas, ''), online, totaltime, leveltime, extra_flags, zone, COALESCE(taxi_path, ''), drunk, health, power1, power2, power3, power4, power5`
+
+type rowScanner interface{ Scan(...any) error }
+
+func scanCharacter(row rowScanner) (Character, error) {
+	var character Character
+	err := row.Scan(&character.GUID, &character.AccountID, &character.RealmID, &character.Name, &character.Race, &character.Class, &character.Gender, &character.Level, &character.XP, &character.Money, &character.Skin, &character.Face, &character.Hairstyle, &character.Haircolour, &character.Facialhair, &character.Bankslots, &character.Talentpoints, &character.Skillpoints, &character.PositionX, &character.PositionY, &character.PositionZ, &character.Map, &character.Orientation, &character.Taximask, &character.ExploredAreas, &character.Online, &character.Totaltime, &character.Leveltime, &character.ExtraFlags, &character.Zone, &character.TaxiPath, &character.Drunk, &character.Health, &character.Power1, &character.Power2, &character.Power3, &character.Power4, &character.Power5)
+	return character, err
+}
+
 func NewStore(databases *database.Databases) *Store { return &Store{db: databases.DB(database.Realm)} }
 
 func (s *Store) Characters(accountID, realmID int64) ([]Character, error) {
-	rows, err := s.db.Query(`SELECT guid, account_id, realm_id, name, race, "class", gender, level, xp, money, skin, face, hairstyle, haircolour, facialhair, bankslots, talentpoints, skillpoints, position_x, position_y, position_z, map, orientation, COALESCE(taximask, ''), COALESCE(explored_areas, ''), online, totaltime, leveltime, extra_flags, zone, COALESCE(taxi_path, ''), drunk, health, power1, power2, power3, power4, power5 FROM characters WHERE account_id = ? AND realm_id = ? ORDER BY guid LIMIT 10`, accountID, realmID)
+	rows, err := s.db.Query(`SELECT `+characterColumns+` FROM characters WHERE account_id = ? AND realm_id = ? ORDER BY guid LIMIT 10`, accountID, realmID)
 	if err != nil {
 		return nil, fmt.Errorf("query characters: %w", err)
 	}
 	defer rows.Close()
 	var characters []Character
 	for rows.Next() {
-		var character Character
-		if err := rows.Scan(&character.GUID, &character.AccountID, &character.RealmID, &character.Name, &character.Race, &character.Class, &character.Gender, &character.Level, &character.XP, &character.Money, &character.Skin, &character.Face, &character.Hairstyle, &character.Haircolour, &character.Facialhair, &character.Bankslots, &character.Talentpoints, &character.Skillpoints, &character.PositionX, &character.PositionY, &character.PositionZ, &character.Map, &character.Orientation, &character.Taximask, &character.ExploredAreas, &character.Online, &character.Totaltime, &character.Leveltime, &character.ExtraFlags, &character.Zone, &character.TaxiPath, &character.Drunk, &character.Health, &character.Power1, &character.Power2, &character.Power3, &character.Power4, &character.Power5); err != nil {
+		character, err := scanCharacter(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan character: %w", err)
 		}
 		characters = append(characters, character)
@@ -70,6 +80,17 @@ func (s *Store) Characters(accountID, realmID int64) ([]Character, error) {
 		return nil, fmt.Errorf("read characters: %w", err)
 	}
 	return characters, nil
+}
+
+func (s *Store) Character(guid, accountID, realmID int64) (Character, bool, error) {
+	character, err := scanCharacter(s.db.QueryRow(`SELECT `+characterColumns+` FROM characters WHERE guid = ? AND account_id = ? AND realm_id = ? LIMIT 1`, guid, accountID, realmID))
+	if err == sql.ErrNoRows {
+		return Character{}, false, nil
+	}
+	if err != nil {
+		return Character{}, false, fmt.Errorf("query character: %w", err)
+	}
+	return character, true, nil
 }
 
 func (s *Store) NameExists(name string, realmID int64) (bool, error) {

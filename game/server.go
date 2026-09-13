@@ -7,6 +7,7 @@ import (
 
 	"Moreno.AlphaCore/database"
 	"Moreno.AlphaCore/database/auth"
+	dbcdb "Moreno.AlphaCore/database/dbc"
 	realmdb "Moreno.AlphaCore/database/realm"
 	worlddb "Moreno.AlphaCore/database/world"
 	"Moreno.AlphaCore/game/login"
@@ -27,9 +28,10 @@ type Config struct {
 
 func Run(ctx context.Context, databases *database.Databases, config Config) error {
 	accounts := auth.NewStore(databases)
+	dbcData := dbcdb.NewStore(databases)
 	characters := realmdb.NewStore(databases)
 	worldData := worlddb.NewStore(databases)
-	worldServer := &world.WorldServer{Address: config.WorldListenAddress, Accounts: accounts, Characters: characters, WorldData: worldData, SupportedClient: config.SupportedClient, AutoCreateAccount: true}
+	worldServer := &world.WorldServer{Address: config.WorldListenAddress, Accounts: accounts, Characters: characters, DBC: dbcData, WorldData: worldData, SupportedClient: config.SupportedClient, AutoCreateAccount: true}
 	services := []interface {
 		Start(context.Context) (net.Listener, error)
 	}{

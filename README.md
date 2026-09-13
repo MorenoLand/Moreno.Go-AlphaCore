@@ -16,7 +16,7 @@
 This repository is the Go port of [The Alpha Project's Alpha Core](https://github.com/The-Alpha-Project/alpha-core). The upstream Python source remains the behavioral reference for this port.
 
 > [!NOTE]
-> The Go port is being developed in focused subsystems. The current slice provides SQLite data import, packet/SRP6 primitives, login, realm, proxy, world authentication, and character create/list/delete; broader gameplay remains in progress.
+> The Go port is being developed in focused subsystems. The current slice provides SQLite data import, packet/SRP6 primitives, login, realm, proxy, world authentication, character create/list/delete, and player-login update packets; broader gameplay remains in progress.
 
 - [Database Tool](https://db.thealphaproject.eu/)
 - [Original AlphaCore Discord](https://discord.gg/RzBMAKU)

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"Moreno.AlphaCore/database/auth"
+	"Moreno.AlphaCore/database/dbc"
 	"Moreno.AlphaCore/database/realm"
 	worlddb "Moreno.AlphaCore/database/world"
 	"Moreno.AlphaCore/network/packet"
@@ -21,6 +22,7 @@ type WorldServer struct {
 	Address           string
 	Accounts          *auth.Store
 	Characters        *realm.Store
+	DBC               *dbc.Store
 	WorldData         *worlddb.Store
 	SupportedClient   uint32
 	AutoCreateAccount bool
@@ -86,6 +88,8 @@ func (s *WorldServer) handle(connection net.Conn) {
 			response, err = s.characterCreate(account.ID, message.Data)
 		case packet.CMSGCharDelete:
 			response, err = s.characterDelete(account.ID, message.Data)
+		case packet.CMSGPlayerLogin:
+			response, err = s.playerLogin(account.ID, message.Data)
 		case packet.CMSGPing:
 			if len(message.Data) < 4 {
 				return

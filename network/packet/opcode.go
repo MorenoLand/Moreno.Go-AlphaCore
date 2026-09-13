@@ -15,6 +15,8 @@ const (
 	SMSGCharDelete             Opcode = 0x003c
 	CMSGPlayerLogin            Opcode = 0x003d
 	SMSGNewWorld               Opcode = 0x003e
+	SMSGCharacterLoginFailed   Opcode = 0x0041
+	SMSGLoginSetTimeSpeed      Opcode = 0x0042
 	SMSGAuthChallenge          Opcode = 0x01dd
 	CMSGPlayerLogout           Opcode = 0x004a
 	CMSGLogoutRequest          Opcode = 0x004b
@@ -39,6 +41,8 @@ var opcodeNames = map[Opcode]string{
 	SMSGCharDelete:             "SMSG_CHAR_DELETE",
 	CMSGPlayerLogin:            "CMSG_PLAYER_LOGIN",
 	SMSGNewWorld:               "SMSG_NEW_WORLD",
+	SMSGCharacterLoginFailed:   "SMSG_CHARACTER_LOGIN_FAILED",
+	SMSGLoginSetTimeSpeed:      "SMSG_LOGIN_SETTIMESPEED",
 	SMSGAuthChallenge:          "SMSG_AUTH_CHALLENGE",
 	CMSGPlayerLogout:           "CMSG_PLAYER_LOGOUT",
 	CMSGLogoutRequest:          "CMSG_LOGOUT_REQUEST",

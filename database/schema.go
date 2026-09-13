@@ -106,4 +106,12 @@ CREATE TABLE IF NOT EXISTS playercreateinfo (
 );
 `
 
-const dbcSchema = commonSchema
+const dbcSchema = commonSchema + `
+CREATE TABLE IF NOT EXISTS ChrRaces (
+    ID INTEGER PRIMARY KEY NOT NULL,
+    FactionID INTEGER NOT NULL DEFAULT 0,
+    MaleDisplayId INTEGER NOT NULL DEFAULT 0,
+    FemaleDisplayId INTEGER NOT NULL DEFAULT 0,
+    CreatureType INTEGER NOT NULL DEFAULT 0
+);
+`
