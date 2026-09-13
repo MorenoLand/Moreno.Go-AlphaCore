@@ -153,6 +153,21 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.listInventory(*active, message.Data)
+		case packet.CMSGBuyItem:
+			if active == nil {
+				return
+			}
+			responses, err = s.buyItem(active, message.Data, false)
+		case packet.CMSGBuyItemInSlot:
+			if active == nil {
+				return
+			}
+			responses, err = s.buyItem(active, message.Data, true)
+		case packet.CMSGSellItem:
+			if active == nil {
+				return
+			}
+			responses, err = s.sellItem(active, message.Data)
 		case packet.CMSGNameQuery:
 			if active == nil {
 				return

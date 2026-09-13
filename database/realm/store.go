@@ -184,7 +184,7 @@ func (s *Store) AddInventoryItem(owner, itemTemplate, slot, amount int64) error 
 }
 
 func (s *Store) AddInventoryItemAt(owner, itemTemplate, bag, slot, amount int64) error {
-	_, err := s.db.Exec(`INSERT INTO character_inventory (owner, bag, slot, item_template, stackcount, enchantments) VALUES (?, ?, ?, ?, ?, '')`, owner, bag, slot, itemTemplate, amount)
+	_, err := s.CreateInventoryItem(owner, 0, bag, slot, itemTemplate, amount)
 	return err
 }
 

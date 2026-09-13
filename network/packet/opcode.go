@@ -164,6 +164,13 @@ const (
 	SMSGMountSpecialAnim          Opcode = 0x0165
 	CMSGListInventory             Opcode = 0x016e
 	SMSGListInventory             Opcode = 0x016f
+	SMSGItemPushResult            Opcode = 0x0159
+	CMSGSellItem                  Opcode = 0x0170
+	SMSGSellItem                  Opcode = 0x0171
+	CMSGBuyItem                   Opcode = 0x0172
+	CMSGBuyItemInSlot             Opcode = 0x0173
+	SMSGBuyItem                   Opcode = 0x0174
+	SMSGBuyFailed                 Opcode = 0x0175
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
 	CMSGStandStateChange          Opcode = 0x00f4
@@ -364,6 +371,13 @@ var opcodeNames = map[Opcode]string{
 	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
 	CMSGListInventory:             "CMSG_LIST_INVENTORY",
 	SMSGListInventory:             "SMSG_LIST_INVENTORY",
+	SMSGItemPushResult:            "SMSG_ITEM_PUSH_RESULT",
+	CMSGSellItem:                  "CMSG_SELL_ITEM",
+	SMSGSellItem:                  "SMSG_SELL_ITEM",
+	CMSGBuyItem:                   "CMSG_BUY_ITEM",
+	CMSGBuyItemInSlot:             "CMSG_BUY_ITEM_IN_SLOT",
+	SMSGBuyItem:                   "SMSG_BUY_ITEM",
+	SMSGBuyFailed:                 "SMSG_BUY_FAILED",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",
 	CMSGStandStateChange:          "CMSG_STANDSTATECHANGE",
