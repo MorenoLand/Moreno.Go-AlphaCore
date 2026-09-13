@@ -322,6 +322,41 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.gameObjectUse(*active, message.Data)
+		case packet.CMSGPetitionShowlist:
+			if active == nil {
+				return
+			}
+			responses, err = s.petitionShowList(*active, message.Data)
+		case packet.CMSGPetitionBuy:
+			if active == nil {
+				return
+			}
+			responses, err = s.petitionBuy(active, message.Data)
+		case packet.CMSGPetitionShowSignatures:
+			if active == nil {
+				return
+			}
+			responses, err = s.petitionSignatures(*active, message.Data)
+		case packet.CMSGPetitionQuery:
+			if active == nil {
+				return
+			}
+			responses, err = s.petitionQuery(*active, message.Data)
+		case packet.CMSGPetitionSign:
+			if active == nil {
+				return
+			}
+			responses, err = s.petitionSign(*active, message.Data)
+		case packet.CMSGOfferPetition:
+			if active == nil {
+				return
+			}
+			responses, err = s.petitionOffer(*active, message.Data)
+		case packet.CMSGTurnInPetition:
+			if active == nil {
+				return
+			}
+			responses, err = s.petitionTurnIn(*active, message.Data)
 		case packet.CMSGCreatureQuery:
 			if active == nil {
 				return

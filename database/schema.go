@@ -152,6 +152,22 @@ CREATE TABLE IF NOT EXISTS character_gifts (
     flags INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS character_gifts_item_idx ON character_gifts (item_guid);
+CREATE TABLE IF NOT EXISTS petition (
+    petition_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    realm_id INTEGER NOT NULL DEFAULT 1,
+    owner_guid INTEGER NOT NULL,
+    item_guid INTEGER NOT NULL UNIQUE,
+    name TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (owner_guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (item_guid) REFERENCES character_inventory (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE IF NOT EXISTS petition_sign (
+    petition_id INTEGER NOT NULL,
+    player_guid INTEGER NOT NULL,
+    PRIMARY KEY (petition_id, player_guid),
+    FOREIGN KEY (petition_id) REFERENCES petition (petition_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (player_guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
 CREATE TABLE IF NOT EXISTS character_skills (
     guid INTEGER NOT NULL,
     skill INTEGER NOT NULL,

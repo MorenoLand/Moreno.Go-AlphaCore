@@ -87,6 +87,18 @@ const (
 	SMSGQuestQueryResponse        Opcode = 0x005d
 	CMSGGameObjectQuery           Opcode = 0x005e
 	CMSGGameObjectUse             Opcode = 0x00b1
+	CMSGPetitionShowlist          Opcode = 0x01ad
+	SMSGPetitionShowlist          Opcode = 0x01ae
+	CMSGPetitionBuy               Opcode = 0x01af
+	CMSGPetitionShowSignatures    Opcode = 0x01b0
+	SMSGPetitionShowSignatures    Opcode = 0x01b1
+	CMSGPetitionSign              Opcode = 0x01b2
+	SMSGPetitionSignResults       Opcode = 0x01b3
+	CMSGOfferPetition             Opcode = 0x01b4
+	CMSGTurnInPetition            Opcode = 0x01b5
+	SMSGTurnInPetitionResults     Opcode = 0x01b6
+	CMSGPetitionQuery             Opcode = 0x01b7
+	SMSGPetitionQueryResponse     Opcode = 0x01b8
 	SMSGGameObjectQueryResponse   Opcode = 0x005f
 	CMSGCreatureQuery             Opcode = 0x0060
 	SMSGCreatureQueryResponse     Opcode = 0x0061
@@ -361,6 +373,18 @@ var opcodeNames = map[Opcode]string{
 	SMSGQuestQueryResponse:        "SMSG_QUEST_QUERY_RESPONSE",
 	CMSGGameObjectQuery:           "CMSG_GAMEOBJECT_QUERY",
 	CMSGGameObjectUse:             "CMSG_GAMEOBJ_USE",
+	CMSGPetitionShowlist:          "CMSG_PETITION_SHOWLIST",
+	SMSGPetitionShowlist:          "SMSG_PETITION_SHOWLIST",
+	CMSGPetitionBuy:               "CMSG_PETITION_BUY",
+	CMSGPetitionShowSignatures:    "CMSG_PETITION_SHOW_SIGNATURES",
+	SMSGPetitionShowSignatures:    "SMSG_PETITION_SHOW_SIGNATURES",
+	CMSGPetitionSign:              "CMSG_PETITION_SIGN",
+	SMSGPetitionSignResults:       "SMSG_PETITION_SIGN_RESULTS",
+	CMSGOfferPetition:             "CMSG_OFFER_PETITION",
+	CMSGTurnInPetition:            "CMSG_TURN_IN_PETITION",
+	SMSGTurnInPetitionResults:     "SMSG_TURN_IN_PETITION_RESULTS",
+	CMSGPetitionQuery:             "CMSG_PETITION_QUERY",
+	SMSGPetitionQueryResponse:     "SMSG_PETITION_QUERY_RESPONSE",
 	SMSGGameObjectQueryResponse:   "SMSG_GAMEOBJECT_QUERY_RESPONSE",
 	CMSGCreatureQuery:             "CMSG_CREATURE_QUERY",
 	SMSGCreatureQueryResponse:     "SMSG_CREATURE_QUERY_RESPONSE",
