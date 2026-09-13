@@ -185,7 +185,7 @@ func (s *WorldServer) inventoryFailure(active realm.Character, code byte, items 
 }
 
 func equipmentSlot(inventoryType int64) int64 {
-	slots := map[int64]int64{1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 9, 11: 10, 12: 12, 13: 15, 14: 16, 15: 17, 16: 14, 17: 15, 19: 18, 20: 4, 21: 15, 22: 16, 23: 16, 25: 17, 26: 17}
+	slots := map[int64]int64{1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 9, 11: 10, 12: 12, 13: 15, 14: 16, 15: 17, 16: 14, 17: 15, 18: 19, 19: 18, 20: 4, 21: 15, 22: 16, 23: 16, 25: 17, 26: 17}
 	if slot, found := slots[inventoryType]; found {
 		return slot
 	}

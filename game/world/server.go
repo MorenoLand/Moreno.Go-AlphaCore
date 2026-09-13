@@ -382,8 +382,32 @@ func (s *WorldServer) characterCreate(accountID int64, data []byte) ([]byte, err
 				if itemsErr != nil {
 					return nil, itemsErr
 				}
-				for slot, item := range items {
-					if err = s.Characters.AddInventoryItem(guid, item.ItemID, int64(23+slot), item.Amount); err != nil {
+				lastBagSlot := int64(23)
+				for _, item := range items {
+					template, templateFound, templateErr := s.WorldData.ItemTemplate(item.ItemID)
+					if templateErr != nil {
+						return nil, templateErr
+					}
+					bag, slot, amount := int64(23), lastBagSlot, item.Amount
+					if templateFound {
+						slot = equipmentSlot(template.InventoryType)
+						if template.InventoryType == 24 {
+							bag, slot, amount = 19, 0, 100
+						} else if slot < 0 || slot >= 23 {
+							slot = lastBagSlot
+							lastBagSlot++
+						}
+						if template.InventoryType == 0 && template.Class == 0 {
+							amount = 4
+							if template.Spells[0].ID == 430 {
+								amount = 2
+							}
+						}
+					}
+					if amount <= 0 {
+						amount = 1
+					}
+					if err = s.Characters.AddInventoryItemAt(guid, item.ItemID, bag, slot, amount); err != nil {
 						return nil, err
 					}
 				}
