@@ -175,7 +175,7 @@ func (s *Store) UpdateZone(guid, accountID, realmID, zone int64) error {
 }
 
 func (s *Store) AddInventoryItem(owner, itemTemplate, slot, amount int64) error {
-	_, err := s.db.Exec(`INSERT INTO character_inventory (owner, bag, slot, item_template, stackcount, enchantments) VALUES (?, 0, ?, ?, ?, '')`, owner, slot, itemTemplate, amount)
+	_, err := s.db.Exec(`INSERT INTO character_inventory (owner, bag, slot, item_template, stackcount, enchantments) VALUES (?, 23, ?, ?, ?, '')`, owner, slot, itemTemplate, amount)
 	return err
 }
 
@@ -258,7 +258,7 @@ func (s *Store) SpellButtons(owner int64) (map[int64]int64, error) {
 }
 
 func (s *Store) Inventory(owner int64) ([]InventoryItem, error) {
-	rows, err := s.db.Query(`SELECT slot, item_template FROM character_inventory WHERE owner = ? AND bag = 0 AND slot BETWEEN 0 AND 19`, owner)
+	rows, err := s.db.Query(`SELECT slot, item_template FROM character_inventory WHERE owner = ? AND bag = 23 AND slot BETWEEN 0 AND 19`, owner)
 	if err != nil {
 		return nil, fmt.Errorf("query character inventory: %w", err)
 	}
@@ -275,7 +275,7 @@ func (s *Store) Inventory(owner int64) ([]InventoryItem, error) {
 }
 
 func (s *Store) WorldInventory(owner int64) ([]InventoryItem, error) {
-	rows, err := s.db.Query(`SELECT guid, owner, creator, bag, slot, item_template, stackcount, duration, item_flags, SpellCharges1, SpellCharges2, SpellCharges3, SpellCharges4, SpellCharges5 FROM character_inventory WHERE owner = ? AND bag = 0 AND slot BETWEEN 0 AND 39 ORDER BY slot, guid`, owner)
+	rows, err := s.db.Query(`SELECT guid, owner, creator, bag, slot, item_template, stackcount, duration, item_flags, SpellCharges1, SpellCharges2, SpellCharges3, SpellCharges4, SpellCharges5 FROM character_inventory WHERE owner = ? AND bag = 23 AND slot BETWEEN 0 AND 39 ORDER BY slot, guid`, owner)
 	if err != nil {
 		return nil, fmt.Errorf("query world inventory: %w", err)
 	}
