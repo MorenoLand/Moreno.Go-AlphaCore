@@ -49,6 +49,15 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	if err := characters.AddInventoryItem(guid, 25, 23, 1); err != nil {
 		t.Fatal(err)
 	}
+	inventory, err := characters.WorldInventory(guid)
+	if err != nil || len(inventory) != 1 {
+		t.Fatalf("inventory=%#v err=%v", inventory, err)
+	}
+	fields := buildPlayerFields(realm.Character{GUID: guid}, dbc.Race{}, inventory)
+	itemGUID := uint64(inventory[0].GUID) | 0x4000000000000000
+	if uint64(fields[230])|uint64(fields[231])<<32 != itemGUID {
+		t.Fatalf("player inventory fields=%x want=%x", uint64(fields[230])|uint64(fields[231])<<32, itemGUID)
+	}
 	server := &WorldServer{Accounts: accounts, Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases), SupportedClient: 3368, ServerSeed: []byte{1, 2, 3, 4}}
 	client, connection := net.Pipe()
 	done := make(chan struct{})

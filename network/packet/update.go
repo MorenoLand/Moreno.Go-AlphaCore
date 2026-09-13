@@ -92,6 +92,7 @@ func EncodeItemCreate(guid uint64, entry uint32, owner, creator uint64, stack ui
 	values[3] = entry
 	values[4] = math.Float32bits(1)
 	SetUint64(values, 6, owner)
+	SetUint64(values, 8, owner)
 	SetUint64(values, 10, creator)
 	values[12] = stack
 	values[13] = uint32(duration)

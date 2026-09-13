@@ -121,7 +121,7 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 			race = value
 		}
 	}
-	values := buildPlayerFields(character, race)
+	values := buildPlayerFields(character, race, inventory)
 	createPacket, err := packet.EncodePlayerCreate(uint64(character.GUID), values, packet.Movement{X: character.PositionX, Y: character.PositionY, Z: character.PositionZ, O: character.Orientation, WalkSpeed: 2.5, RunSpeed: 7, SwimSpeed: 4.722222, TurnRate: 3.141594})
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 	return joinPackets(packets...), nil
 }
 
-func buildPlayerFields(character realm.Character, race dbc.Race) []uint32 {
+func buildPlayerFields(character realm.Character, race dbc.Race, inventory []realm.InventoryItem) []uint32 {
 	values := make([]uint32, packet.PlayerFieldCount)
 	packet.SetUint64(values, 0, uint64(character.GUID))
 	values[2] = objectType
@@ -165,6 +165,17 @@ func buildPlayerFields(character realm.Character, race dbc.Race) []uint32 {
 	values[526] = byteValue(0, character.Bankslots, character.Facialhair, uint8(character.ExtraFlags))
 	values[623] = uint32(character.Talentpoints)
 	values[624] = uint32(character.Skillpoints)
+	for _, item := range inventory {
+		field := -1
+		if item.Slot >= 0 && item.Slot < 23 {
+			field = 184 + int(item.Slot)*2
+		} else if item.Slot >= 23 && item.Slot < 39 {
+			field = 230 + int(item.Slot-23)*2
+		}
+		if field >= 0 {
+			packet.SetUint64(values, field, uint64(item.GUID)|0x4000000000000000)
+		}
+	}
 	return values
 }
 
