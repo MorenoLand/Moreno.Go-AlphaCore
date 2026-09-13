@@ -6,13 +6,23 @@ import (
 )
 
 const (
-	bagCantStack     byte = 18
-	bagNotEquippable byte = 19
-	bagItemNotFound  byte = 22
-	bagItemTooFew    byte = 25
-	bagSplitFailed   byte = 26
-	bagLootGone      byte = 47
-	bagInventoryFull byte = 48
+	bagCantStack         byte = 18
+	bagNotEquippable     byte = 19
+	bagItemNotFound      byte = 22
+	bagItemTooFew        byte = 25
+	bagSplitFailed       byte = 26
+	bagLootGone          byte = 47
+	bagInventoryFull     byte = 48
+	bagItemLocked        byte = 35
+	bagNotWhileDead      byte = 36
+	bagError             byte = 38
+	bagCantWrapStackable byte = 41
+	bagCantWrapEquipped  byte = 42
+	bagCantWrapWrapped   byte = 43
+	bagCantWrapBound     byte = 44
+	bagCantWrapUnique    byte = 45
+	bagCantWrapBags      byte = 46
+	bagUnknownItem       byte = 51
 )
 
 func inventoryBag(value byte) int64 {
@@ -170,6 +180,10 @@ func (s *WorldServer) swapItems(active realm.Character, data []byte) error {
 }
 
 func (s *WorldServer) inventoryFailure(active realm.Character, code byte, items ...realm.InventoryItem) ([]byte, error) {
+	return encodeInventoryFailure(active, code, items...)
+}
+
+func encodeInventoryFailure(active realm.Character, code byte, items ...realm.InventoryItem) ([]byte, error) {
 	body := []byte{code}
 	first, second := active.GUID, active.GUID
 	if len(items) > 0 && items[0].GUID > 0 {

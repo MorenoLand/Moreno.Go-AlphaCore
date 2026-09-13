@@ -85,6 +85,7 @@ const (
 	CMSGQuestQuery                Opcode = 0x005c
 	SMSGQuestQueryResponse        Opcode = 0x005d
 	CMSGGameObjectQuery           Opcode = 0x005e
+	CMSGGameObjectUse             Opcode = 0x00b1
 	SMSGGameObjectQueryResponse   Opcode = 0x005f
 	CMSGCreatureQuery             Opcode = 0x0060
 	SMSGCreatureQueryResponse     Opcode = 0x0061
@@ -237,6 +238,7 @@ const (
 	CMSGSwapInvItem               Opcode = 0x0100
 	CMSGSplitItem                 Opcode = 0x0101
 	CMSGDestroyItem               Opcode = 0x0104
+	CMSGWrapItem                  Opcode = 0x01c4
 	SMSGInventoryChangeFailure    Opcode = 0x0105
 	SMSGUpdateObject              Opcode = 0x00a9
 	CMSGQueryTime                 Opcode = 0x01bf
@@ -342,6 +344,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGQuestQuery:                "CMSG_QUEST_QUERY",
 	SMSGQuestQueryResponse:        "SMSG_QUEST_QUERY_RESPONSE",
 	CMSGGameObjectQuery:           "CMSG_GAMEOBJECT_QUERY",
+	CMSGGameObjectUse:             "CMSG_GAMEOBJ_USE",
 	SMSGGameObjectQueryResponse:   "SMSG_GAMEOBJECT_QUERY_RESPONSE",
 	CMSGCreatureQuery:             "CMSG_CREATURE_QUERY",
 	SMSGCreatureQueryResponse:     "SMSG_CREATURE_QUERY_RESPONSE",
@@ -494,6 +497,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGSwapInvItem:               "CMSG_SWAP_INV_ITEM",
 	CMSGSplitItem:                 "CMSG_SPLIT_ITEM",
 	CMSGDestroyItem:               "CMSG_DESTROYITEM",
+	CMSGWrapItem:                  "CMSG_WRAP_ITEM",
 	SMSGInventoryChangeFailure:    "SMSG_INVENTORY_CHANGE_FAILURE",
 	SMSGUpdateObject:              "SMSG_UPDATE_OBJECT",
 	CMSGPing:                      "CMSG_PING",
