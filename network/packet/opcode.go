@@ -171,6 +171,12 @@ const (
 	CMSGBuyItemInSlot             Opcode = 0x0173
 	SMSGBuyItem                   Opcode = 0x0174
 	SMSGBuyFailed                 Opcode = 0x0175
+	CMSGQuestGiverStatusQuery     Opcode = 0x017e
+	SMSGQuestGiverStatus          Opcode = 0x017f
+	CMSGQuestGiverHello           Opcode = 0x0180
+	SMSGQuestGiverQuestList       Opcode = 0x0181
+	CMSGQuestGiverQueryQuest      Opcode = 0x0182
+	SMSGQuestGiverQuestDetails    Opcode = 0x0184
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
 	CMSGStandStateChange          Opcode = 0x00f4
@@ -378,6 +384,12 @@ var opcodeNames = map[Opcode]string{
 	CMSGBuyItemInSlot:             "CMSG_BUY_ITEM_IN_SLOT",
 	SMSGBuyItem:                   "SMSG_BUY_ITEM",
 	SMSGBuyFailed:                 "SMSG_BUY_FAILED",
+	CMSGQuestGiverStatusQuery:     "CMSG_QUESTGIVER_STATUS_QUERY",
+	SMSGQuestGiverStatus:          "SMSG_QUESTGIVER_STATUS",
+	CMSGQuestGiverHello:           "CMSG_QUESTGIVER_HELLO",
+	SMSGQuestGiverQuestList:       "SMSG_QUESTGIVER_QUEST_LIST",
+	CMSGQuestGiverQueryQuest:      "CMSG_QUESTGIVER_QUERY_QUEST",
+	SMSGQuestGiverQuestDetails:    "SMSG_QUESTGIVER_QUEST_DETAILS",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",
 	CMSGStandStateChange:          "CMSG_STANDSTATECHANGE",

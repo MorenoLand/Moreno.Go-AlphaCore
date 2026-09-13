@@ -86,6 +86,24 @@ CREATE TABLE IF NOT EXISTS character_addons_settings (
     updated_at INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
 );
+CREATE TABLE IF NOT EXISTS character_quest_state (
+    guid INTEGER NOT NULL,
+    quest INTEGER NOT NULL,
+    state INTEGER NOT NULL DEFAULT 0,
+    rewarded INTEGER NOT NULL DEFAULT 0,
+    explored INTEGER NOT NULL DEFAULT 0,
+    timer INTEGER NOT NULL DEFAULT 0,
+    mobcount1 INTEGER NOT NULL DEFAULT 0,
+    mobcount2 INTEGER NOT NULL DEFAULT 0,
+    mobcount3 INTEGER NOT NULL DEFAULT 0,
+    mobcount4 INTEGER NOT NULL DEFAULT 0,
+    itemcount1 INTEGER NOT NULL DEFAULT 0,
+    itemcount2 INTEGER NOT NULL DEFAULT 0,
+    itemcount3 INTEGER NOT NULL DEFAULT 0,
+    itemcount4 INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (guid, quest),
+    FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
 CREATE TABLE IF NOT EXISTS tickets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     is_bug INTEGER NOT NULL DEFAULT 0,
@@ -520,6 +538,34 @@ CREATE TABLE IF NOT EXISTS areatrigger_teleport (
     target_position_y REAL NOT NULL DEFAULT 0,
     target_position_z REAL NOT NULL DEFAULT 0,
     target_orientation REAL NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS creature_quest_starter (
+    entry INTEGER NOT NULL DEFAULT 0,
+    quest INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, quest)
+);
+CREATE TABLE IF NOT EXISTS creature_quest_finisher (
+    entry INTEGER NOT NULL DEFAULT 0,
+    quest INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, quest)
+);
+CREATE TABLE IF NOT EXISTS gameobject_quest_starter (
+    entry INTEGER NOT NULL DEFAULT 0,
+    quest INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, quest)
+);
+CREATE TABLE IF NOT EXISTS gameobject_quest_finisher (
+    entry INTEGER NOT NULL DEFAULT 0,
+    quest INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, quest)
+);
+CREATE TABLE IF NOT EXISTS quest_greeting (
+    entry INTEGER NOT NULL DEFAULT 0,
+    type INTEGER NOT NULL DEFAULT 0,
+    content_default TEXT NOT NULL DEFAULT '',
+    emote_id INTEGER NOT NULL DEFAULT 0,
+    emote_delay INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, type)
 );
 `
 

@@ -193,6 +193,21 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.questQuery(message.Data)
+		case packet.CMSGQuestGiverStatusQuery:
+			if active == nil {
+				return
+			}
+			response, err = s.questGiverStatus(*active, message.Data)
+		case packet.CMSGQuestGiverHello:
+			if active == nil {
+				return
+			}
+			responses, err = s.questGiverHello(*active, message.Data)
+		case packet.CMSGQuestGiverQueryQuest:
+			if active == nil {
+				return
+			}
+			responses, err = s.questGiverQuery(*active, message.Data)
 		case packet.CMSGGameObjectQuery:
 			if active == nil {
 				return
