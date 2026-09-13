@@ -100,6 +100,13 @@ func (s *WorldServer) trainerList(active realm.Character, data []byte) ([][]byte
 			}
 			continue
 		}
+		allowed, err := s.DBC.SpellAllowedForRaceClass(spell.PlayerSpell, active.Race, active.Class)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			continue
+		}
 		if creature.TrainerClass == 4 && int64(active.Class) != creature.TrainerClass && !trainerLockpickingSpells[spell.PlayerSpell] {
 			continue
 		}
@@ -175,6 +182,13 @@ func (s *WorldServer) trainerBuy(active *realm.Character, data []byte) ([][]byte
 		return trainerBuyFailure(guid, trainingSpell, trainerFailUnavailable)
 	}
 	if exists, err := s.DBC.SpellExists(trainerSpell.PlayerSpell); err != nil || !exists {
+		return trainerBuyFailure(guid, trainingSpell, trainerFailUnavailable)
+	}
+	allowed, err := s.DBC.SpellAllowedForRaceClass(trainerSpell.PlayerSpell, active.Race, active.Class)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
 		return trainerBuyFailure(guid, trainingSpell, trainerFailUnavailable)
 	}
 	learned, err := s.Characters.Spells(active.GUID)
