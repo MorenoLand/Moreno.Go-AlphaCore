@@ -53,6 +53,11 @@ type InventoryItem struct {
 	ItemTemplate int64
 }
 
+type Spell struct {
+	ID     int64
+	Active bool
+}
+
 type Store struct{ db *sql.DB }
 
 const characterColumns = `guid, account_id, realm_id, name, race, "class", gender, level, xp, money, skin, face, hairstyle, haircolour, facialhair, bankslots, talentpoints, skillpoints, position_x, position_y, position_z, map, orientation, COALESCE(taximask, ''), COALESCE(explored_areas, ''), online, totaltime, leveltime, extra_flags, zone, COALESCE(taxi_path, ''), drunk, health, power1, power2, power3, power4, power5`
@@ -177,6 +182,47 @@ func (s *Store) AddInventoryItem(owner, itemTemplate, slot, amount int64) error 
 func (s *Store) AddSpell(owner, spell int64) error {
 	_, err := s.db.Exec(`INSERT OR IGNORE INTO character_spells (guid, spell, active, disabled) VALUES (?, ?, 1, 0)`, owner, spell)
 	return err
+}
+
+func (s *Store) AddButton(owner, index, action int64) error {
+	_, err := s.db.Exec(`INSERT OR IGNORE INTO character_buttons (owner, "index", action) VALUES (?, ?, ?)`, owner, index, action)
+	return err
+}
+
+func (s *Store) Spells(owner int64) ([]Spell, error) {
+	rows, err := s.db.Query(`SELECT spell, active FROM character_spells WHERE guid = ? ORDER BY spell`, owner)
+	if err != nil {
+		return nil, fmt.Errorf("query character spells: %w", err)
+	}
+	defer rows.Close()
+	var spells []Spell
+	for rows.Next() {
+		var spell Spell
+		var active int
+		if err := rows.Scan(&spell.ID, &active); err != nil {
+			return nil, fmt.Errorf("scan character spell: %w", err)
+		}
+		spell.Active = active != 0
+		spells = append(spells, spell)
+	}
+	return spells, rows.Err()
+}
+
+func (s *Store) Buttons(owner int64) (map[int64]int64, error) {
+	rows, err := s.db.Query(`SELECT "index", action FROM character_buttons WHERE owner = ?`, owner)
+	if err != nil {
+		return nil, fmt.Errorf("query character buttons: %w", err)
+	}
+	defer rows.Close()
+	buttons := make(map[int64]int64)
+	for rows.Next() {
+		var index, action int64
+		if err := rows.Scan(&index, &action); err != nil {
+			return nil, fmt.Errorf("scan character button: %w", err)
+		}
+		buttons[index] = action
+	}
+	return buttons, rows.Err()
 }
 
 func (s *Store) Inventory(owner int64) ([]InventoryItem, error) {

@@ -15,6 +15,7 @@ const (
 	SMSGCharDelete             Opcode = 0x003c
 	CMSGPlayerLogin            Opcode = 0x003d
 	SMSGNewWorld               Opcode = 0x003e
+	MSGMoveWorldportAck        Opcode = 0x00d9
 	SMSGCharacterLoginFailed   Opcode = 0x0041
 	SMSGLoginSetTimeSpeed      Opcode = 0x0042
 	SMSGAuthChallenge          Opcode = 0x01dd
@@ -28,6 +29,9 @@ const (
 	SMSGNameQueryResponse      Opcode = 0x0051
 	CMSGMessageChat            Opcode = 0x0095
 	SMSGMessageChat            Opcode = 0x0096
+	SMSGInitializeFactions     Opcode = 0x0115
+	SMSGActionButtons          Opcode = 0x011c
+	SMSGInitialSpells          Opcode = 0x011d
 	SMSGUpdateObject           Opcode = 0x00a9
 	CMSGQueryTime              Opcode = 0x01bf
 	SMSGQueryTimeResponse      Opcode = 0x01c0
@@ -61,6 +65,9 @@ var opcodeNames = map[Opcode]string{
 	SMSGNameQueryResponse:      "SMSG_NAME_QUERY_RESPONSE",
 	CMSGMessageChat:            "CMSG_MESSAGECHAT",
 	SMSGMessageChat:            "SMSG_MESSAGECHAT",
+	SMSGInitializeFactions:     "SMSG_INITIALIZE_FACTIONS",
+	SMSGActionButtons:          "SMSG_ACTION_BUTTONS",
+	SMSGInitialSpells:          "SMSG_INITIAL_SPELLS",
 	SMSGUpdateObject:           "SMSG_UPDATE_OBJECT",
 	CMSGPing:                   "CMSG_PING",
 	SMSGPong:                   "SMSG_PONG",

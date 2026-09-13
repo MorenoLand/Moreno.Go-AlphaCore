@@ -15,6 +15,11 @@ type StartingItem struct {
 	Amount int64
 }
 
+type StartingAction struct {
+	Button int64
+	Action int64
+}
+
 type ItemTemplate struct {
 	Entry         int64
 	DisplayID     int64
@@ -65,6 +70,23 @@ func (s *Store) StartingSpells(race, class uint8) ([]int64, error) {
 		spells = append(spells, spell)
 	}
 	return spells, rows.Err()
+}
+
+func (s *Store) StartingActions(race, class uint8) ([]StartingAction, error) {
+	rows, err := s.db.Query(`SELECT button, action FROM playercreateinfo_action WHERE race = ? AND "class" = ? ORDER BY button`, race, class)
+	if err != nil {
+		return nil, fmt.Errorf("query starting actions: %w", err)
+	}
+	defer rows.Close()
+	var actions []StartingAction
+	for rows.Next() {
+		var action StartingAction
+		if err := rows.Scan(&action.Button, &action.Action); err != nil {
+			return nil, fmt.Errorf("scan starting action: %w", err)
+		}
+		actions = append(actions, action)
+	}
+	return actions, rows.Err()
 }
 
 func (s *Store) ItemTemplate(entry int64) (ItemTemplate, bool, error) {

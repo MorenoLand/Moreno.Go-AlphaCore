@@ -33,23 +33,41 @@ func TestPlayerLoginPacketOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	packets := make([]packet.Packet, 0, 3)
-	for len(result) > 0 {
-		if len(result) < packet.HeaderSize {
-			t.Fatalf("truncated packet stream: %d", len(result))
+	packets := parsePacketStream(t, result)
+	if len(packets) != 2 || packets[0].Opcode != packet.SMSGLoginSetTimeSpeed || packets[1].Opcode != packet.SMSGNewWorld {
+		t.Fatalf("packet order: %#v", packets)
+	}
+	character, found, err := characters.Character(guid, 1, 1)
+	if err != nil || !found {
+		t.Fatalf("character=%#v found=%v err=%v", character, found, err)
+	}
+	initial, err := server.initialPlayerPackets(character)
+	if err != nil {
+		t.Fatal(err)
+	}
+	initialPackets := parsePacketStream(t, initial)
+	if len(initialPackets) != 4 || initialPackets[0].Opcode != packet.SMSGInitializeFactions || initialPackets[1].Opcode != packet.SMSGInitialSpells || initialPackets[2].Opcode != packet.SMSGActionButtons || initialPackets[3].Opcode != packet.SMSGCompressedUpdateObject {
+		t.Fatalf("initial packet order: %#v", initialPackets)
+	}
+}
+
+func parsePacketStream(t *testing.T, data []byte) []packet.Packet {
+	t.Helper()
+	packets := make([]packet.Packet, 0)
+	for len(data) > 0 {
+		if len(data) < packet.HeaderSize {
+			t.Fatalf("truncated packet stream: %d", len(data))
 		}
-		size, _, err := packet.ParseHeader(result[:packet.HeaderSize])
-		if err != nil || len(result) < packet.HeaderSize+int(size) {
+		size, _, err := packet.ParseHeader(data[:packet.HeaderSize])
+		if err != nil || len(data) < packet.HeaderSize+int(size) {
 			t.Fatalf("invalid packet stream: size=%d err=%v", size, err)
 		}
-		message, err := packet.Parse(result[:packet.HeaderSize+int(size)])
+		message, err := packet.Parse(data[:packet.HeaderSize+int(size)])
 		if err != nil {
 			t.Fatal(err)
 		}
 		packets = append(packets, message)
-		result = result[packet.HeaderSize+int(size):]
+		data = data[packet.HeaderSize+int(size):]
 	}
-	if len(packets) != 3 || packets[0].Opcode != packet.SMSGLoginSetTimeSpeed || packets[1].Opcode != packet.SMSGNewWorld || packets[2].Opcode != packet.SMSGCompressedUpdateObject {
-		t.Fatalf("packet order: %#v", packets)
-	}
+	return packets
 }

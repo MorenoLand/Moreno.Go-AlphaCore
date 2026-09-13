@@ -27,28 +27,70 @@ func (s *WorldServer) playerLogin(accountID int64, data []byte) ([]byte, error) 
 	if !found {
 		return packet.Encode(packet.SMSGCharacterLoginFailed, []byte{charLoginFailed})
 	}
-	race := dbc.Race{ID: int64(character.Race)}
-	if s.DBC != nil {
-		var found bool
-		race, found, err = s.DBC.Race(character.Race)
-		if err != nil {
-			return nil, err
-		}
-		if !found {
-			race = dbc.Race{ID: int64(character.Race)}
-		}
-	}
-	values := buildPlayerFields(character, race)
 	loginTime := loginTimeSpeed()
 	newWorld, err := newWorldPacket(character)
 	if err != nil {
 		return nil, err
 	}
-	create, err := packet.EncodePlayerCreate(uint64(character.GUID), values, packet.Movement{X: character.PositionX, Y: character.PositionY, Z: character.PositionZ, O: character.Orientation, WalkSpeed: 2.5, RunSpeed: 7, SwimSpeed: 4.722222, TurnRate: 3.141594})
+	return joinPackets(loginTime, newWorld), nil
+}
+
+func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, error) {
+	spells, err := s.Characters.Spells(character.GUID)
 	if err != nil {
 		return nil, err
 	}
-	return joinPackets(loginTime, newWorld, create), nil
+	buttons, err := s.Characters.Buttons(character.GUID)
+	if err != nil {
+		return nil, err
+	}
+	initialSpells := make([]byte, 3, 3+len(spells)*4+2)
+	initialSpells[0] = 0
+	binary.LittleEndian.PutUint16(initialSpells[1:], uint16(len(spells)))
+	for _, spell := range spells {
+		if !spell.Active {
+			continue
+		}
+		value := make([]byte, 4)
+		binary.LittleEndian.PutUint16(value, uint16(spell.ID))
+		initialSpells = append(initialSpells, value...)
+	}
+	initialSpells = append(initialSpells, 0, 0)
+	spellsPacket, err := packet.Encode(packet.SMSGInitialSpells, initialSpells)
+	if err != nil {
+		return nil, err
+	}
+	actionData := make([]byte, 120*4)
+	for slot, action := range buttons {
+		if slot < 0 || slot >= 120 {
+			continue
+		}
+		binary.LittleEndian.PutUint32(actionData[slot*4:], uint32(action))
+	}
+	actionPacket, err := packet.Encode(packet.SMSGActionButtons, actionData)
+	if err != nil {
+		return nil, err
+	}
+	factionData := make([]byte, 4+64*5)
+	binary.LittleEndian.PutUint32(factionData, 64)
+	factionPacket, err := packet.Encode(packet.SMSGInitializeFactions, factionData)
+	if err != nil {
+		return nil, err
+	}
+	race := dbc.Race{ID: int64(character.Race)}
+	if s.DBC != nil {
+		if value, found, queryErr := s.DBC.Race(character.Race); queryErr != nil {
+			return nil, queryErr
+		} else if found {
+			race = value
+		}
+	}
+	values := buildPlayerFields(character, race)
+	createPacket, err := packet.EncodePlayerCreate(uint64(character.GUID), values, packet.Movement{X: character.PositionX, Y: character.PositionY, Z: character.PositionZ, O: character.Orientation, WalkSpeed: 2.5, RunSpeed: 7, SwimSpeed: 4.722222, TurnRate: 3.141594})
+	if err != nil {
+		return nil, err
+	}
+	return joinPackets(factionPacket, spellsPacket, actionPacket, createPacket), nil
 }
 
 func buildPlayerFields(character realm.Character, race dbc.Race) []uint32 {

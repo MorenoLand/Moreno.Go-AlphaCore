@@ -113,6 +113,20 @@ CREATE TABLE IF NOT EXISTS character_spells (
     PRIMARY KEY (guid, spell),
     FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
 );
+CREATE TABLE IF NOT EXISTS character_buttons (
+    owner INTEGER NOT NULL,
+    "index" INTEGER NOT NULL,
+    action INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (owner, "index", action),
+    FOREIGN KEY (owner) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE IF NOT EXISTS character_spell_book (
+    owner INTEGER NOT NULL,
+    "index" INTEGER NOT NULL DEFAULT 0,
+    spell INTEGER NOT NULL,
+    PRIMARY KEY (owner, spell),
+    FOREIGN KEY (owner) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
 `
 
 const worldSchema = commonSchema + `
@@ -145,6 +159,14 @@ CREATE TABLE IF NOT EXISTS playercreateinfo_item (
     itemid INTEGER NOT NULL DEFAULT 0,
     amount INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (id)
+);
+CREATE TABLE IF NOT EXISTS playercreateinfo_action (
+    race INTEGER NOT NULL DEFAULT 0,
+    "class" INTEGER NOT NULL DEFAULT 0,
+    button INTEGER NOT NULL DEFAULT 0,
+    action INTEGER NOT NULL DEFAULT 0,
+    type INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (race, "class", button)
 );
 CREATE TABLE IF NOT EXISTS playercreateinfo_spell (
     race INTEGER NOT NULL DEFAULT 0,

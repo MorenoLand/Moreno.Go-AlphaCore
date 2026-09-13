@@ -108,6 +108,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 					err = s.Characters.SetOnline(character.GUID, account.ID, 1, true)
 				}
 			}
+		case packet.MSGMoveWorldportAck:
+			if active == nil {
+				return
+			}
+			response, err = s.initialPlayerPackets(*active)
 		case packet.CMSGNameQuery:
 			if active == nil {
 				return
@@ -227,8 +232,14 @@ func (s *WorldServer) characterCreate(accountID int64, data []byte) ([]byte, err
 						return nil, err
 					}
 				}
-				if err != nil {
-					return nil, err
+				actions, actionsErr := s.WorldData.StartingActions(raw[0], raw[1])
+				if actionsErr != nil {
+					return nil, actionsErr
+				}
+				for _, action := range actions {
+					if err = s.Characters.AddButton(guid, action.Button, action.Action); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}

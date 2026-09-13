@@ -62,10 +62,18 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	binary.LittleEndian.PutUint64(loginData, uint64(guid))
 	message, _ = packet.Encode(packet.CMSGPlayerLogin, loginData)
 	client.Write(message)
-	for index, expected := range []packet.Opcode{packet.SMSGLoginSetTimeSpeed, packet.SMSGNewWorld, packet.SMSGCompressedUpdateObject} {
+	for index, expected := range []packet.Opcode{packet.SMSGLoginSetTimeSpeed, packet.SMSGNewWorld} {
 		response, err = sockets.ReadPacket(stream)
 		if err != nil || response.Opcode != expected {
 			t.Fatalf("login[%d]=%#v err=%v", index, response, err)
+		}
+	}
+	message, _ = packet.Encode(packet.MSGMoveWorldportAck, nil)
+	client.Write(message)
+	for index, expected := range []packet.Opcode{packet.SMSGInitializeFactions, packet.SMSGInitialSpells, packet.SMSGActionButtons, packet.SMSGCompressedUpdateObject} {
+		response, err = sockets.ReadPacket(stream)
+		if err != nil || response.Opcode != expected {
+			t.Fatalf("initial[%d]=%#v err=%v", index, response, err)
 		}
 	}
 	pingData := []byte{1, 2, 3, 4}
