@@ -52,12 +52,12 @@ type Page struct {
 }
 
 type CreatureTemplate struct {
-	Entry       int64
-	Name        string
-	Subname     string
-	StaticFlags int64
-	Type        int64
-	BeastFamily int64
+	Entry, DisplayID1, LevelMin, LevelMax, Faction, StaticFlags int64
+	Name, Subname                                               string
+	Scale, HealthMultiplier, ManaMultiplier, ArmorMultiplier    float32
+	UnitClass, UnitFlags, NPCFlags, Type, BeastFamily           int64
+	BaseAttackTime, RangedAttackTime                            int64
+	DamageMultiplier, DamageVariance                            float32
 }
 
 type GameObjectTemplate struct {
@@ -128,7 +128,7 @@ func (s *Store) PageText(entry int64) (Page, bool, error) {
 
 func (s *Store) CreatureTemplate(entry int64) (CreatureTemplate, bool, error) {
 	var creature CreatureTemplate
-	err := s.db.QueryRow(`SELECT entry, name, COALESCE(subname, ''), static_flags, type, beast_family FROM creature_template WHERE entry = ?`, entry).Scan(&creature.Entry, &creature.Name, &creature.Subname, &creature.StaticFlags, &creature.Type, &creature.BeastFamily)
+	err := s.db.QueryRow(`SELECT entry, display_id1, name, COALESCE(subname, ''), static_flags, level_min, level_max, faction, scale, unit_class, unit_flags, npc_flags, type, beast_family, health_multiplier, mana_multiplier, armor_multiplier, damage_multiplier, damage_variance, base_attack_time, ranged_attack_time FROM creature_template WHERE entry = ?`, entry).Scan(&creature.Entry, &creature.DisplayID1, &creature.Name, &creature.Subname, &creature.StaticFlags, &creature.LevelMin, &creature.LevelMax, &creature.Faction, &creature.Scale, &creature.UnitClass, &creature.UnitFlags, &creature.NPCFlags, &creature.Type, &creature.BeastFamily, &creature.HealthMultiplier, &creature.ManaMultiplier, &creature.ArmorMultiplier, &creature.DamageMultiplier, &creature.DamageVariance, &creature.BaseAttackTime, &creature.RangedAttackTime)
 	if err == sql.ErrNoRows {
 		return CreatureTemplate{}, false, nil
 	}

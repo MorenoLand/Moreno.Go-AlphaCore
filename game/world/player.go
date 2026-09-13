@@ -127,6 +127,11 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 		return nil, err
 	}
 	packets = append(packets, createPacket)
+	creaturePackets, err := s.nearbyCreaturePackets(character)
+	if err != nil {
+		return nil, err
+	}
+	packets = append(packets, creaturePackets...)
 	return joinPackets(packets...), nil
 }
 

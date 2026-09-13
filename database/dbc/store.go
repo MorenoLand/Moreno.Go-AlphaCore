@@ -28,6 +28,11 @@ type EmoteText struct {
 	EmoteID int64
 }
 
+type CreatureDisplayInfo struct {
+	ID, ModelID     int64
+	ModelScale      float32
+}
+
 type Store struct{ db *sql.DB }
 
 func NewStore(databases *database.Databases) *Store { return &Store{db: databases.DB(database.DBC)} }
@@ -78,4 +83,16 @@ func (s *Store) EmoteText(id int64) (EmoteText, bool, error) {
 		return EmoteText{}, false, fmt.Errorf("query emote text: %w", err)
 	}
 	return emote, true, nil
+}
+
+func (s *Store) CreatureDisplayInfo(id int64) (CreatureDisplayInfo, bool, error) {
+	var display CreatureDisplayInfo
+	err := s.db.QueryRow(`SELECT ID, ModelID, CreatureModelScale FROM CreatureDisplayInfo WHERE ID = ?`, id).Scan(&display.ID, &display.ModelID, &display.ModelScale)
+	if err == sql.ErrNoRows {
+		return CreatureDisplayInfo{}, false, nil
+	}
+	if err != nil {
+		return CreatureDisplayInfo{}, false, fmt.Errorf("query creature display info: %w", err)
+	}
+	return display, true, nil
 }

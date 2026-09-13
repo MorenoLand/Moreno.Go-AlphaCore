@@ -8,6 +8,7 @@ import (
 )
 
 const PlayerFieldCount = 634
+const UnitFieldCount = 184
 
 const (
 	UpdatePartial      byte = 0
@@ -114,6 +115,50 @@ func EncodeItemCreate(guid uint64, entry uint32, owner, creator uint64, stack ui
 	write(uint32(0xffffffff))
 	write(uint32(0xf))
 	for _, value := range values {
+		write(value)
+	}
+	body := make([]byte, 4+data.Len())
+	binary.LittleEndian.PutUint32(body, 1)
+	copy(body[4:], data.Bytes())
+	return Encode(SMSGUpdateObject, body)
+}
+
+func EncodeUnitCreate(guid uint64, fields []uint32, movement Movement) ([]byte, error) {
+	if len(fields) != UnitFieldCount {
+		return nil, fmt.Errorf("unit field count: got %d, want %d", len(fields), UnitFieldCount)
+	}
+	var data bytes.Buffer
+	write := func(value any) { binary.Write(&data, binary.LittleEndian, value) }
+	data.WriteByte(UpdateCreateObject)
+	write(guid)
+	data.WriteByte(3)
+	write(uint64(0))
+	write([4]float32{})
+	write([4]float32{movement.X, movement.Y, movement.Z, movement.O})
+	write(float32(0))
+	write(movement.MovementFlags)
+	write(uint32(0))
+	write(movement.WalkSpeed)
+	write(movement.RunSpeed)
+	write(movement.SwimSpeed)
+	write(movement.TurnRate)
+	write(uint32(0))
+	write(uint32(0))
+	write(uint32(0))
+	write(uint64(0))
+	blockCount := (len(fields) + 31) / 32
+	data.WriteByte(byte(blockCount))
+	for block := 0; block < blockCount; block++ {
+		var mask uint32
+		for bit := 0; bit < 32; bit++ {
+			index := block*32 + bit
+			if index < len(fields) {
+				mask |= 1 << bit
+			}
+		}
+		write(mask)
+	}
+	for _, value := range fields {
 		write(value)
 	}
 	body := make([]byte, 4+data.Len())

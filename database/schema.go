@@ -293,11 +293,26 @@ CREATE TABLE IF NOT EXISTS page_text (
 );
 CREATE TABLE IF NOT EXISTS creature_template (
     entry INTEGER PRIMARY KEY NOT NULL,
+    display_id1 INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     subname TEXT,
     static_flags INTEGER NOT NULL DEFAULT 0,
+    level_min INTEGER NOT NULL DEFAULT 1,
+    level_max INTEGER NOT NULL DEFAULT 1,
+    faction INTEGER NOT NULL DEFAULT 0,
+    scale REAL NOT NULL DEFAULT 1,
+    unit_class INTEGER NOT NULL DEFAULT 1,
+    unit_flags INTEGER NOT NULL DEFAULT 0,
+    npc_flags INTEGER NOT NULL DEFAULT 0,
     type INTEGER NOT NULL DEFAULT 0,
-    beast_family INTEGER NOT NULL DEFAULT 0
+    beast_family INTEGER NOT NULL DEFAULT 0,
+    health_multiplier REAL NOT NULL DEFAULT 1,
+    mana_multiplier REAL NOT NULL DEFAULT 1,
+    armor_multiplier REAL NOT NULL DEFAULT 1,
+    damage_multiplier REAL NOT NULL DEFAULT 1,
+    damage_variance REAL NOT NULL DEFAULT 0.14,
+    base_attack_time INTEGER NOT NULL DEFAULT 2000,
+    ranged_attack_time INTEGER NOT NULL DEFAULT 2000
 );
 CREATE TABLE IF NOT EXISTS gameobject_template (
     entry INTEGER PRIMARY KEY NOT NULL,
@@ -369,6 +384,45 @@ CREATE TABLE IF NOT EXISTS quest_template (
     ReqItemCount3 INTEGER NOT NULL DEFAULT 0,
     ReqItemCount4 INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS creature_classlevelstats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    "class" INTEGER NOT NULL DEFAULT 0,
+    level INTEGER NOT NULL DEFAULT 0,
+    melee_damage REAL NOT NULL DEFAULT 0,
+    ranged_damage REAL NOT NULL DEFAULT 0,
+    attack_power INTEGER NOT NULL DEFAULT 0,
+    ranged_attack_power INTEGER NOT NULL DEFAULT 0,
+    health INTEGER NOT NULL DEFAULT 0,
+    base_health INTEGER NOT NULL DEFAULT 0,
+    mana INTEGER NOT NULL DEFAULT 0,
+    base_mana INTEGER NOT NULL DEFAULT 0,
+    strength INTEGER NOT NULL DEFAULT 0,
+    agility INTEGER NOT NULL DEFAULT 0,
+    stamina INTEGER NOT NULL DEFAULT 0,
+    intellect INTEGER NOT NULL DEFAULT 0,
+    spirit INTEGER NOT NULL DEFAULT 0,
+    armor INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS creature_model_info (
+    modelid INTEGER PRIMARY KEY NOT NULL,
+    bounding_radius REAL NOT NULL DEFAULT 0,
+    combat_reach REAL NOT NULL DEFAULT 0,
+    gender INTEGER NOT NULL DEFAULT 2
+);
+CREATE TABLE IF NOT EXISTS spawns_creatures (
+    spawn_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    spawn_entry1 INTEGER NOT NULL DEFAULT 0,
+    map INTEGER NOT NULL DEFAULT 0,
+    position_x REAL NOT NULL DEFAULT 0,
+    position_y REAL NOT NULL DEFAULT 0,
+    position_z REAL NOT NULL DEFAULT 0,
+    orientation REAL NOT NULL DEFAULT 0,
+    health_percent REAL NOT NULL DEFAULT 100,
+    mana_percent REAL NOT NULL DEFAULT 100,
+    movement_type INTEGER NOT NULL DEFAULT 0,
+    spawn_flags INTEGER NOT NULL DEFAULT 0,
+    ignored INTEGER NOT NULL DEFAULT 0
+);
 `
 
 const dbcSchema = commonSchema + `
@@ -385,6 +439,11 @@ CREATE TABLE IF NOT EXISTS AreaTable (
     AreaNumber INTEGER NOT NULL DEFAULT 0,
     ContinentID INTEGER NOT NULL DEFAULT 0,
     ParentAreaNum INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS CreatureDisplayInfo (
+    ID INTEGER PRIMARY KEY NOT NULL,
+    ModelID INTEGER NOT NULL DEFAULT 0,
+    CreatureModelScale REAL NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS EmotesText (
     ID INTEGER PRIMARY KEY NOT NULL,
