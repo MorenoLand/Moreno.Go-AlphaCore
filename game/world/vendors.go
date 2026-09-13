@@ -39,7 +39,11 @@ func (s *WorldServer) listInventory(active realm.Character, data []byte) ([][]by
 		itemData = append(itemData, encodeVendorValue(int64(index+1))...)
 		itemData = append(itemData, encodeVendorValue(item.Entry)...)
 		itemData = append(itemData, encodeVendorValue(item.DisplayID)...)
-		itemData = append(itemData, encodeVendorValue(vendorItem.MaxCount)...)
+		maxCount := vendorItem.MaxCount
+		if maxCount <= 0 {
+			maxCount = 0xffffffff
+		}
+		itemData = append(itemData, encodeVendorValue(maxCount)...)
 		itemData = append(itemData, encodeVendorValue(item.BuyPrice)...)
 		itemData = append(itemData, encodeVendorValue(item.MaxDurability)...)
 		itemData = append(itemData, encodeVendorValue(item.BuyCount)...)
@@ -101,12 +105,15 @@ func (s *WorldServer) buyItem(active *realm.Character, data []byte, inSlot bool)
 	if count <= 0 {
 		count = 1
 	}
-	_, creature, found, err := s.vendorAt(*active, vendorGUID)
+	_, creature, found, err := s.creatureAt(*active, vendorGUID, maxShopDistance)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
 		return s.buyFailure(*active, itemEntry, vendorGUID, 5, count)
+	}
+	if creature.NPCFlags&1 == 0 {
+		return s.buyFailure(*active, itemEntry, vendorGUID, 11, count)
 	}
 	items, err := s.WorldData.VendorItems(creature.Entry, creature.VendorID > 0)
 	if err != nil {
@@ -192,12 +199,15 @@ func (s *WorldServer) sellItem(active *realm.Character, data []byte) ([][]byte, 
 		return nil, nil
 	}
 	vendorGUID, itemGUID := binary.LittleEndian.Uint64(data), binary.LittleEndian.Uint64(data[8:])
-	_, _, found, err := s.vendorAt(*active, vendorGUID)
+	_, creature, found, err := s.creatureAt(*active, vendorGUID, maxShopDistance)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
 		return s.sellFailure(*active, itemGUID, vendorGUID, 1)
+	}
+	if creature.NPCFlags&1 == 0 {
+		return s.sellFailure(*active, itemGUID, vendorGUID, 2)
 	}
 	itemGUID &= 0x3fffffffffffffff
 	item, found, err := s.Characters.ItemByGUID(active.GUID, int64(itemGUID))

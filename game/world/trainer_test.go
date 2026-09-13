@@ -23,10 +23,10 @@ func TestTrainerListAndBuy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, BaseLevel) VALUES (500, 1)`); err != nil {
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, BaseLevel) VALUES (500, 1), (501, 2)`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := databases.DB(database.World).Exec(`INSERT INTO creature_template (entry, display_id1, name, npc_flags, trainer_id, trainer_type) VALUES (100, 20, 'Trainer', 8, 10, 0); INSERT INTO trainer_template (template_entry, spell, playerspell, spellcost, reqlevel) VALUES (10, 600, 500, 100, 1); INSERT INTO npc_trainer_greeting (entry, content_default) VALUES (100, 'Train'); INSERT INTO spawns_creatures (spawn_id, spawn_entry1, map, position_x, position_y, position_z) VALUES (1, 100, 0, 0, 0, 0)`); err != nil {
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO creature_template (entry, display_id1, name, npc_flags, trainer_id, trainer_type) VALUES (100, 20, 'Trainer', 8, 10, 0); INSERT INTO trainer_template (template_entry, spell, playerspell, spellcost, reqlevel) VALUES (10, 600, 500, 100, 1), (10, 601, 501, 100, 2); INSERT INTO npc_trainer_greeting (entry, content_default) VALUES (100, 'Train'); INSERT INTO spawns_creatures (spawn_id, spawn_entry1, map, position_x, position_y, position_z) VALUES (1, 100, 0, 0, 0, 0)`); err != nil {
 		t.Fatal(err)
 	}
 	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases)}
@@ -38,7 +38,7 @@ func TestTrainerListAndBuy(t *testing.T) {
 		t.Fatalf("list responses=%d err=%v", len(responses), err)
 	}
 	list, err := packet.Parse(responses[0])
-	if err != nil || list.Opcode != packet.SMSGTrainerList || len(list.Data) < 8+4+4+33 || binary.LittleEndian.Uint32(list.Data[12:]) != 1 || binary.LittleEndian.Uint32(list.Data[16:]) != 600 {
+	if err != nil || list.Opcode != packet.SMSGTrainerList || len(list.Data) < 8+4+4+36*2 || binary.LittleEndian.Uint32(list.Data[12:]) != 2 || binary.LittleEndian.Uint32(list.Data[16:]) != 600 || list.Data[20] != byte(trainerServiceAvailable) || binary.LittleEndian.Uint32(list.Data[52:]) != 601 || list.Data[56] != byte(trainerServiceUnavailable) {
 		t.Fatalf("list=%#v err=%v", list, err)
 	}
 	buy := make([]byte, 12)

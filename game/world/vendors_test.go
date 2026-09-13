@@ -29,7 +29,7 @@ func TestListInventory(t *testing.T) {
 		t.Fatalf("responses=%d err=%v", len(responses), err)
 	}
 	list, err := packet.Parse(responses[1])
-	if err != nil || list.Opcode != packet.SMSGListInventory || len(list.Data) != 37 || binary.LittleEndian.Uint64(list.Data) != 0xf110000000000001 || list.Data[8] != 1 || binary.LittleEndian.Uint32(list.Data[9:]) != 1 || binary.LittleEndian.Uint32(list.Data[13:]) != 200 || binary.LittleEndian.Uint32(list.Data[17:]) != 12 || binary.LittleEndian.Uint32(list.Data[25:]) != 99 || binary.LittleEndian.Uint32(list.Data[29:]) != 40 {
+	if err != nil || list.Opcode != packet.SMSGListInventory || len(list.Data) != 37 || binary.LittleEndian.Uint64(list.Data) != 0xf110000000000001 || list.Data[8] != 1 || binary.LittleEndian.Uint32(list.Data[9:]) != 1 || binary.LittleEndian.Uint32(list.Data[13:]) != 200 || binary.LittleEndian.Uint32(list.Data[17:]) != 12 || binary.LittleEndian.Uint32(list.Data[21:]) != 0xffffffff || binary.LittleEndian.Uint32(list.Data[25:]) != 99 || binary.LittleEndian.Uint32(list.Data[29:]) != 40 {
 		t.Fatalf("list=%#v err=%v", list, err)
 	}
 }

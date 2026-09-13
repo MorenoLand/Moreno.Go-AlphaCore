@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	trainerServiceAvailable uint32 = 0
-	trainerServiceUsed      uint32 = 2
-	trainerFailUnavailable  uint32 = 0
-	trainerFailMoney        uint32 = 1
-	trainerFailPoints       uint32 = 2
+	trainerServiceAvailable   uint32 = 0
+	trainerServiceUnavailable uint32 = 1
+	trainerServiceUsed        uint32 = 2
+	trainerFailUnavailable    uint32 = 0
+	trainerFailMoney          uint32 = 1
+	trainerFailPoints         uint32 = 2
 )
 
 func (s *WorldServer) trainerList(active realm.Character, data []byte) ([][]byte, error) {
@@ -56,7 +57,7 @@ func (s *WorldServer) trainerList(active realm.Character, data []byte) ([][]byte
 		if known[spell.PlayerSpell] {
 			status = trainerServiceUsed
 		} else if spell.ReqLevel > int64(active.Level) {
-			status = trainerServiceUsed
+			status = trainerServiceUnavailable
 		}
 		spellData = append(spellData, trainerSpellData(spell, status)...)
 		count++
