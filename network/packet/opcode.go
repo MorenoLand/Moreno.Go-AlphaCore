@@ -29,6 +29,8 @@ const (
 	SMSGNameQueryResponse      Opcode = 0x0051
 	CMSGMessageChat            Opcode = 0x0095
 	SMSGMessageChat            Opcode = 0x0096
+	CMSGWho                    Opcode = 0x0062
+	SMSGWho                    Opcode = 0x0063
 	SMSGInitializeFactions     Opcode = 0x0115
 	SMSGActionButtons          Opcode = 0x011c
 	SMSGInitialSpells          Opcode = 0x011d
@@ -65,6 +67,8 @@ var opcodeNames = map[Opcode]string{
 	SMSGNameQueryResponse:      "SMSG_NAME_QUERY_RESPONSE",
 	CMSGMessageChat:            "CMSG_MESSAGECHAT",
 	SMSGMessageChat:            "SMSG_MESSAGECHAT",
+	CMSGWho:                    "CMSG_WHO",
+	SMSGWho:                    "SMSG_WHO",
 	SMSGInitializeFactions:     "SMSG_INITIALIZE_FACTIONS",
 	SMSGActionButtons:          "SMSG_ACTION_BUTTONS",
 	SMSGInitialSpells:          "SMSG_INITIAL_SPELLS",

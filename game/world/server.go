@@ -28,6 +28,7 @@ type WorldServer struct {
 	SupportedClient   uint32
 	AutoCreateAccount bool
 	ServerSeed        []byte
+	players           playerRegistry
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -68,6 +69,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 	logoutPending := false
 	defer func() {
 		if active != nil {
+			s.unregisterPlayer(active.GUID)
 			s.Characters.SetOnline(active.GUID, active.AccountID, active.RealmID, false)
 		}
 	}()
@@ -106,6 +108,9 @@ func (s *WorldServer) handle(connection net.Conn) {
 				} else if found {
 					active = &character
 					err = s.Characters.SetOnline(character.GUID, account.ID, 1, true)
+					if err == nil {
+						s.registerPlayer(character)
+					}
 				}
 			}
 		case packet.MSGMoveWorldportAck:
@@ -118,6 +123,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.nameQuery(message.Data)
+		case packet.CMSGWho:
+			if active == nil {
+				return
+			}
+			response, err = s.who(*active, message.Data)
 		case packet.CMSGMessageChat:
 			if active == nil {
 				return
@@ -155,6 +165,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 			}
 			response, err = packet.Encode(packet.SMSGLogoutComplete, nil)
 			if err == nil {
+				s.unregisterPlayer(active.GUID)
 				err = s.Characters.SetOnline(active.GUID, active.AccountID, active.RealmID, false)
 				active = nil
 			}
@@ -167,6 +178,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 			active.PositionZ = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[32:36]))
 			active.Orientation = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[36:40]))
 			err = s.Characters.UpdatePosition(active.GUID, active.AccountID, active.RealmID, active.PositionX, active.PositionY, active.PositionZ, active.Orientation)
+			s.updatePlayer(*active)
 		}
 		if err != nil {
 			return

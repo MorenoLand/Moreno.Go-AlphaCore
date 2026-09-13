@@ -29,8 +29,11 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO ChrRaces (ID, FactionID, MaleDisplayId, FemaleDisplayId, CreatureType) VALUES (1, 1, 49, 50, 7)`); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO AreaTable (ID, AreaNumber, ContinentID, ParentAreaNum) VALUES (12, 393216, 0, 0)`); err != nil {
+		t.Fatal(err)
+	}
 	characters := realm.NewStore(databases)
-	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Testone", Race: 1, Class: 1, Level: 1, PositionX: 1, PositionY: 2, PositionZ: 3, Orientation: 4, Health: 20})
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Testone", Race: 1, Class: 1, Level: 1, Map: 0, Zone: 12, PositionX: 1, PositionY: 2, PositionZ: 3, Orientation: 4, Health: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,6 +99,25 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	response, err = sockets.ReadPacket(stream)
 	if err != nil || response.Opcode != packet.SMSGNameQueryResponse {
 		t.Fatalf("name=%#v err=%v", response, err)
+	}
+	whoData := make([]byte, 26)
+	binary.LittleEndian.PutUint32(whoData, 1)
+	binary.LittleEndian.PutUint32(whoData[4:], 60)
+	whoData[8] = 0
+	whoData[9] = 0
+	binary.LittleEndian.PutUint32(whoData[10:], 0xffffffff)
+	binary.LittleEndian.PutUint32(whoData[14:], 0xffffffff)
+	binary.LittleEndian.PutUint32(whoData[18:], 0)
+	binary.LittleEndian.PutUint32(whoData[22:], 0)
+	message, _ = packet.Encode(packet.CMSGWho, whoData)
+	client.Write(message)
+	response, err = sockets.ReadPacket(stream)
+	if err != nil || response.Opcode != packet.SMSGWho || len(response.Data) < 8 || binary.LittleEndian.Uint32(response.Data) != 1 || binary.LittleEndian.Uint32(response.Data[4:]) != 1 {
+		t.Fatalf("who=%#v err=%v", response, err)
+	}
+	name, err := packet.ReadString(response.Data, 8, 0)
+	if err != nil || name != "Testone" {
+		t.Fatalf("who name=%q err=%v", name, err)
 	}
 	chatData := []byte{0, 0, 0, 0, 7, 0, 0, 0}
 	chatData = append(chatData, []byte("Hello\x00")...)
