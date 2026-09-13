@@ -40,7 +40,21 @@ func (s *WorldServer) questAccept(active realm.Character, data []byte) ([][]byte
 	if found && !state.Rewarded {
 		return s.questInvalid(13)
 	}
-	if err := s.Characters.SaveQuestState(realm.QuestState{GUID: active.GUID, Quest: questID, State: questAccepted}); err != nil {
+	stateToSave := realm.QuestState{GUID: active.GUID, Quest: questID, State: questAccepted}
+	for index, entry := range quest.ReqItemIDs {
+		if entry == 0 {
+			continue
+		}
+		count, countErr := s.Characters.ItemCount(active.GUID, entry)
+		if countErr != nil {
+			return nil, countErr
+		}
+		stateToSave.ItemCounts[index] = count
+		if stateToSave.ItemCounts[index] > quest.ReqItemCounts[index] {
+			stateToSave.ItemCounts[index] = quest.ReqItemCounts[index]
+		}
+	}
+	if err := s.Characters.SaveQuestState(stateToSave); err != nil {
 		return nil, err
 	}
 	return s.questQuery(encodeUint32(questID))
@@ -212,6 +226,15 @@ func (s *WorldServer) questConfirmAccept(active realm.Character, data []byte) ([
 }
 
 func (s *WorldServer) questRequirementsMet(active realm.Character, quest worlddb.QuestTemplate) (bool, error) {
+	state, found, err := s.Characters.QuestState(active.GUID, quest.Entry)
+	if err != nil || !found {
+		return false, err
+	}
+	for index, entry := range quest.ReqCreatureOrGOIDs {
+		if entry != 0 && state.MobCounts[index] < quest.ReqCreatureOrGOCounts[index] {
+			return false, nil
+		}
+	}
 	for index, entry := range quest.ReqItemIDs {
 		if entry == 0 {
 			continue
@@ -222,6 +245,117 @@ func (s *WorldServer) questRequirementsMet(active realm.Character, quest worlddb
 		}
 	}
 	return true, nil
+}
+
+func (s *WorldServer) questProgress(active realm.Character, entry int64, guid uint64) ([][]byte, error) {
+	if s.Characters == nil || s.WorldData == nil {
+		return nil, nil
+	}
+	states, err := s.Characters.QuestStates(active.GUID)
+	if err != nil {
+		return nil, err
+	}
+	responses := make([][]byte, 0)
+	for _, state := range states {
+		if state.State != questAccepted || state.Rewarded {
+			continue
+		}
+		quest, found, err := s.WorldData.QuestTemplate(state.Quest)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			continue
+		}
+		for index, requiredEntry := range quest.ReqCreatureOrGOIDs {
+			if requiredEntry != entry || quest.ReqCreatureOrGOCounts[index] <= state.MobCounts[index] {
+				continue
+			}
+			state.MobCounts[index]++
+			if err := s.Characters.SaveQuestState(state); err != nil {
+				return nil, err
+			}
+			complete, err := s.questRequirementsMet(active, quest)
+			if err != nil {
+				return nil, err
+			}
+			if complete {
+				state.State = questReward
+				if err := s.Characters.SaveQuestState(state); err != nil {
+					return nil, err
+				}
+			}
+			packetEntry := uint32(entry)
+			if entry < 0 {
+				packetEntry = uint32(-entry) | 0x80000000
+			}
+			body := append(encodeUint32(state.Quest), encodeUint32(int64(packetEntry))...)
+			body = append(body, encodeUint32(state.MobCounts[index])...)
+			body = append(body, encodeUint32(quest.ReqCreatureOrGOCounts[index])...)
+			body = append(body, encodeGUID(int64(guid))...)
+			response, err := packet.Encode(packet.SMSGQuestUpdateAddKill, body)
+			if err != nil {
+				return nil, err
+			}
+			responses = append(responses, response)
+			break
+		}
+	}
+	return responses, nil
+}
+
+func (s *WorldServer) questItemProgress(active realm.Character, entry, amount int64) ([][]byte, error) {
+	if amount <= 0 || s.Characters == nil || s.WorldData == nil {
+		return nil, nil
+	}
+	states, err := s.Characters.QuestStates(active.GUID)
+	if err != nil {
+		return nil, err
+	}
+	responses := make([][]byte, 0)
+	for _, state := range states {
+		if state.State != questAccepted || state.Rewarded {
+			continue
+		}
+		quest, found, err := s.WorldData.QuestTemplate(state.Quest)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			continue
+		}
+		for index, requiredEntry := range quest.ReqItemIDs {
+			if requiredEntry != entry {
+				continue
+			}
+			current := state.ItemCounts[index] + amount
+			if current > quest.ReqItemCounts[index] {
+				current = quest.ReqItemCounts[index]
+			}
+			state.ItemCounts[index] = current
+			if err := s.Characters.SaveQuestState(state); err != nil {
+				return nil, err
+			}
+			complete, err := s.questRequirementsMet(active, quest)
+			if err != nil {
+				return nil, err
+			}
+			if complete {
+				state.State = questReward
+				if err := s.Characters.SaveQuestState(state); err != nil {
+					return nil, err
+				}
+			}
+			body := append(encodeUint32(entry), encodeUint32(amount)...)
+			response, err := packet.Encode(packet.SMSGQuestUpdateAddItem, body)
+			if err != nil {
+				return nil, err
+			}
+			responses = append(responses, response)
+			break
+		}
+	}
+	return responses, nil
 }
 
 func (s *WorldServer) addQuestReward(active realm.Character, entry, count int64) error {

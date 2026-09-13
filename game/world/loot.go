@@ -319,6 +319,10 @@ func (s *WorldServer) lootItem(active realm.Character, data []byte) ([][]byte, e
 	}
 	state.items[data[0]].claimed = true
 	s.lootMu.Unlock()
+	progress, err := s.questItemProgress(active, item.entry, item.quantity)
+	if err != nil {
+		return nil, err
+	}
 	create, err := packet.EncodeItemCreate(uint64(created.GUID)|0x4000000000000000, uint32(created.ItemTemplate), uint64(active.GUID), 0, uint32(created.StackCount), 0, encodedItemFlags(template, created.Flags), created.SpellCharges, packet.Movement{X: active.PositionX, Y: active.PositionY, Z: active.PositionZ, O: active.Orientation})
 	if err != nil {
 		return nil, err
@@ -335,7 +339,7 @@ func (s *WorldServer) lootItem(active realm.Character, data []byte) ([][]byte, e
 	if err != nil {
 		return nil, err
 	}
-	return append(append(queries, create, push), removed), nil
+	return append(append(append(queries, create, push), removed), progress...), nil
 }
 
 func (s *WorldServer) lootMoney(active *realm.Character) ([][]byte, error) {

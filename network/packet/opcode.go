@@ -246,6 +246,10 @@ const (
 	SMSGTrainerBuySucceeded       Opcode = 0x01a5
 	SMSGTrainerBuyFailed          Opcode = 0x01a6
 	SMSGQuestGiverQuestDetails    Opcode = 0x0184
+	SMSGQuestUpdateFailed         Opcode = 0x0192
+	SMSGQuestUpdateComplete       Opcode = 0x0193
+	SMSGQuestUpdateAddKill        Opcode = 0x0194
+	SMSGQuestUpdateAddItem        Opcode = 0x0195
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
 	CMSGAttackSwing               Opcode = 0x0134
@@ -554,6 +558,10 @@ var opcodeNames = map[Opcode]string{
 	SMSGTrainerBuySucceeded:       "SMSG_TRAINER_BUY_SUCCEEDED",
 	SMSGTrainerBuyFailed:          "SMSG_TRAINER_BUY_FAILED",
 	SMSGQuestGiverQuestDetails:    "SMSG_QUESTGIVER_QUEST_DETAILS",
+	SMSGQuestUpdateFailed:         "SMSG_QUESTUPDATE_FAILED",
+	SMSGQuestUpdateComplete:       "SMSG_QUESTUPDATE_COMPLETE",
+	SMSGQuestUpdateAddKill:        "SMSG_QUESTUPDATE_ADD_KILL",
+	SMSGQuestUpdateAddItem:        "SMSG_QUESTUPDATE_ADD_ITEM",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",
 	CMSGAttackSwing:               "CMSG_ATTACKSWING",

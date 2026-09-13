@@ -108,7 +108,15 @@ func (s *WorldServer) gameObjectUse(active realm.Character, data []byte) ([][]by
 		state.flags |= gameObjectFlagInUse
 		state.state = 0
 		s.setGameObjectState(guid, state)
-		return s.sendLoot(active, guid, lootGameObjectSource, template.Entry, template, active.Zone)
+		responses, err := s.sendLoot(active, guid, lootGameObjectSource, template.Entry, template, active.Zone)
+		if err != nil {
+			return nil, err
+		}
+		progress, err := s.questProgress(active, -template.Entry, guid)
+		if err != nil {
+			return nil, err
+		}
+		return append(responses, progress...), nil
 	}
 	if template.Type == 2 || template.Type == 10 {
 		return s.questGiverHello(active, data)
