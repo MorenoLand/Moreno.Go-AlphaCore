@@ -7,27 +7,34 @@ import (
 
 	"Moreno.AlphaCore/database"
 	"Moreno.AlphaCore/database/auth"
+	realmdb "Moreno.AlphaCore/database/realm"
 	"Moreno.AlphaCore/game/login"
 	"Moreno.AlphaCore/game/realm"
+	"Moreno.AlphaCore/game/world"
 )
 
 type Config struct {
-	LoginAddress  string
-	RealmAddress  string
-	ProxyAddress  string
-	WorldAddress  string
-	WorldPort     int
-	AdvertiseHost string
+	LoginAddress       string
+	RealmAddress       string
+	ProxyAddress       string
+	WorldListenAddress string
+	WorldAddress       string
+	WorldPort          int
+	AdvertiseHost      string
+	SupportedClient    uint32
 }
 
 func Run(ctx context.Context, databases *database.Databases, config Config) error {
 	accounts := auth.NewStore(databases)
+	characters := realmdb.NewStore(databases)
+	worldServer := &world.WorldServer{Address: config.WorldListenAddress, Accounts: accounts, Characters: characters, SupportedClient: config.SupportedClient, AutoCreateAccount: true}
 	services := []interface {
 		Start(context.Context) (net.Listener, error)
 	}{
 		login.LoginServer{Address: config.LoginAddress, Accounts: accounts},
 		realm.RealmServer{Address: config.RealmAddress, AdvertiseHost: config.AdvertiseHost, Accounts: accounts},
 		realm.ProxyServer{Address: config.ProxyAddress, WorldAddress: config.WorldAddress, WorldPort: config.WorldPort},
+		worldServer,
 	}
 	listeners := make([]net.Listener, 0, len(services))
 	for _, service := range services {

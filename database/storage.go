@@ -48,6 +48,29 @@ func Open(ctx context.Context, work utils.Workspace) (*Databases, error) {
 	return databases, nil
 }
 
+func OpenMemory(ctx context.Context) (*Databases, error) {
+	databases := &Databases{items: make(map[Name]*sql.DB, len(names))}
+	for _, name := range names {
+		db, err := sql.Open("sqlite", ":memory:")
+		if err != nil {
+			databases.Close()
+			return nil, fmt.Errorf("open %s database: %w", name, err)
+		}
+		db.SetMaxOpenConns(1)
+		db.SetMaxIdleConns(1)
+		databases.items[name] = db
+		if err := configure(ctx, db); err != nil {
+			databases.Close()
+			return nil, fmt.Errorf("configure %s database: %w", name, err)
+		}
+		if err := initialize(ctx, db, name); err != nil {
+			databases.Close()
+			return nil, fmt.Errorf("initialize %s database: %w", name, err)
+		}
+	}
+	return databases, nil
+}
+
 func configure(ctx context.Context, db *sql.DB) error {
 	for _, statement := range []string{"PRAGMA busy_timeout = 5000", "PRAGMA foreign_keys = ON", "PRAGMA journal_mode = WAL"} {
 		if _, err := db.ExecContext(ctx, statement); err != nil {

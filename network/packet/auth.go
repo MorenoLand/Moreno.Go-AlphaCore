@@ -5,8 +5,10 @@ type AuthCode byte
 const (
 	AuthOK                AuthCode = 0x0c
 	AuthFailed            AuthCode = 0x0d
+	AuthVersionMismatch   AuthCode = 0x14
 	AuthIncorrectPassword AuthCode = 0x16
 	AuthUnknownAccount    AuthCode = 0x15
+	AuthSessionExpired    AuthCode = 0x17
 )
 
 type SRP6Response byte
