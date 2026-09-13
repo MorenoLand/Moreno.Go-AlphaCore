@@ -236,6 +236,7 @@ CREATE TABLE IF NOT EXISTS item_template (
     display_id INTEGER NOT NULL DEFAULT 0,
     quality INTEGER NOT NULL DEFAULT 0,
     flags INTEGER NOT NULL DEFAULT 0,
+    buy_count INTEGER NOT NULL DEFAULT 1,
     buy_price INTEGER NOT NULL DEFAULT 0,
     sell_price INTEGER NOT NULL DEFAULT 0,
     inventory_type INTEGER NOT NULL DEFAULT 0,
@@ -328,7 +329,8 @@ CREATE TABLE IF NOT EXISTS item_template (
     start_quest INTEGER NOT NULL DEFAULT 0,
     lock_id INTEGER NOT NULL DEFAULT 0,
     material INTEGER NOT NULL DEFAULT 0,
-    sheath INTEGER NOT NULL DEFAULT 0
+    sheath INTEGER NOT NULL DEFAULT 0,
+    max_durability INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS page_text (
     entry INTEGER PRIMARY KEY NOT NULL,
@@ -356,7 +358,26 @@ CREATE TABLE IF NOT EXISTS creature_template (
     damage_multiplier REAL NOT NULL DEFAULT 1,
     damage_variance REAL NOT NULL DEFAULT 0.14,
     base_attack_time INTEGER NOT NULL DEFAULT 2000,
-    ranged_attack_time INTEGER NOT NULL DEFAULT 2000
+    ranged_attack_time INTEGER NOT NULL DEFAULT 2000,
+    vendor_id INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS npc_vendor (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    maxcount INTEGER NOT NULL DEFAULT 0,
+    incrtime INTEGER NOT NULL DEFAULT 0,
+    itemflags INTEGER NOT NULL DEFAULT 0,
+    slot INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
+);
+CREATE TABLE IF NOT EXISTS npc_vendor_template (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    maxcount INTEGER NOT NULL DEFAULT 0,
+    incrtime INTEGER NOT NULL DEFAULT 0,
+    itemflags INTEGER NOT NULL DEFAULT 0,
+    slot INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
 );
 CREATE TABLE IF NOT EXISTS gameobject_template (
     entry INTEGER PRIMARY KEY NOT NULL,

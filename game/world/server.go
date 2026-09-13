@@ -148,6 +148,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.areaTrigger(active, message.Data)
+		case packet.CMSGListInventory:
+			if active == nil {
+				return
+			}
+			responses, err = s.listInventory(*active, message.Data)
 		case packet.CMSGNameQuery:
 			if active == nil {
 				return

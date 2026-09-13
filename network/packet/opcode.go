@@ -162,6 +162,8 @@ const (
 	CMSGNewSpellSlot              Opcode = 0x0120
 	CMSGMountSpecialAnim          Opcode = 0x0164
 	SMSGMountSpecialAnim          Opcode = 0x0165
+	CMSGListInventory             Opcode = 0x016e
+	SMSGListInventory             Opcode = 0x016f
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
 	CMSGStandStateChange          Opcode = 0x00f4
@@ -360,6 +362,8 @@ var opcodeNames = map[Opcode]string{
 	CMSGNewSpellSlot:              "CMSG_NEW_SPELL_SLOT",
 	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",
 	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
+	CMSGListInventory:             "CMSG_LIST_INVENTORY",
+	SMSGListInventory:             "SMSG_LIST_INVENTORY",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",
 	CMSGStandStateChange:          "CMSG_STANDSTATECHANGE",

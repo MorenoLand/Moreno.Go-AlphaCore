@@ -29,7 +29,8 @@ type ItemTemplate struct {
 	Entry, Class, Subclass              int64
 	Name, Description                   string
 	DisplayID, Quality, Flags           int64
-	BuyPrice, SellPrice, InventoryType  int64
+	BuyCount, BuyPrice, SellPrice       int64
+	InventoryType, MaxDurability        int64
 	AllowableClass, AllowableRace       int64
 	ItemLevel, RequiredLevel            int64
 	RequiredSkill, RequiredSkillRank    int64
@@ -57,6 +58,7 @@ type CreatureTemplate struct {
 	Scale, HealthMultiplier, ManaMultiplier, ArmorMultiplier    float32
 	UnitClass, UnitFlags, NPCFlags, Type, BeastFamily           int64
 	BaseAttackTime, RangedAttackTime                            int64
+	VendorID                                                    int64
 	DamageMultiplier, DamageVariance                            float32
 }
 
@@ -90,7 +92,7 @@ spellid_2, spelltrigger_2, spellcharges_2, spellcooldown_2, spellcategory_2, spe
 spellid_3, spelltrigger_3, spellcharges_3, spellcooldown_3, spellcategory_3, spellcategorycooldown_3,
 spellid_4, spelltrigger_4, spellcharges_4, spellcooldown_4, spellcategory_4, spellcategorycooldown_4,
 spellid_5, spelltrigger_5, spellcharges_5, spellcooldown_5, spellcategory_5, spellcategorycooldown_5,
-bonding, page_text, page_language, page_material, start_quest, lock_id, material, sheath`
+bonding, page_text, page_language, page_material, start_quest, lock_id, material, sheath, buy_count, max_durability`
 
 func (s *Store) ItemTemplate(entry int64) (ItemTemplate, bool, error) {
 	var item ItemTemplate
@@ -106,7 +108,7 @@ func (s *Store) ItemTemplate(entry int64) (ItemTemplate, bool, error) {
 	for index := range item.Spells {
 		values = append(values, &item.Spells[index].ID, &item.Spells[index].Trigger, &item.Spells[index].Charges, &item.Spells[index].Cooldown, &item.Spells[index].Category, &item.Spells[index].CategoryCooldown)
 	}
-	values = append(values, &item.Bonding, &item.PageText, &item.PageLanguage, &item.PageMaterial, &item.StartQuest, &item.LockID, &item.Material, &item.Sheath)
+	values = append(values, &item.Bonding, &item.PageText, &item.PageLanguage, &item.PageMaterial, &item.StartQuest, &item.LockID, &item.Material, &item.Sheath, &item.BuyCount, &item.MaxDurability)
 	err := s.db.QueryRow(`SELECT `+itemTemplateColumns+` FROM item_template WHERE entry = ?`, entry).Scan(values...)
 	if err == sql.ErrNoRows {
 		return ItemTemplate{}, false, nil
@@ -131,7 +133,7 @@ func (s *Store) PageText(entry int64) (Page, bool, error) {
 
 func (s *Store) CreatureTemplate(entry int64) (CreatureTemplate, bool, error) {
 	var creature CreatureTemplate
-	err := s.db.QueryRow(`SELECT entry, display_id1, name, COALESCE(subname, ''), static_flags, level_min, level_max, faction, scale, unit_class, unit_flags, npc_flags, type, beast_family, health_multiplier, mana_multiplier, armor_multiplier, damage_multiplier, damage_variance, base_attack_time, ranged_attack_time FROM creature_template WHERE entry = ?`, entry).Scan(&creature.Entry, &creature.DisplayID1, &creature.Name, &creature.Subname, &creature.StaticFlags, &creature.LevelMin, &creature.LevelMax, &creature.Faction, &creature.Scale, &creature.UnitClass, &creature.UnitFlags, &creature.NPCFlags, &creature.Type, &creature.BeastFamily, &creature.HealthMultiplier, &creature.ManaMultiplier, &creature.ArmorMultiplier, &creature.DamageMultiplier, &creature.DamageVariance, &creature.BaseAttackTime, &creature.RangedAttackTime)
+	err := s.db.QueryRow(`SELECT entry, display_id1, name, COALESCE(subname, ''), static_flags, level_min, level_max, faction, scale, unit_class, unit_flags, npc_flags, type, beast_family, health_multiplier, mana_multiplier, armor_multiplier, damage_multiplier, damage_variance, base_attack_time, ranged_attack_time, COALESCE(vendor_id, 0) FROM creature_template WHERE entry = ?`, entry).Scan(&creature.Entry, &creature.DisplayID1, &creature.Name, &creature.Subname, &creature.StaticFlags, &creature.LevelMin, &creature.LevelMax, &creature.Faction, &creature.Scale, &creature.UnitClass, &creature.UnitFlags, &creature.NPCFlags, &creature.Type, &creature.BeastFamily, &creature.HealthMultiplier, &creature.ManaMultiplier, &creature.ArmorMultiplier, &creature.DamageMultiplier, &creature.DamageVariance, &creature.BaseAttackTime, &creature.RangedAttackTime, &creature.VendorID)
 	if err == sql.ErrNoRows {
 		return CreatureTemplate{}, false, nil
 	}

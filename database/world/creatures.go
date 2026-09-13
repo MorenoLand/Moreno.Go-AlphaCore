@@ -57,6 +57,18 @@ func (s *Store) CreatureSpawns(mapID int64, x, y, z, distance float32) ([]Creatu
 	return spawns, rows.Err()
 }
 
+func (s *Store) CreatureSpawnByID(id int64) (CreatureSpawn, bool, error) {
+	var spawn CreatureSpawn
+	err := s.db.QueryRow(`SELECT spawn_id, spawn_entry1, map, position_x, position_y, position_z, orientation, health_percent, mana_percent, movement_type, spawn_flags FROM spawns_creatures WHERE spawn_id = ?`, id).Scan(&spawn.SpawnID, &spawn.Entry, &spawn.Map, &spawn.PositionX, &spawn.PositionY, &spawn.PositionZ, &spawn.Orientation, &spawn.HealthPercent, &spawn.ManaPercent, &spawn.MovementType, &spawn.SpawnFlags)
+	if err == sql.ErrNoRows {
+		return CreatureSpawn{}, false, nil
+	}
+	if err != nil {
+		return CreatureSpawn{}, false, fmt.Errorf("query creature spawn by id: %w", err)
+	}
+	return spawn, true, nil
+}
+
 func (s *Store) CreatureModelInfo(modelID int64) (CreatureModelInfo, bool, error) {
 	var info CreatureModelInfo
 	err := s.db.QueryRow(`SELECT modelid, bounding_radius, combat_reach, gender FROM creature_model_info WHERE modelid = ?`, modelID).Scan(&info.ModelID, &info.BoundingRadius, &info.CombatReach, &info.Gender)
