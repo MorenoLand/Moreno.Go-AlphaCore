@@ -244,6 +244,10 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			err = s.zoneUpdate(active.GUID, active.AccountID, message.Data)
+			if err == nil && len(message.Data) >= 4 {
+				active.Zone = int64(binary.LittleEndian.Uint32(message.Data))
+				s.updatePlayer(*active)
+			}
 		case packet.CMSGPing:
 			if active == nil || len(message.Data) < 4 {
 				return

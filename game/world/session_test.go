@@ -155,6 +155,12 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	if err != nil || response.Opcode != packet.SMSGLogoutResponse || response.Data[0] != 1 {
 		t.Fatalf("logout request=%#v err=%v", response, err)
 	}
+	server.players.mu.RLock()
+	zone := server.players.players[guid].Zone
+	server.players.mu.RUnlock()
+	if zone != 42 {
+		t.Fatalf("registry zone=%d", zone)
+	}
 	message, _ = packet.Encode(packet.CMSGLogoutCancel, nil)
 	client.Write(message)
 	response, err = sockets.ReadPacket(stream)
