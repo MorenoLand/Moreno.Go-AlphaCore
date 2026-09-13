@@ -453,6 +453,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.chat(*active, message.Data)
+		case packet.CMSGBug:
+			if active == nil {
+				return
+			}
+			err = s.bugReport(account, *active, message.Data)
 		case packet.CMSGZoneUpdate:
 			if active == nil {
 				return
