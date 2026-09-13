@@ -16,7 +16,7 @@
 This repository is the Go port of [The Alpha Project's Alpha Core](https://github.com/The-Alpha-Project/alpha-core). The upstream Python source remains the behavioral reference for this port.
 
 > [!NOTE]
-> The Go port is being developed in focused subsystems. The current slice provides SQLite data import, packet/SRP6 primitives, login, realm, proxy, world authentication, character create/list/delete, player-login and starting-inventory update packets, nearby creature and gameobject updates, item/page/quest/creature/gameobject queries, WHO, friend/ignore state, party invite/accept/disband/leader state, played time, action and spell-button persistence, random roll, LFG, selection, target, chat/whisper, text emotes, readable item pages, basic inventory mutations, ping, time, movement persistence, and logout; broader gameplay remains in progress.
+> The Go port is being developed in focused subsystems. The current slice provides SQLite data import, packet/SRP6 primitives, login, realm, proxy, world authentication, character create/list/delete, player-login and starting-inventory update packets, nearby creature and gameobject updates, item/page/quest/creature/gameobject queries, WHO, friend/ignore state, party invite/accept/disband/leader state, channel join/list/chat/administration, played time, action and spell-button persistence, random roll, LFG, selection, target, chat/whisper, text emotes, readable item pages, basic inventory mutations, ping, time, movement persistence, and logout; broader gameplay remains in progress.
 
 - [Database Tool](https://db.thealphaproject.eu/)
 - [Original AlphaCore Discord](https://discord.gg/RzBMAKU)

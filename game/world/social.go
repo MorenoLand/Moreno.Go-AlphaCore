@@ -38,8 +38,11 @@ func (s *WorldServer) chat(active realm.Character, data []byte) ([][]byte, error
 		return nil, nil
 	}
 	chatType := data[0]
-	if chatType != 0 && chatType != 4 && chatType != 5 && chatType != 7 {
+	if chatType != 0 && chatType != 4 && chatType != 5 && chatType != 7 && chatType != 13 {
 		return nil, nil
+	}
+	if chatType == 13 {
+		return s.channelChat(active, data)
 	}
 	messageOffset := 8
 	var target realm.Character

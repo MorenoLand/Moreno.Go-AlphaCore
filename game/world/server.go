@@ -30,6 +30,7 @@ type WorldServer struct {
 	ServerSeed        []byte
 	players           playerRegistry
 	groups            groupRegistry
+	channels          channelRegistry
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -226,6 +227,21 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.groupDisband(*active)
+		case packet.CMSGJoinChannel:
+			if active == nil {
+				return
+			}
+			responses, err = s.joinChannel(*active, message.Data)
+		case packet.CMSGLeaveChannel:
+			if active == nil {
+				return
+			}
+			responses, err = s.leaveChannel(*active, message.Data)
+		case packet.CMSGChannelList:
+			if active == nil {
+				return
+			}
+			responses, err = s.listChannel(*active, message.Data)
 		case packet.CMSGPlayedTime:
 			if active == nil {
 				return

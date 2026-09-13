@@ -66,6 +66,24 @@ const (
 	SMSGGroupList                 Opcode = 0x007d
 	SMSGPartyMemberStats          Opcode = 0x007e
 	SMSGPartyCommandResult        Opcode = 0x007f
+	CMSGJoinChannel               Opcode = 0x0097
+	CMSGLeaveChannel              Opcode = 0x0098
+	SMSGChannelNotify             Opcode = 0x0099
+	CMSGChannelList               Opcode = 0x009a
+	SMSGChannelList               Opcode = 0x009b
+	CMSGChannelPassword           Opcode = 0x009c
+	CMSGChannelSetOwner           Opcode = 0x009d
+	CMSGChannelOwner              Opcode = 0x009e
+	CMSGChannelModerator          Opcode = 0x009f
+	CMSGChannelUnmoderator        Opcode = 0x00a0
+	CMSGChannelMute               Opcode = 0x00a1
+	CMSGChannelUnmute             Opcode = 0x00a2
+	CMSGChannelInvite             Opcode = 0x00a3
+	CMSGChannelKick               Opcode = 0x00a4
+	CMSGChannelBan                Opcode = 0x00a5
+	CMSGChannelUnban              Opcode = 0x00a6
+	CMSGChannelAnnouncements      Opcode = 0x00a7
+	CMSGChannelModerate           Opcode = 0x00a8
 	SMSGInitializeFactions        Opcode = 0x0115
 	CMSGSetActionButton           Opcode = 0x011b
 	SMSGActionButtons             Opcode = 0x011c
@@ -164,6 +182,24 @@ var opcodeNames = map[Opcode]string{
 	SMSGGroupList:                 "SMSG_GROUP_LIST",
 	SMSGPartyMemberStats:          "SMSG_PARTY_MEMBER_STATS",
 	SMSGPartyCommandResult:        "SMSG_PARTY_COMMAND_RESULT",
+	CMSGJoinChannel:               "CMSG_JOIN_CHANNEL",
+	CMSGLeaveChannel:              "CMSG_LEAVE_CHANNEL",
+	SMSGChannelNotify:             "SMSG_CHANNEL_NOTIFY",
+	CMSGChannelList:               "CMSG_CHANNEL_LIST",
+	SMSGChannelList:               "SMSG_CHANNEL_LIST",
+	CMSGChannelPassword:           "CMSG_CHANNEL_PASSWORD",
+	CMSGChannelSetOwner:           "CMSG_CHANNEL_SET_OWNER",
+	CMSGChannelOwner:              "CMSG_CHANNEL_OWNER",
+	CMSGChannelModerator:          "CMSG_CHANNEL_MODERATOR",
+	CMSGChannelUnmoderator:        "CMSG_CHANNEL_UNMODERATOR",
+	CMSGChannelMute:               "CMSG_CHANNEL_MUTE",
+	CMSGChannelUnmute:             "CMSG_CHANNEL_UNMUTE",
+	CMSGChannelInvite:             "CMSG_CHANNEL_INVITE",
+	CMSGChannelKick:               "CMSG_CHANNEL_KICK",
+	CMSGChannelBan:                "CMSG_CHANNEL_BAN",
+	CMSGChannelUnban:              "CMSG_CHANNEL_UNBAN",
+	CMSGChannelAnnouncements:      "CMSG_CHANNEL_ANNOUNCEMENTS",
+	CMSGChannelModerate:           "CMSG_CHANNEL_MODERATE",
 	SMSGInitializeFactions:        "SMSG_INITIALIZE_FACTIONS",
 	CMSGSetActionButton:           "CMSG_SET_ACTION_BUTTON",
 	SMSGActionButtons:             "SMSG_ACTION_BUTTONS",
