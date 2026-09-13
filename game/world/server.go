@@ -262,6 +262,16 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.setDeathBindPoint(*active)
+		case packet.CMSGTaxiQueryAvailableNodes:
+			if active == nil {
+				return
+			}
+			responses, err = s.taxiQueryNodes(active, message.Data)
+		case packet.CMSGTaxiNodeStatusQuery:
+			if active == nil {
+				return
+			}
+			response, err = s.taxiNodeStatus(*active, message.Data)
 		case packet.CMSGGetDeathBindZone:
 			if active == nil {
 				return

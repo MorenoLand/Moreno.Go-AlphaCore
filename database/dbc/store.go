@@ -28,6 +28,15 @@ type AreaTrigger struct {
 	X, Y, Z, Radius float32
 }
 
+type TaxiNode struct {
+	ID, ContinentID, Team int64
+	X, Y, Z               float32
+}
+
+type TaxiPath struct {
+	ID, From, To, Cost int64
+}
+
 type EmoteText struct {
 	ID      int64
 	EmoteID int64
@@ -97,6 +106,35 @@ func (s *Store) MapExists(id int64) (bool, error) {
 		return false, nil
 	}
 	return err == nil, err
+}
+
+func (s *Store) TaxiNodesByMap(mapID int64) ([]TaxiNode, error) {
+	rows, err := s.db.Query(`SELECT ID, ContinentID, X, Y, Z, custom_Team FROM TaxiNodes WHERE ContinentID = ? ORDER BY ID`, mapID)
+	if err != nil {
+		return nil, fmt.Errorf("query taxi nodes: %w", err)
+	}
+	defer rows.Close()
+	nodes := make([]TaxiNode, 0)
+	for rows.Next() {
+		var node TaxiNode
+		if err := rows.Scan(&node.ID, &node.ContinentID, &node.X, &node.Y, &node.Z, &node.Team); err != nil {
+			return nil, fmt.Errorf("scan taxi node: %w", err)
+		}
+		nodes = append(nodes, node)
+	}
+	return nodes, rows.Err()
+}
+
+func (s *Store) TaxiPath(from, to int64) (TaxiPath, bool, error) {
+	var path TaxiPath
+	err := s.db.QueryRow(`SELECT ID, FromTaxiNode, ToTaxiNode, Cost FROM TaxiPath WHERE FromTaxiNode = ? AND ToTaxiNode = ? LIMIT 1`, from, to).Scan(&path.ID, &path.From, &path.To, &path.Cost)
+	if err == sql.ErrNoRows {
+		return TaxiPath{}, false, nil
+	}
+	if err != nil {
+		return TaxiPath{}, false, fmt.Errorf("query taxi path: %w", err)
+	}
+	return path, true, nil
 }
 
 func (s *Store) EmoteText(id int64) (EmoteText, bool, error) {

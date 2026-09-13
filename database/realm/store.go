@@ -179,6 +179,11 @@ func (s *Store) UpdateZone(guid, accountID, realmID, zone int64) error {
 	return err
 }
 
+func (s *Store) UpdateTaximask(guid, accountID, realmID int64, mask string) error {
+	_, err := s.db.Exec(`UPDATE characters SET taximask = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, mask, guid, accountID, realmID)
+	return err
+}
+
 func (s *Store) AddInventoryItem(owner, itemTemplate, slot, amount int64) error {
 	return s.AddInventoryItemAt(owner, itemTemplate, 23, slot, amount)
 }

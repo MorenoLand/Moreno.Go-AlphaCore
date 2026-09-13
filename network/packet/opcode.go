@@ -190,6 +190,16 @@ const (
 	SMSGQuestLogFull              Opcode = 0x0191
 	CMSGQuestConfirmAccept        Opcode = 0x0196
 	SMSGQuestConfirmAccept        Opcode = 0x0197
+	CMSGTaxiClearAllNodes         Opcode = 0x0198
+	CMSGTaxiEnableAllNodes        Opcode = 0x0199
+	CMSGTaxiShowNodes             Opcode = 0x019a
+	SMSGShowTaxiNodes             Opcode = 0x019b
+	CMSGTaxiNodeStatusQuery       Opcode = 0x019c
+	SMSGTaxiNodeStatus            Opcode = 0x019d
+	CMSGTaxiQueryAvailableNodes   Opcode = 0x019e
+	CMSGActivateTaxi              Opcode = 0x019f
+	SMSGActivateTaxiReply         Opcode = 0x01a0
+	SMSGNewTaxiPath               Opcode = 0x01a1
 	CMSGBinderActivate            Opcode = 0x01a7
 	SMSGPlayerBindError           Opcode = 0x01a8
 	CMSGBankerActivate            Opcode = 0x01a9
@@ -432,6 +442,16 @@ var opcodeNames = map[Opcode]string{
 	SMSGQuestLogFull:              "SMSG_QUESTLOG_FULL",
 	CMSGQuestConfirmAccept:        "CMSG_QUEST_CONFIRM_ACCEPT",
 	SMSGQuestConfirmAccept:        "SMSG_QUEST_CONFIRM_ACCEPT",
+	CMSGTaxiClearAllNodes:         "CMSG_TAXICLEARALLNODES",
+	CMSGTaxiEnableAllNodes:        "CMSG_TAXIENABLEALLNODES",
+	CMSGTaxiShowNodes:             "CMSG_TAXISHOWNODES",
+	SMSGShowTaxiNodes:             "SMSG_SHOWTAXINODES",
+	CMSGTaxiNodeStatusQuery:       "CMSG_TAXINODE_STATUS_QUERY",
+	SMSGTaxiNodeStatus:            "SMSG_TAXINODE_STATUS",
+	CMSGTaxiQueryAvailableNodes:   "CMSG_TAXIQUERYAVAILABLENODES",
+	CMSGActivateTaxi:              "CMSG_ACTIVATETAXI",
+	SMSGActivateTaxiReply:         "SMSG_ACTIVATETAXIREPLY",
+	SMSGNewTaxiPath:               "SMSG_NEW_TAXI_PATH",
 	CMSGBinderActivate:            "CMSG_BINDER_ACTIVATE",
 	SMSGPlayerBindError:           "SMSG_PLAYERBINDERROR",
 	CMSGBankerActivate:            "CMSG_BANKER_ACTIVATE",
