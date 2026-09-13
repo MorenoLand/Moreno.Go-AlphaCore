@@ -43,6 +43,14 @@ const (
 	SMSGMessageChat               Opcode = 0x0096
 	CMSGWho                       Opcode = 0x0062
 	SMSGWho                       Opcode = 0x0063
+	CMSGFriendList                Opcode = 0x0066
+	SMSGFriendList                Opcode = 0x0067
+	SMSGFriendStatus              Opcode = 0x0068
+	CMSGAddFriend                 Opcode = 0x0069
+	CMSGDelFriend                 Opcode = 0x006a
+	SMSGIgnoreList                Opcode = 0x006b
+	CMSGAddIgnore                 Opcode = 0x006c
+	CMSGDelIgnore                 Opcode = 0x006d
 	SMSGInitializeFactions        Opcode = 0x0115
 	SMSGActionButtons             Opcode = 0x011c
 	SMSGInitialSpells             Opcode = 0x011d
@@ -93,6 +101,14 @@ var opcodeNames = map[Opcode]string{
 	SMSGMessageChat:               "SMSG_MESSAGECHAT",
 	CMSGWho:                       "CMSG_WHO",
 	SMSGWho:                       "SMSG_WHO",
+	CMSGFriendList:                "CMSG_FRIEND_LIST",
+	SMSGFriendList:                "SMSG_FRIEND_LIST",
+	SMSGFriendStatus:              "SMSG_FRIEND_STATUS",
+	CMSGAddFriend:                 "CMSG_ADD_FRIEND",
+	CMSGDelFriend:                 "CMSG_DEL_FRIEND",
+	SMSGIgnoreList:                "SMSG_IGNORE_LIST",
+	CMSGAddIgnore:                 "CMSG_ADD_IGNORE",
+	CMSGDelIgnore:                 "CMSG_DEL_IGNORE",
 	SMSGInitializeFactions:        "SMSG_INITIALIZE_FACTIONS",
 	SMSGActionButtons:             "SMSG_ACTION_BUTTONS",
 	SMSGInitialSpells:             "SMSG_INITIAL_SPELLS",

@@ -12,6 +12,7 @@ type Race struct {
 	FactionID       int64
 	MaleDisplayID   int64
 	FemaleDisplayID int64
+	BaseLanguage    int64
 	CreatureType    int64
 }
 
@@ -28,7 +29,7 @@ func NewStore(databases *database.Databases) *Store { return &Store{db: database
 
 func (s *Store) Race(id uint8) (Race, bool, error) {
 	var race Race
-	err := s.db.QueryRow(`SELECT ID, FactionID, MaleDisplayId, FemaleDisplayId, CreatureType FROM ChrRaces WHERE ID = ?`, id).Scan(&race.ID, &race.FactionID, &race.MaleDisplayID, &race.FemaleDisplayID, &race.CreatureType)
+	err := s.db.QueryRow(`SELECT ID, FactionID, MaleDisplayId, FemaleDisplayId, BaseLanguage, CreatureType FROM ChrRaces WHERE ID = ?`, id).Scan(&race.ID, &race.FactionID, &race.MaleDisplayID, &race.FemaleDisplayID, &race.BaseLanguage, &race.CreatureType)
 	if err == sql.ErrNoRows {
 		return Race{}, false, nil
 	}

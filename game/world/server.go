@@ -159,6 +159,31 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.who(*active, message.Data)
+		case packet.CMSGFriendList:
+			if active == nil {
+				return
+			}
+			responses, err = s.friendList(*active)
+		case packet.CMSGAddFriend:
+			if active == nil {
+				return
+			}
+			response, err = s.friendAdd(*active, message.Data, false)
+		case packet.CMSGAddIgnore:
+			if active == nil {
+				return
+			}
+			response, err = s.friendAdd(*active, message.Data, true)
+		case packet.CMSGDelFriend:
+			if active == nil {
+				return
+			}
+			response, err = s.friendDelete(*active, message.Data, false)
+		case packet.CMSGDelIgnore:
+			if active == nil {
+				return
+			}
+			response, err = s.friendDelete(*active, message.Data, true)
 		case packet.CMSGMessageChat:
 			if active == nil {
 				return

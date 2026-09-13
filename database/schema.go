@@ -127,6 +127,14 @@ CREATE TABLE IF NOT EXISTS character_spell_book (
     PRIMARY KEY (owner, spell),
     FOREIGN KEY (owner) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
 );
+CREATE TABLE IF NOT EXISTS character_social (
+    guid INTEGER NOT NULL,
+    other_guid INTEGER NOT NULL,
+    ignore INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (guid, other_guid, ignore),
+    FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (other_guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
 `
 
 const worldSchema = commonSchema + `
@@ -369,6 +377,7 @@ CREATE TABLE IF NOT EXISTS ChrRaces (
     FactionID INTEGER NOT NULL DEFAULT 0,
     MaleDisplayId INTEGER NOT NULL DEFAULT 0,
     FemaleDisplayId INTEGER NOT NULL DEFAULT 0,
+    BaseLanguage INTEGER NOT NULL DEFAULT 0,
     CreatureType INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS AreaTable (
