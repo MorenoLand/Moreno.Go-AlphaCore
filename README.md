@@ -1,4 +1,4 @@
-# ![logo](.github/logo-small.png) Alpha Core
+# ![logo](.github/logo-small.png) Moreno.AlphaCore
 
 ---
 
@@ -8,9 +8,14 @@
 
 ---
 
-## The Alpha Project - `alpha-core`
+## Moreno.AlphaCore - Golang port of `alpha-core`
 
-`alpha-core` is an experimental emulator written in Python for version `0.5.3` of the **Friends & Family Alpha** of *World of Warcraft*.
+`Moreno.AlphaCore` is a Golang port of The Alpha Project's experimental emulator for version `0.5.3` of the **Friends & Family Alpha** of *World of Warcraft*.
+
+This repository is the Go implementation of Alpha Core. The upstream Python source remains in the separate `G:\Development\Go\References\alpha-core` checkout as the behavioral reference.
+
+> [!NOTE]
+> The Go port is being developed in focused subsystems. The current slice provides SQLite workspace bootstrap, packet primitives, and SRP6 primitives; client-facing gameplay remains in progress.
 
 - [Database Tool](https://db.thealphaproject.eu/)
 - [Discord Community](https://discord.gg/RzBMAKU)
@@ -19,100 +24,25 @@
 
 ## ⚙️ Configuration
 
-For Docker Compose + Makefile usage, see `README.docker.md`.
+The Go port uses SQLite and stores runtime state under `bin/` by default. The `--work` flag accepts either `--work=bin/` or `--work bin/` and points to the directory containing the SQLite files and built binary.
 
-1. In `etc/config`, create a copy of `config.yml.dist` and rename it to `config.yml`.  
-   Edit the file as needed for your setup.
+```bash
+go run . --work=bin/
+```
 
-2. You need **Python 3.11 or higher**. Install it from [python.org](https://www.python.org/downloads/).
-
-3. **Generate `.map` and `.nav` files**
-   - In `config.yml`, configure the `Extractor` section by setting `wow_root_path`.
-   - Run:
-     ```bash
-     python main.py -e
-     ```
-     This extracts `.map` and `.nav` files.
-   - After extraction, enable `use_map_tiles` and `use_nav_tiles` in the config.
-
-4. **If Python isn't on your PATH** (common with Docker or fresh installs), use:
-   ```bash
-   py main.py -e
-   ```
-
-> [!NOTE]  
-> If you're not using Docker, ensure that `Database => Connection` in `config.yml` matches your MariaDB credentials.  
-> By default:  
-> ```
-> username: alphapython
-> password: alphapython
-> host: 127.0.0.1
-> ```
-
-5. Create the databases using the utility scripts:
-   - `make db-create`
-   - Uses `.env` values (`MYSQL_USERNAME`, `MYSQL_PASSWORD`, `DB_PREFIX`)
-   - Creates `${DB_PREFIX}auth`, `${DB_PREFIX}realm`, `${DB_PREFIX}world`, `${DB_PREFIX}dbc`
-
-6. Each folder (`auth`, `dbc`, `realm`, `world`) in `etc/databases` contains:
-   - Base SQL files
-   - Updates in the `/updates` subfolder  
-     Example: `dbc/updates` should be applied to the `${DB_PREFIX}dbc` database.
+This creates `auth.sqlite3`, `realm.sqlite3`, `world.sqlite3`, and `dbc.sqlite3` under the selected work directory. The upstream SQL assets remain under `etc/databases` for later schema and data porting.
 
 ---
 
 ## 📦 Installation
 
-### Traditional Setup
-- Install [MariaDB](https://mariadb.org/download/).
-- Install project requirements:
-  ```bash
-  pip3 install -r requirements.txt
-  ```
+Install [Go](https://go.dev/dl/) and run from the repository root:
 
-> [!NOTE]  
-> Make sure you're inside the project folder before running commands. Example:  
-> `/home/user/GitHub/alpha-core`
-
----
-
-### Docker Setup
-- Minimum requirements:
-  - [Docker](https://www.docker.com/products/docker-desktop/) `19.03+`
-  - `docker-compose` `1.28+` (install with `pip3 install docker-compose` if needed)
-
-See `README.docker.md` for Docker Compose and Makefile workflows.
-
-- Start the containers:
-  ```bash
-  docker-compose up -d
-  ```
-
-#### Development in Docker
-- The project is mounted at `/var/wow` inside the main container.
-- Access the container:
-  ```bash
-  docker-compose exec main bash
-  ```
-- View logs:
-  ```bash
-  docker-compose logs -f main
-  ```
-- Enable developer mode (hot reload, auto-restart on changes):
-  ```bash
-  docker-compose --profile dev up
-  ```
-- Manually restart the server:
-  ```bash
-  docker-compose restart main
-  ```
-- **phpMyAdmin** is available at: `http://localhost:8080`.
-
-#### Rebuild the Database
-To wipe and rebuild from scratch (removes custom data, including accounts):
 ```bash
-docker-compose up --renew-anon-volumes sql
+go run . --work=bin/
 ```
+
+Build the executable into `bin/` with either `.\scripts\build.ps1` on Windows or `bash scripts/build.sh` on Unix-like systems. Run the built binary with `bin/Moreno.AlphaCore.exe --work=bin/` on Windows.
 
 ---
 
@@ -166,25 +96,15 @@ docker-compose up --renew-anon-volumes sql
 
 [AlphaUI](https://github.com/The-Alpha-Project/AlphaUI) is a custom addon framework for the `0.5.3` client. It provides UI enhancements and quality-of-life features not present in the original client, communicating with the server through the addons chat API.
 
-To enable addon support, set `enable_addons_chat_api: True` under `Server > General` in your `config.yml`.
+Addon protocol support will be ported with the corresponding client handlers.
 
 ---
 
 ## ⚠️ Common Issues
 
-- **Port already in use (MariaDB / Docker):**
-  ```text
-  Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:3306 -> 0.0.0.0:0: listen tcp 0.0.0.0:3306: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
-  ```
-  Make sure port `3306` is not being used by another `MariaDB`, `MySQL`, or similar service.
+- **Work directory:** If the selected `--work` path is a file, choose a directory path instead.
 
-- **Invalid realm list**  
-  If you've set the correct information in `config.yml` but still get this error, the server likely hasn't fully started yet.  
-  Look for a message similar to:
-  ```
-  2025-08-01 01:11:25 [INFO] [01/08/2025 01:11:25] Alpha Core is now running.
-  ```
-  When you see this, it is ready to accept logins.
+- **SQLite files:** The Go bootstrap creates missing databases and preserves existing files. Remove the selected files manually when a clean local database is required.
 
 > [!IMPORTANT]  
 > Due to the age and experimental nature of the `0.5.3` client build, you may experience stability and performance issues. These are client-related and **not** caused by the core server implementation.
@@ -201,6 +121,6 @@ The `Alpha Project` **does not** encourage unofficial public servers. If you use
 
 ## License
 
-The `Alpha Project` – alpha-core source components are released under the [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) license.
+The original `Alpha Project` source components retained in this repository, and the Moreno.AlphaCore port, are released under the [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) license.
 
-`alpha-core` is **not** an official Blizzard Entertainment product and is **not** affiliated with or endorsed by *World of Warcraft* or Blizzard Entertainment.
+`Moreno.AlphaCore` is **not** an official Blizzard Entertainment product and is **not** affiliated with or endorsed by *World of Warcraft* or Blizzard Entertainment.
