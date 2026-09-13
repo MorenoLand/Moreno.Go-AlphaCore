@@ -86,22 +86,6 @@ func (s *WorldServer) binderAt(active realm.Character, guid uint64) (worlddb.Cre
 	return spawn, creature, true, nil
 }
 
-func (s *WorldServer) creatureAt(active realm.Character, guid uint64, distance float32) (worlddb.CreatureSpawn, worlddb.CreatureTemplate, bool, error) {
-	spawn, found, err := s.WorldData.CreatureSpawnByID(int64(uint32(guid)))
-	if err != nil || !found || spawn.Map != active.Map {
-		return worlddb.CreatureSpawn{}, worlddb.CreatureTemplate{}, false, err
-	}
-	dx, dy, dz := spawn.PositionX-active.PositionX, spawn.PositionY-active.PositionY, spawn.PositionZ-active.PositionZ
-	if dx*dx+dy*dy+dz*dz > distance*distance {
-		return worlddb.CreatureSpawn{}, worlddb.CreatureTemplate{}, false, nil
-	}
-	creature, found, err := s.WorldData.CreatureTemplate(spawn.Entry)
-	if err != nil || !found {
-		return worlddb.CreatureSpawn{}, worlddb.CreatureTemplate{}, false, err
-	}
-	return spawn, creature, true, nil
-}
-
 func deathbindPointPacket(bind realm.Deathbind) ([]byte, error) {
 	body := make([]byte, 16)
 	binary.LittleEndian.PutUint32(body, math.Float32bits(bind.X))
