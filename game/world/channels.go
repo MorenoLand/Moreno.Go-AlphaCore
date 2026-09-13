@@ -522,7 +522,7 @@ func (s *WorldServer) channelToggle(active realm.Character, data []byte, moderat
 	if moderation {
 		channel.Moderated = !channel.Moderated
 		code := channelModerationOff
-		if !channel.Moderated {
+		if channel.Moderated {
 			code = channelModerationOn
 		}
 		response, err := channelNotify(channel.Name, code, 0, 0, "", nil, false)
@@ -537,7 +537,7 @@ func (s *WorldServer) channelToggle(active realm.Character, data []byte, moderat
 	}
 	channel.Announce = !channel.Announce
 	code := channelAnnouncementsOff
-	if !channel.Announce {
+	if channel.Announce {
 		code = channelAnnouncementsOn
 	}
 	return channelNotify(channel.Name, code, 0, 0, "", nil, false)

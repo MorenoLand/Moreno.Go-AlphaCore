@@ -582,6 +582,71 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.listChannel(*active, message.Data)
+		case packet.CMSGChannelPassword:
+			if active == nil {
+				return
+			}
+			response, err = s.channelPassword(*active, message.Data)
+		case packet.CMSGChannelSetOwner:
+			if active == nil {
+				return
+			}
+			response, err = s.channelSetOwner(*active, message.Data)
+		case packet.CMSGChannelOwner:
+			if active == nil {
+				return
+			}
+			response, err = s.channelOwner(*active, message.Data)
+		case packet.CMSGChannelModerator:
+			if active == nil {
+				return
+			}
+			response, err = s.channelModerator(*active, message.Data, false)
+		case packet.CMSGChannelUnmoderator:
+			if active == nil {
+				return
+			}
+			response, err = s.channelModerator(*active, message.Data, true)
+		case packet.CMSGChannelMute:
+			if active == nil {
+				return
+			}
+			response, err = s.channelMute(*active, message.Data, false)
+		case packet.CMSGChannelUnmute:
+			if active == nil {
+				return
+			}
+			response, err = s.channelMute(*active, message.Data, true)
+		case packet.CMSGChannelInvite:
+			if active == nil {
+				return
+			}
+			response, err = s.channelInvite(*active, message.Data)
+		case packet.CMSGChannelKick:
+			if active == nil {
+				return
+			}
+			response, err = s.channelKick(*active, message.Data, false)
+		case packet.CMSGChannelBan:
+			if active == nil {
+				return
+			}
+			response, err = s.channelKick(*active, message.Data, true)
+		case packet.CMSGChannelUnban:
+			if active == nil {
+				return
+			}
+			response, err = s.channelUnban(*active, message.Data)
+		case packet.CMSGChannelAnnouncements:
+			if active == nil {
+				return
+			}
+			response, err = s.channelToggle(*active, message.Data, false)
+		case packet.CMSGChannelModerate:
+			if active == nil {
+				return
+			}
+			response, err = s.channelToggle(*active, message.Data, true)
 		case packet.CMSGPlayedTime:
 			if active == nil {
 				return
