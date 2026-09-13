@@ -17,6 +17,53 @@ const (
 	trainerFailPoints         uint32 = 2
 )
 
+var trainerLockpickingSpells = map[int64]bool{1804: true, 6461: true, 6463: true}
+
+func (s *WorldServer) trainerCanTrain(active realm.Character, creature worlddb.CreatureTemplate) bool {
+	return creature.TrainerClass <= 0 || creature.TrainerClass == 4 || creature.TrainerClass == int64(active.Class)
+}
+
+func (s *WorldServer) trainerRequirementLevel(spell worlddb.TrainerSpell) (int64, error) {
+	if spell.ReqLevel > 0 {
+		return spell.ReqLevel, nil
+	}
+	level, _, err := s.DBC.SpellBaseLevel(spell.PlayerSpell)
+	return level, err
+}
+
+func (s *WorldServer) trainerSpellStatus(active realm.Character, spell worlddb.TrainerSpell, known map[int64]bool) (uint32, error) {
+	if known[spell.PlayerSpell] {
+		return trainerServiceUsed, nil
+	}
+	requiredLevel, err := s.trainerRequirementLevel(spell)
+	if err != nil {
+		return trainerServiceUnavailable, err
+	}
+	if requiredLevel > int64(active.Level) {
+		return trainerServiceUnavailable, nil
+	}
+	if spell.ReqSkill > 0 {
+		value, found, err := s.Characters.SkillValue(active.GUID, spell.ReqSkill)
+		if err != nil {
+			return trainerServiceUnavailable, err
+		}
+		if !found || value < spell.ReqSkillValue {
+			return trainerServiceUnavailable, nil
+		}
+	}
+	for _, required := range []int64{spell.ReqSpell1, spell.ReqSpell2, spell.ReqSpell3} {
+		if required > 0 && !known[required] {
+			return trainerServiceUnavailable, nil
+		}
+	}
+	if preceded, found, err := s.DBC.PrecededSpell(spell.PlayerSpell); err != nil {
+		return trainerServiceUnavailable, err
+	} else if found && preceded > 0 && !known[preceded] {
+		return trainerServiceUnavailable, nil
+	}
+	return trainerServiceAvailable, nil
+}
+
 func (s *WorldServer) trainerList(active realm.Character, data []byte) ([][]byte, error) {
 	if len(data) < 8 || s.DBC == nil || s.WorldData == nil {
 		return nil, nil
@@ -26,7 +73,7 @@ func (s *WorldServer) trainerList(active realm.Character, data []byte) ([][]byte
 		return nil, nil
 	}
 	_, creature, found, err := s.creatureAt(active, guid, maxShopDistance)
-	if err != nil || !found || creature.NPCFlags&0x8 == 0 || creature.TrainerID <= 0 {
+	if err != nil || !found || creature.NPCFlags&0x8 == 0 || creature.TrainerID <= 0 || !s.trainerCanTrain(active, creature) {
 		return nil, err
 	}
 	spells, err := s.WorldData.TrainerSpells(creature.TrainerID)
@@ -41,7 +88,7 @@ func (s *WorldServer) trainerList(active realm.Character, data []byte) ([][]byte
 	for _, spell := range learned {
 		known[spell.ID] = true
 	}
-	spellData := make([]byte, 0, len(spells)*33)
+	spellData := make([]byte, 0, len(spells)*36)
 	count := 0
 	for _, spell := range spells {
 		if spell.PlayerSpell <= 0 {
@@ -53,11 +100,17 @@ func (s *WorldServer) trainerList(active realm.Character, data []byte) ([][]byte
 			}
 			continue
 		}
-		status := trainerServiceAvailable
-		if known[spell.PlayerSpell] {
-			status = trainerServiceUsed
-		} else if spell.ReqLevel > int64(active.Level) {
-			status = trainerServiceUnavailable
+		if creature.TrainerClass == 4 && int64(active.Class) != creature.TrainerClass && !trainerLockpickingSpells[spell.PlayerSpell] {
+			continue
+		}
+		status, err := s.trainerSpellStatus(active, spell, known)
+		if err != nil {
+			return nil, err
+		}
+		if requiredLevel, levelErr := s.trainerRequirementLevel(spell); levelErr != nil {
+			return nil, levelErr
+		} else {
+			spell.ReqLevel = requiredLevel
 		}
 		spellData = append(spellData, trainerSpellData(spell, status)...)
 		count++
@@ -104,7 +157,7 @@ func (s *WorldServer) trainerBuy(active *realm.Character, data []byte) ([][]byte
 	}
 	guid, trainingSpell := binary.LittleEndian.Uint64(data), int64(binary.LittleEndian.Uint32(data[8:]))
 	_, creature, found, err := s.creatureAt(*active, guid, maxShopDistance)
-	if err != nil || !found || creature.NPCFlags&0x8 == 0 || creature.TrainerID <= 0 {
+	if err != nil || !found || creature.NPCFlags&0x8 == 0 || creature.TrainerID <= 0 || !s.trainerCanTrain(*active, creature) {
 		return trainerBuyFailure(guid, trainingSpell, trainerFailUnavailable)
 	}
 	spells, err := s.WorldData.TrainerSpells(creature.TrainerID)
@@ -133,7 +186,15 @@ func (s *WorldServer) trainerBuy(active *realm.Character, data []byte) ([][]byte
 			return trainerBuyFailure(guid, trainingSpell, trainerFailUnavailable)
 		}
 	}
-	if trainerSpell.ReqLevel > int64(active.Level) {
+	known := make(map[int64]bool, len(learned))
+	for _, spell := range learned {
+		known[spell.ID] = true
+	}
+	status, err := s.trainerSpellStatus(*active, *trainerSpell, known)
+	if err != nil {
+		return nil, err
+	}
+	if status != trainerServiceAvailable {
 		return trainerBuyFailure(guid, trainingSpell, trainerFailUnavailable)
 	}
 	if trainerSpell.SpellCost > active.Money {

@@ -57,3 +57,58 @@ func TestTrainerListAndBuy(t *testing.T) {
 		t.Fatalf("spells=%#v err=%v", spells, err)
 	}
 }
+
+func TestTrainerRequirements(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Student", Class: 1, Level: 10, Money: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, BaseLevel) VALUES (500, 1), (501, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO creature_template (entry, display_id1, name, npc_flags, trainer_id, trainer_class) VALUES (100, 20, 'Trainer', 8, 10, 1); INSERT INTO trainer_template (template_entry, spell, playerspell, spellcost, reqskill, reqskillvalue, req_spell_1) VALUES (10, 600, 500, 10, 55, 100, 501); INSERT INTO spawns_creatures (spawn_id, spawn_entry1, map, position_x, position_y, position_z) VALUES (1, 100, 0, 0, 0, 0)`); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases)}
+	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Student", Class: 1, Level: 10, Money: 100, Map: 0}
+	data := make([]byte, 8)
+	binary.LittleEndian.PutUint64(data, 0xf130000000000001)
+	responses, err := server.trainerList(active, data)
+	if err != nil || len(responses) != 1 {
+		t.Fatalf("blocked list responses=%d err=%v", len(responses), err)
+	}
+	list, err := packet.Parse(responses[0])
+	if err != nil || list.Data[20] != byte(trainerServiceUnavailable) {
+		t.Fatalf("blocked list=%#v err=%v", list, err)
+	}
+	if err := characters.AddSpell(guid, 501); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.Realm).Exec(`INSERT INTO character_skills (guid, skill, value, max) VALUES (?, 55, 100, 100)`, guid); err != nil {
+		t.Fatal(err)
+	}
+	responses, err = server.trainerList(active, data)
+	if err != nil || len(responses) != 1 {
+		t.Fatalf("available list responses=%d err=%v", len(responses), err)
+	}
+	list, err = packet.Parse(responses[0])
+	if err != nil || list.Data[20] != byte(trainerServiceAvailable) {
+		t.Fatalf("available list=%#v err=%v", list, err)
+	}
+	buy := make([]byte, 12)
+	copy(buy, data)
+	binary.LittleEndian.PutUint32(buy[8:], 600)
+	responses, err = server.trainerBuy(&active, buy)
+	if err != nil || len(responses) != 2 {
+		t.Fatalf("buy responses=%d err=%v", len(responses), err)
+	}
+	if succeeded, parseErr := packet.Parse(responses[0]); parseErr != nil || succeeded.Opcode != packet.SMSGTrainerBuySucceeded {
+		t.Fatalf("buy=%#v err=%v", succeeded, parseErr)
+	}
+}
