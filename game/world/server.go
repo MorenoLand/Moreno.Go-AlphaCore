@@ -504,6 +504,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.readItem(*active, message.Data)
+		case packet.CMSGInspect:
+			if active == nil {
+				return
+			}
+			err = s.inspect(*active, message.Data)
 		case packet.CMSGSplitItem:
 			if active == nil {
 				return
