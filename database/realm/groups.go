@@ -66,6 +66,11 @@ func (s *Store) UpdateGroupLeader(groupID, leaderGUID int64) error {
 	return err
 }
 
+func (s *Store) UpdateGroupLoot(groupID, lootMethod, lootMaster int64) error {
+	_, err := s.db.Exec(`UPDATE "group" SET loot_method = ?, loot_master = ? WHERE group_id = ?`, lootMethod, lootMaster, groupID)
+	return err
+}
+
 func (s *Store) DeleteGroup(groupID int64) error {
 	_, err := s.db.Exec(`DELETE FROM "group" WHERE group_id = ?`, groupID)
 	return err

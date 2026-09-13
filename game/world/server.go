@@ -226,6 +226,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.groupSetLeader(*active, message.Data)
+		case packet.CMSGLootMethod:
+			if active == nil {
+				return
+			}
+			responses, err = s.groupLootMethod(*active, message.Data)
 		case packet.CMSGGroupDisband:
 			if active == nil {
 				return
@@ -353,6 +358,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			s.setLookingForGroup(*active, message.Data)
+		case packet.MSGMinimapPing:
+			if active == nil {
+				return
+			}
+			err = s.minimapPing(*active, message.Data)
 		case packet.MSGRandomRoll:
 			if active == nil {
 				return

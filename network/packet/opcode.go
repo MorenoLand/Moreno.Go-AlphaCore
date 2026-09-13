@@ -110,6 +110,7 @@ const (
 	SMSGGroupUninvite             Opcode = 0x0077
 	CMSGGroupSetLeader            Opcode = 0x0078
 	SMSGGroupSetLeader            Opcode = 0x0079
+	CMSGLootMethod                Opcode = 0x007a
 	CMSGGroupDisband              Opcode = 0x007b
 	SMSGGroupDestroyed            Opcode = 0x007c
 	SMSGGroupList                 Opcode = 0x007d
@@ -185,6 +186,7 @@ const (
 	CMSGSetWeaponMode             Opcode = 0x01d1
 	CMSGPlayerMacro               Opcode = 0x01d4
 	SMSGPlayerMacro               Opcode = 0x01d5
+	MSGMinimapPing                Opcode = 0x01c6
 	CMSGZoneUpdate                Opcode = 0x01e5
 	CMSGPing                      Opcode = 0x01cd
 	SMSGPong                      Opcode = 0x01ce
@@ -300,6 +302,7 @@ var opcodeNames = map[Opcode]string{
 	SMSGGroupUninvite:             "SMSG_GROUP_UNINVITE",
 	CMSGGroupSetLeader:            "CMSG_GROUP_SET_LEADER",
 	SMSGGroupSetLeader:            "SMSG_GROUP_SET_LEADER",
+	CMSGLootMethod:                "CMSG_LOOT_METHOD",
 	CMSGGroupDisband:              "CMSG_GROUP_DISBAND",
 	SMSGGroupDestroyed:            "SMSG_GROUP_DESTROYED",
 	SMSGGroupList:                 "SMSG_GROUP_LIST",
@@ -375,6 +378,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGSetWeaponMode:             "CMSG_SETWEAPONMODE",
 	CMSGPlayerMacro:               "CMSG_PLAYER_MACRO",
 	SMSGPlayerMacro:               "SMSG_PLAYER_MACRO",
+	MSGMinimapPing:                "MSG_MINIMAP_PING",
 	MSGRandomRoll:                 "MSG_RANDOM_ROLL",
 	MSGLookingForGroup:            "MSG_LOOKING_FOR_GROUP",
 	CMSGSetLookingForGroup:        "CMSG_SET_LOOKING_FOR_GROUP",
