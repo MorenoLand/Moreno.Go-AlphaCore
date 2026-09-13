@@ -12,7 +12,7 @@
 
 `Moreno.AlphaCore` is a Golang port of The Alpha Project's experimental emulator for version `0.5.3` of the **Friends & Family Alpha** of *World of Warcraft*.
 
-This repository is the Go implementation of Alpha Core. The upstream Python source remains in the separate `G:\Development\Go\References\alpha-core` checkout as the behavioral reference.
+This repository is the Go port of [The Alpha Project's Alpha Core](https://github.com/The-Alpha-Project/alpha-core). The upstream Python source remains the behavioral reference for this port.
 
 > [!NOTE]
 > The Go port is being developed in focused subsystems. The current slice provides SQLite workspace bootstrap, packet primitives, and SRP6 primitives; client-facing gameplay remains in progress.
