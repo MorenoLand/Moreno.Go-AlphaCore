@@ -4,7 +4,8 @@
 
 ## ❤️ Enjoy the Project or Want to Support?
 
-[![Ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/R6R21LO82)
+[![AlphaCore Ko-Fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/R6R21LO82)
+[![Moreno.AlphaCore Go Port Ko-Fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/denveous)
 
 ---
 
@@ -18,7 +19,8 @@ This repository is the Go port of [The Alpha Project's Alpha Core](https://githu
 > The Go port is being developed in focused subsystems. The current slice provides SQLite workspace bootstrap, packet primitives, and SRP6 primitives; client-facing gameplay remains in progress.
 
 - [Database Tool](https://db.thealphaproject.eu/)
-- [Discord Community](https://discord.gg/RzBMAKU)
+- [Original AlphaCore Discord](https://discord.gg/RzBMAKU)
+- [MorenoLand Discord](https://discord.moreno.land)
 
 ---
 
@@ -30,7 +32,15 @@ The Go port uses SQLite and stores runtime state under `bin/` by default. The `-
 go run . --work=bin/
 ```
 
+Bare `go run .` starts the translated listeners. Use `--bootstrap` when you only want to create or import the SQLite files and exit.
+
 This creates `auth.sqlite3`, `realm.sqlite3`, `world.sqlite3`, and `dbc.sqlite3` under the selected work directory. The upstream SQL assets remain under `etc/databases` for later schema and data porting.
+
+To load those retained SQL dumps into SQLite, run:
+
+```bash
+go run . --bootstrap --import-sql --work=bin/
+```
 
 ---
 
