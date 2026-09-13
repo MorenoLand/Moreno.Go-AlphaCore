@@ -68,6 +68,67 @@ func (s *Store) InventoryItems(owner, bag, start, end int64) ([]InventoryItem, e
 	return items, nil
 }
 
+func (s *Store) ItemCount(owner, template int64) (int64, error) {
+	var count int64
+	err := s.db.QueryRow(`SELECT COALESCE(SUM(stackcount), 0) FROM character_inventory WHERE owner = ? AND item_template = ?`, owner, template).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count inventory item: %w", err)
+	}
+	return count, nil
+}
+
+func (s *Store) RemoveItems(owner, template, count int64) error {
+	if count <= 0 {
+		return nil
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin item removal: %w", err)
+	}
+	defer tx.Rollback()
+	rows, err := tx.Query(`SELECT guid, stackcount FROM character_inventory WHERE owner = ? AND item_template = ? ORDER BY bag, slot, guid`, owner, template)
+	if err != nil {
+		return fmt.Errorf("query item removal: %w", err)
+	}
+	type stack struct{ guid, count int64 }
+	items := make([]stack, 0)
+	for rows.Next() {
+		var item stack
+		if err := rows.Scan(&item.guid, &item.count); err != nil {
+			rows.Close()
+			return fmt.Errorf("scan item removal: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return fmt.Errorf("read item removal: %w", err)
+	}
+	rows.Close()
+	remaining := count
+	for _, item := range items {
+		if remaining <= 0 {
+			break
+		}
+		removed := item.count
+		if removed > remaining {
+			removed = remaining
+		}
+		if removed == item.count {
+			if _, err := tx.Exec(`DELETE FROM character_inventory WHERE owner = ? AND guid = ?`, owner, item.guid); err != nil {
+				return fmt.Errorf("delete quest item: %w", err)
+			}
+		} else if _, err := tx.Exec(`UPDATE character_inventory SET stackcount = stackcount - ? WHERE owner = ? AND guid = ?`, removed, owner, item.guid); err != nil {
+			return fmt.Errorf("update quest item: %w", err)
+		}
+		remaining -= removed
+	}
+	if remaining > 0 {
+		return fmt.Errorf("not enough inventory items: need %d", count)
+	}
+	return tx.Commit()
+}
+
 func (s *Store) DeleteItem(guid, owner int64) error {
 	_, err := s.db.Exec(`DELETE FROM character_inventory WHERE guid = ? AND owner = ?`, guid, owner)
 	return err

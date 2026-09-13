@@ -230,7 +230,8 @@ func (s *WorldServer) questDetailsData(guid uint64, quest worlddb.QuestTemplate)
 	body = append(body, encodeUint32(quest.RewOrReqMoney)...)
 	body = append(body, encodeUint32(4)...)
 	for index := 0; index < 4; index++ {
-		body = append(body, make([]byte, 8)...)
+		body = append(body, encodeUint32(quest.DetailsEmotes[index])...)
+		body = append(body, encodeUint32(quest.DetailsEmoteDelays[index])...)
 	}
 	return body, items, nil
 }

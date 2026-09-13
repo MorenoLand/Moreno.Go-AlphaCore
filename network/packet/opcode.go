@@ -176,6 +176,20 @@ const (
 	CMSGQuestGiverHello           Opcode = 0x0180
 	SMSGQuestGiverQuestList       Opcode = 0x0181
 	CMSGQuestGiverQueryQuest      Opcode = 0x0182
+	CMSGQuestGiverAcceptQuest     Opcode = 0x0185
+	CMSGQuestGiverCompleteQuest   Opcode = 0x0186
+	SMSGQuestGiverRequestItems    Opcode = 0x0187
+	CMSGQuestGiverRequestReward   Opcode = 0x0188
+	SMSGQuestGiverOfferReward     Opcode = 0x0189
+	CMSGQuestGiverChooseReward    Opcode = 0x018a
+	SMSGQuestGiverQuestInvalid    Opcode = 0x018b
+	CMSGQuestGiverCancel          Opcode = 0x018c
+	SMSGQuestGiverQuestComplete   Opcode = 0x018d
+	SMSGQuestGiverQuestFailed     Opcode = 0x018e
+	CMSGQuestLogRemoveQuest       Opcode = 0x0190
+	SMSGQuestLogFull              Opcode = 0x0191
+	CMSGQuestConfirmAccept        Opcode = 0x0196
+	SMSGQuestConfirmAccept        Opcode = 0x0197
 	SMSGQuestGiverQuestDetails    Opcode = 0x0184
 	CMSGSetSelection              Opcode = 0x0130
 	CMSGSetTarget                 Opcode = 0x0131
@@ -389,6 +403,20 @@ var opcodeNames = map[Opcode]string{
 	CMSGQuestGiverHello:           "CMSG_QUESTGIVER_HELLO",
 	SMSGQuestGiverQuestList:       "SMSG_QUESTGIVER_QUEST_LIST",
 	CMSGQuestGiverQueryQuest:      "CMSG_QUESTGIVER_QUERY_QUEST",
+	CMSGQuestGiverAcceptQuest:     "CMSG_QUESTGIVER_ACCEPT_QUEST",
+	CMSGQuestGiverCompleteQuest:   "CMSG_QUESTGIVER_COMPLETE_QUEST",
+	SMSGQuestGiverRequestItems:    "SMSG_QUESTGIVER_REQUEST_ITEMS",
+	CMSGQuestGiverRequestReward:   "CMSG_QUESTGIVER_REQUEST_REWARD",
+	SMSGQuestGiverOfferReward:     "SMSG_QUESTGIVER_OFFER_REWARD",
+	CMSGQuestGiverChooseReward:    "CMSG_QUESTGIVER_CHOOSE_REWARD",
+	SMSGQuestGiverQuestInvalid:    "SMSG_QUESTGIVER_QUEST_INVALID",
+	CMSGQuestGiverCancel:          "CMSG_QUESTGIVER_CANCEL",
+	SMSGQuestGiverQuestComplete:   "SMSG_QUESTGIVER_QUEST_COMPLETE",
+	SMSGQuestGiverQuestFailed:     "SMSG_QUESTGIVER_QUEST_FAILED",
+	CMSGQuestLogRemoveQuest:       "CMSG_QUESTLOG_REMOVE_QUEST",
+	SMSGQuestLogFull:              "SMSG_QUESTLOG_FULL",
+	CMSGQuestConfirmAccept:        "CMSG_QUEST_CONFIRM_ACCEPT",
+	SMSGQuestConfirmAccept:        "SMSG_QUEST_CONFIRM_ACCEPT",
 	SMSGQuestGiverQuestDetails:    "SMSG_QUESTGIVER_QUEST_DETAILS",
 	CMSGSetSelection:              "CMSG_SET_SELECTION",
 	CMSGSetTarget:                 "CMSG_SET_TARGET",

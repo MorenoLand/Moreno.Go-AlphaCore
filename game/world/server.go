@@ -208,6 +208,40 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.questGiverQuery(*active, message.Data)
+		case packet.CMSGQuestGiverAcceptQuest:
+			if active == nil {
+				return
+			}
+			responses, err = s.questAccept(*active, message.Data)
+		case packet.CMSGQuestGiverCompleteQuest:
+			if active == nil {
+				return
+			}
+			responses, err = s.questComplete(*active, message.Data)
+		case packet.CMSGQuestGiverRequestReward:
+			if active == nil {
+				return
+			}
+			responses, err = s.questRequestReward(*active, message.Data)
+		case packet.CMSGQuestGiverChooseReward:
+			if active == nil {
+				return
+			}
+			responses, err = s.questChooseReward(active, message.Data)
+		case packet.CMSGQuestLogRemoveQuest:
+			if active == nil {
+				return
+			}
+			err = s.questRemove(*active, message.Data)
+		case packet.CMSGQuestConfirmAccept:
+			if active == nil {
+				return
+			}
+			responses, err = s.questConfirmAccept(*active, message.Data)
+		case packet.CMSGQuestGiverCancel:
+			if active == nil {
+				return
+			}
 		case packet.CMSGGameObjectQuery:
 			if active == nil {
 				return

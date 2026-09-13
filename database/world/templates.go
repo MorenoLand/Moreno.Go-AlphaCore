@@ -75,9 +75,12 @@ type GameObjectTemplate struct {
 
 type QuestTemplate struct {
 	Entry, Method, ZoneOrSort, QuestLevel, Type, NextQuestInChain, SrcItemID, RewOrReqMoney int64
+	MinLevel, MaxLevel, QuestFlags, SrcItemCount, RewXP, RewSpellCast                       int64
 	RewItemIDs, RewItemCounts                                                               [4]int64
 	RewChoiceItemIDs, RewChoiceItemCounts                                                   [6]int64
-	Title, Details, Objectives, EndText                                                     string
+	Title, Details, Objectives, OfferRewardText, RequestItemsText, EndText                  string
+	DetailsEmotes, DetailsEmoteDelays, OfferRewardEmotes, OfferRewardEmoteDelays            [4]int64
+	IncompleteEmote, CompleteEmote                                                          int64
 	PointMapID, PointOpt                                                                    int64
 	PointX, PointY                                                                          float32
 	ReqCreatureOrGOIDs, ReqCreatureOrGOCounts, ReqItemIDs, ReqItemCounts                    [4]int64
@@ -187,13 +190,31 @@ func (s *Store) QuestTemplate(entry int64) (QuestTemplate, bool, error) {
 	for index := range quest.ReqItemCounts {
 		values = append(values, &quest.ReqItemCounts[index])
 	}
+	values = append(values, &quest.MinLevel, &quest.MaxLevel, &quest.QuestFlags, &quest.SrcItemCount, &quest.RewXP, &quest.RewSpellCast, &quest.OfferRewardText, &quest.RequestItemsText)
+	for index := range quest.DetailsEmotes {
+		values = append(values, &quest.DetailsEmotes[index])
+	}
+	for index := range quest.DetailsEmoteDelays {
+		values = append(values, &quest.DetailsEmoteDelays[index])
+	}
+	values = append(values, &quest.IncompleteEmote, &quest.CompleteEmote)
+	for index := range quest.OfferRewardEmotes {
+		values = append(values, &quest.OfferRewardEmotes[index])
+	}
+	for index := range quest.OfferRewardEmoteDelays {
+		values = append(values, &quest.OfferRewardEmoteDelays[index])
+	}
 	err := s.db.QueryRow(`SELECT entry, Method, ZoneOrSort, QuestLevel, Type, NextQuestInChain, SrcItemId, RewOrReqMoney,
 RewItemId1, RewItemId2, RewItemId3, RewItemId4, RewItemCount1, RewItemCount2, RewItemCount3, RewItemCount4,
 RewChoiceItemId1, RewChoiceItemId2, RewChoiceItemId3, RewChoiceItemId4, RewChoiceItemId5, RewChoiceItemId6,
 RewChoiceItemCount1, RewChoiceItemCount2, RewChoiceItemCount3, RewChoiceItemCount4, RewChoiceItemCount5, RewChoiceItemCount6,
 COALESCE(Title, ''), COALESCE(Details, ''), COALESCE(Objectives, ''), COALESCE(EndText, ''), PointMapId, PointX, PointY, PointOpt,
 ReqCreatureOrGOId1, ReqCreatureOrGOId2, ReqCreatureOrGOId3, ReqCreatureOrGOId4, ReqCreatureOrGOCount1, ReqCreatureOrGOCount2, ReqCreatureOrGOCount3, ReqCreatureOrGOCount4,
-ReqItemId1, ReqItemId2, ReqItemId3, ReqItemId4, ReqItemCount1, ReqItemCount2, ReqItemCount3, ReqItemCount4 FROM quest_template WHERE entry = ?`, entry).Scan(values...)
+ReqItemId1, ReqItemId2, ReqItemId3, ReqItemId4, ReqItemCount1, ReqItemCount2, ReqItemCount3, ReqItemCount4,
+MinLevel, MaxLevel, QuestFlags, SrcItemCount, RewXP, RewSpellCast, COALESCE(OfferRewardText, ''), COALESCE(RequestItemsText, ''),
+DetailsEmote1, DetailsEmote2, DetailsEmote3, DetailsEmote4, DetailsEmoteDelay1, DetailsEmoteDelay2, DetailsEmoteDelay3, DetailsEmoteDelay4,
+IncompleteEmote, CompleteEmote, OfferRewardEmote1, OfferRewardEmote2, OfferRewardEmote3, OfferRewardEmote4,
+OfferRewardEmoteDelay1, OfferRewardEmoteDelay2, OfferRewardEmoteDelay3, OfferRewardEmoteDelay4 FROM quest_template WHERE entry = ?`, entry).Scan(values...)
 	if err == sql.ErrNoRows {
 		return QuestTemplate{}, false, nil
 	}
