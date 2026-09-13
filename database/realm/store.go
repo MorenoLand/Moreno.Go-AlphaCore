@@ -240,6 +240,23 @@ func (s *Store) Buttons(owner int64) (map[int64]int64, error) {
 	return buttons, rows.Err()
 }
 
+func (s *Store) SpellButtons(owner int64) (map[int64]int64, error) {
+	rows, err := s.db.Query(`SELECT spell, "index" FROM character_spell_book WHERE owner = ?`, owner)
+	if err != nil {
+		return nil, fmt.Errorf("query character spell buttons: %w", err)
+	}
+	defer rows.Close()
+	buttons := make(map[int64]int64)
+	for rows.Next() {
+		var spell, index int64
+		if err := rows.Scan(&spell, &index); err != nil {
+			return nil, fmt.Errorf("scan character spell button: %w", err)
+		}
+		buttons[spell] = index
+	}
+	return buttons, rows.Err()
+}
+
 func (s *Store) Inventory(owner int64) ([]InventoryItem, error) {
 	rows, err := s.db.Query(`SELECT slot, item_template FROM character_inventory WHERE owner = ? AND bag = 0 AND slot BETWEEN 0 AND 19`, owner)
 	if err != nil {

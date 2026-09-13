@@ -40,6 +40,10 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
+	spellButtons, err := s.Characters.SpellButtons(character.GUID)
+	if err != nil {
+		return nil, err
+	}
 	buttons, err := s.Characters.Buttons(character.GUID)
 	if err != nil {
 		return nil, err
@@ -53,6 +57,7 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 		}
 		value := make([]byte, 4)
 		binary.LittleEndian.PutUint16(value, uint16(spell.ID))
+		binary.LittleEndian.PutUint16(value[2:], uint16(spellButtons[spell.ID]))
 		initialSpells = append(initialSpells, value...)
 	}
 	initialSpells = append(initialSpells, 0, 0)
