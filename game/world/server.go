@@ -35,6 +35,8 @@ type WorldServer struct {
 	guilds            guildRegistry
 	vendorMu          sync.Mutex
 	vendors           map[uint64]*vendorData
+	gameObjectMu      sync.Mutex
+	gameObjects       map[uint64]gameObjectState
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -315,6 +317,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.gameObjectQuery(message.Data)
+		case packet.CMSGGameObjectUse:
+			if active == nil {
+				return
+			}
+			responses, err = s.gameObjectUse(*active, message.Data)
 		case packet.CMSGCreatureQuery:
 			if active == nil {
 				return
