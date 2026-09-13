@@ -241,6 +241,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.destroyItem(*active, message.Data)
+		case packet.CMSGReadItem:
+			if active == nil {
+				return
+			}
+			response, err = s.readItem(*active, message.Data)
 		case packet.CMSGSplitItem:
 			if active == nil {
 				return

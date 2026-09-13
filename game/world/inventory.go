@@ -129,6 +129,32 @@ func (s *WorldServer) autoequipItem(active realm.Character, data []byte) ([]byte
 	return nil, s.Characters.SwapItems(active.GUID, sourceBag, sourceSlot, 23, destSlot)
 }
 
+func (s *WorldServer) readItem(active realm.Character, data []byte) ([]byte, error) {
+	if len(data) < 2 {
+		return nil, nil
+	}
+	item, found, err := s.Characters.ItemAt(active.GUID, inventoryBag(data[0]), int64(data[1]))
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return s.inventoryFailure(active, bagItemNotFound)
+	}
+	template, found, err := s.WorldData.ItemTemplate(item.ItemTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if !found || template.PageText == 0 {
+		return s.inventoryFailure(active, bagItemNotFound, item)
+	}
+	guid := encodeGUID(int64(uint64(item.GUID) | 0x4000000000000000))
+	if template.PageLanguage == 0 || template.PageLanguage == nativeLanguage(active.Race) {
+		return packet.Encode(packet.SMSGReadItemOK, guid)
+	}
+	body := append(guid, 0)
+	return packet.Encode(packet.SMSGReadItemFailed, body)
+}
+
 func (s *WorldServer) swapInventory(active realm.Character, data []byte) error {
 	if len(data) < 2 {
 		return nil
@@ -164,4 +190,8 @@ func equipmentSlot(inventoryType int64) int64 {
 		return slot
 	}
 	return -1
+}
+
+func nativeLanguage(race uint8) int64 {
+	return map[uint8]int64{1: 7, 2: 1, 3: 6, 4: 2, 5: 7, 6: 3, 7: 13, 8: 14}[race]
 }

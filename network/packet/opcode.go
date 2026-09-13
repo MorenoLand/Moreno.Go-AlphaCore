@@ -63,6 +63,10 @@ const (
 	SMSGEmote                     Opcode = 0x00f6
 	SMSGTextEmote                 Opcode = 0x00f8
 	SMSGDestroyObject             Opcode = 0x00aa
+	CMSGOpenItem                  Opcode = 0x00ac
+	CMSGReadItem                  Opcode = 0x00ad
+	SMSGReadItemOK                Opcode = 0x00ae
+	SMSGReadItemFailed            Opcode = 0x00af
 	CMSGAutoequipItem             Opcode = 0x00fd
 	CMSGAutostoreBagItem          Opcode = 0x00fe
 	CMSGSwapItem                  Opcode = 0x00ff
@@ -142,6 +146,10 @@ var opcodeNames = map[Opcode]string{
 	SMSGEmote:                     "SMSG_EMOTE",
 	SMSGTextEmote:                 "SMSG_TEXT_EMOTE",
 	SMSGDestroyObject:             "SMSG_DESTROY_OBJECT",
+	CMSGOpenItem:                  "CMSG_OPEN_ITEM",
+	CMSGReadItem:                  "CMSG_READ_ITEM",
+	SMSGReadItemOK:                "SMSG_READ_ITEM_OK",
+	SMSGReadItemFailed:            "SMSG_READ_ITEM_FAILED",
 	CMSGAutoequipItem:             "CMSG_AUTOEQUIP_ITEM",
 	CMSGAutostoreBagItem:          "CMSG_AUTOSTORE_BAG_ITEM",
 	CMSGSwapItem:                  "CMSG_SWAP_ITEM",

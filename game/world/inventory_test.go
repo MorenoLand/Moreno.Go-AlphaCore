@@ -19,6 +19,9 @@ func TestInventoryMutations(t *testing.T) {
 	if _, err := databases.DB(database.World).Exec(`INSERT INTO item_template (entry, name, stackable, inventory_type) VALUES (1, 'Potion', 20, 0), (2, 'Sword', 1, 13)`); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO page_text (entry, text, next_page) VALUES (1, 'Readable', 0); UPDATE item_template SET page_text = 1, page_language = 7 WHERE entry = 1`); err != nil {
+		t.Fatal(err)
+	}
 	characters := realm.NewStore(databases)
 	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Inventory", Race: 1, Class: 1})
 	if err != nil {
@@ -31,7 +34,20 @@ func TestInventoryMutations(t *testing.T) {
 		t.Fatal(err)
 	}
 	server := &WorldServer{Characters: characters, WorldData: worlddb.NewStore(databases)}
-	active := realm.Character{GUID: guid, Name: "Inventory", Class: 1}
+	active := realm.Character{GUID: guid, Name: "Inventory", Race: 1, Class: 1}
+	readResponse, err := server.readItem(active, []byte{23, 23})
+	parsed, parseErr := packet.Parse(readResponse)
+	if err != nil || parseErr != nil || parsed.Opcode != packet.SMSGReadItemOK || len(parsed.Data) != 8 {
+		t.Fatalf("read item=%#v err=%v parse=%v", parsed, err, parseErr)
+	}
+	if _, err := databases.DB(database.World).Exec(`UPDATE item_template SET page_language = 1 WHERE entry = 1`); err != nil {
+		t.Fatal(err)
+	}
+	readResponse, err = server.readItem(active, []byte{23, 23})
+	parsed, parseErr = packet.Parse(readResponse)
+	if err != nil || parseErr != nil || parsed.Opcode != packet.SMSGReadItemFailed || len(parsed.Data) != 9 || parsed.Data[8] != 0 {
+		t.Fatalf("foreign read item=%#v err=%v parse=%v", parsed, err, parseErr)
+	}
 	splitData := []byte{23, 23, 23, 24, 2}
 	if response, err := server.splitItem(active, splitData); response != nil || err != nil {
 		t.Fatalf("split response=%v err=%v", response, err)
@@ -69,7 +85,7 @@ func TestInventoryMutations(t *testing.T) {
 	if err != nil || len(response) != 1 {
 		t.Fatalf("destroy response=%d err=%v", len(response), err)
 	}
-	parsed, err := packet.Parse(response[0])
+	parsed, parseErr = packet.Parse(response[0])
 	if err != nil || parsed.Opcode != packet.SMSGDestroyObject {
 		t.Fatalf("destroy packet=%#v err=%v", parsed, err)
 	}
@@ -77,7 +93,7 @@ func TestInventoryMutations(t *testing.T) {
 		t.Fatalf("destroy found=%v err=%v", found, err)
 	}
 	failure, err := server.splitItem(active, []byte{23, 23, 23, 28, 9})
-	parsed, parseErr := packet.Parse(failure)
+	parsed, parseErr = packet.Parse(failure)
 	if err != nil || parseErr != nil || parsed.Opcode != packet.SMSGInventoryChangeFailure || parsed.Data[0] != bagItemTooFew {
 		t.Fatalf("split failure=%#v err=%v parse=%v", parsed, err, parseErr)
 	}
