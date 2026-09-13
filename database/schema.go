@@ -479,7 +479,59 @@ CREATE TABLE IF NOT EXISTS gameobject_template (
     data6 INTEGER NOT NULL DEFAULT 0,
     data7 INTEGER NOT NULL DEFAULT 0,
     data8 INTEGER NOT NULL DEFAULT 0,
-    data9 INTEGER NOT NULL DEFAULT 0
+    data9 INTEGER NOT NULL DEFAULT 0,
+    mingold INTEGER NOT NULL DEFAULT 0,
+    maxgold INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS item_loot_template (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    ChanceOrQuestChance REAL NOT NULL DEFAULT 100,
+    groupid INTEGER NOT NULL DEFAULT 0,
+    mincountOrRef INTEGER NOT NULL DEFAULT 1,
+    maxcount INTEGER NOT NULL DEFAULT 1,
+    condition_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
+);
+CREATE TABLE IF NOT EXISTS creature_loot_template (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    ChanceOrQuestChance REAL NOT NULL DEFAULT 100,
+    groupid INTEGER NOT NULL DEFAULT 0,
+    mincountOrRef INTEGER NOT NULL DEFAULT 1,
+    maxcount INTEGER NOT NULL DEFAULT 1,
+    condition_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
+);
+CREATE TABLE IF NOT EXISTS gameobject_loot_template (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    ChanceOrQuestChance REAL NOT NULL DEFAULT 100,
+    groupid INTEGER NOT NULL DEFAULT 0,
+    mincountOrRef INTEGER NOT NULL DEFAULT 1,
+    maxcount INTEGER NOT NULL DEFAULT 1,
+    condition_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
+);
+CREATE TABLE IF NOT EXISTS fishing_loot_template (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    ChanceOrQuestChance REAL NOT NULL DEFAULT 100,
+    groupid INTEGER NOT NULL DEFAULT 0,
+    mincountOrRef INTEGER NOT NULL DEFAULT 1,
+    maxcount INTEGER NOT NULL DEFAULT 1,
+    condition_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
+);
+CREATE TABLE IF NOT EXISTS reference_loot_template (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    ChanceOrQuestChance REAL NOT NULL DEFAULT 100,
+    groupid INTEGER NOT NULL DEFAULT 0,
+    mincountOrRef INTEGER NOT NULL DEFAULT 1,
+    maxcount INTEGER NOT NULL DEFAULT 1,
+    condition_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
 );
 CREATE TABLE IF NOT EXISTS quest_template (
     entry INTEGER PRIMARY KEY NOT NULL,

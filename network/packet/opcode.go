@@ -87,6 +87,7 @@ const (
 	SMSGQuestQueryResponse        Opcode = 0x005d
 	CMSGGameObjectQuery           Opcode = 0x005e
 	CMSGGameObjectUse             Opcode = 0x00b1
+	CMSGAutostoreLootItem         Opcode = 0x00fb
 	CMSGInitiateTrade             Opcode = 0x0109
 	CMSGBeginTrade                Opcode = 0x010a
 	CMSGAcceptTrade               Opcode = 0x010d
@@ -97,6 +98,15 @@ const (
 	CMSGSetTradeGold              Opcode = 0x0112
 	SMSGTradeStatus               Opcode = 0x0113
 	SMSGTradeStatusExtended       Opcode = 0x0114
+	CMSGLoot                      Opcode = 0x0150
+	CMSGLootMoney                 Opcode = 0x0151
+	CMSGLootRelease               Opcode = 0x0152
+	SMSGLootResponse              Opcode = 0x0153
+	SMSGLootReleaseResponse       Opcode = 0x0154
+	SMSGLootRemoved               Opcode = 0x0155
+	SMSGLootMoneyNotify           Opcode = 0x0156
+	SMSGLootItemNotify            Opcode = 0x0157
+	SMSGLootClearMoney            Opcode = 0x0158
 	CMSGPetitionShowlist          Opcode = 0x01ad
 	SMSGPetitionShowlist          Opcode = 0x01ae
 	CMSGPetitionBuy               Opcode = 0x01af
@@ -383,6 +393,7 @@ var opcodeNames = map[Opcode]string{
 	SMSGQuestQueryResponse:        "SMSG_QUEST_QUERY_RESPONSE",
 	CMSGGameObjectQuery:           "CMSG_GAMEOBJECT_QUERY",
 	CMSGGameObjectUse:             "CMSG_GAMEOBJ_USE",
+	CMSGAutostoreLootItem:         "CMSG_AUTOSTORE_LOOT_ITEM",
 	CMSGInitiateTrade:             "CMSG_INITIATE_TRADE",
 	CMSGBeginTrade:                "CMSG_BEGIN_TRADE",
 	CMSGAcceptTrade:               "CMSG_ACCEPT_TRADE",
@@ -393,6 +404,15 @@ var opcodeNames = map[Opcode]string{
 	CMSGSetTradeGold:              "CMSG_SET_TRADE_GOLD",
 	SMSGTradeStatus:               "SMSG_TRADE_STATUS",
 	SMSGTradeStatusExtended:       "SMSG_TRADE_STATUS_EXTENDED",
+	CMSGLoot:                      "CMSG_LOOT",
+	CMSGLootMoney:                 "CMSG_LOOT_MONEY",
+	CMSGLootRelease:               "CMSG_LOOT_RELEASE",
+	SMSGLootResponse:              "SMSG_LOOT_RESPONSE",
+	SMSGLootReleaseResponse:       "SMSG_LOOT_RELEASE_RESPONSE",
+	SMSGLootRemoved:               "SMSG_LOOT_REMOVED",
+	SMSGLootMoneyNotify:           "SMSG_LOOT_MONEY_NOTIFY",
+	SMSGLootItemNotify:            "SMSG_LOOT_ITEM_NOTIFY",
+	SMSGLootClearMoney:            "SMSG_LOOT_CLEAR_MONEY",
 	CMSGPetitionShowlist:          "CMSG_PETITION_SHOWLIST",
 	SMSGPetitionShowlist:          "SMSG_PETITION_SHOWLIST",
 	CMSGPetitionBuy:               "CMSG_PETITION_BUY",

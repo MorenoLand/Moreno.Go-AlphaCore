@@ -104,6 +104,12 @@ func (s *WorldServer) gameObjectUse(active realm.Character, data []byte) ([][]by
 	if dx*dx+dy*dy+dz*dz > distance*distance {
 		return nil, nil
 	}
+	if template.Type == 3 || template.Type == gameObjectTypeFishingNode {
+		state.flags |= gameObjectFlagInUse
+		state.state = 0
+		s.setGameObjectState(guid, state)
+		return s.sendLoot(active, guid, lootGameObjectSource, template.Entry, template, active.Zone)
+	}
 	if template.Type == gameObjectTypeDoor || template.Type == gameObjectTypeButton {
 		now := time.Now()
 		if now.Before(state.cooldown) {

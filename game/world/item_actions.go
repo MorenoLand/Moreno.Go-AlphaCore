@@ -75,6 +75,9 @@ func (s *WorldServer) openItem(active realm.Character, data []byte) ([][]byte, e
 		}
 	}
 	if item.Flags&itemDynWrapped == 0 {
+		if template.Flags&4 != 0 {
+			return s.sendLoot(active, uint64(item.GUID)|0x4000000000000000, lootItemSource, item.ItemTemplate, worlddb.GameObjectTemplate{}, 0)
+		}
 		return nil, nil
 	}
 	gift, found, err := s.Characters.GiftByItemGUID(item.GUID)

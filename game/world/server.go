@@ -39,6 +39,9 @@ type WorldServer struct {
 	gameObjects       map[uint64]gameObjectState
 	tradeMu           sync.Mutex
 	trades            map[int64]*tradeState
+	lootMu            sync.Mutex
+	loots             map[uint64]*lootState
+	lootSelections    map[int64]uint64
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -661,6 +664,26 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.wrapItem(*active, message.Data)
+		case packet.CMSGLoot:
+			if active == nil {
+				return
+			}
+			responses, err = s.lootRequest(*active, message.Data)
+		case packet.CMSGLootMoney:
+			if active == nil {
+				return
+			}
+			responses, err = s.lootMoney(active)
+		case packet.CMSGLootRelease:
+			if active == nil {
+				return
+			}
+			responses, err = s.lootRelease(*active, message.Data)
+		case packet.CMSGAutostoreLootItem:
+			if active == nil {
+				return
+			}
+			responses, err = s.lootItem(*active, message.Data)
 		case packet.CMSGReadItem:
 			if active == nil {
 				return

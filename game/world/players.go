@@ -52,6 +52,12 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.standState, guid)
 	delete(s.players.weaponMode, guid)
 	delete(s.players.combatTarget, guid)
+	s.lootMu.Lock()
+	delete(s.lootSelections, guid)
+	for _, loot := range s.loots {
+		delete(loot.active, guid)
+	}
+	s.lootMu.Unlock()
 	delete(s.players.connections, guid)
 	s.players.mu.Unlock()
 }
