@@ -184,6 +184,46 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.friendDelete(*active, message.Data, true)
+		case packet.CMSGPlayedTime:
+			if active == nil {
+				return
+			}
+			response, err = s.playedTime(*active)
+		case packet.CMSGSetActionButton:
+			if active == nil {
+				return
+			}
+			err = s.setActionButton(*active, message.Data)
+		case packet.CMSGNewSpellSlot:
+			if active == nil {
+				return
+			}
+			err = s.newSpellSlot(*active, message.Data)
+		case packet.MSGLookingForGroup:
+			if active == nil {
+				return
+			}
+			response, err = s.lookingForGroup(*active)
+		case packet.CMSGSetLookingForGroup:
+			if active == nil {
+				return
+			}
+			s.setLookingForGroup(*active, message.Data)
+		case packet.MSGRandomRoll:
+			if active == nil {
+				return
+			}
+			response, err = s.randomRoll(*active, message.Data)
+		case packet.CMSGSetSelection:
+			if active == nil {
+				return
+			}
+			s.setSelection(*active, message.Data)
+		case packet.CMSGSetTarget:
+			if active == nil {
+				return
+			}
+			s.setTarget(*active, message.Data)
 		case packet.CMSGMessageChat:
 			if active == nil {
 				return

@@ -189,6 +189,21 @@ func (s *Store) AddButton(owner, index, action int64) error {
 	return err
 }
 
+func (s *Store) SetButton(owner, index, action int64) error {
+	if _, err := s.db.Exec(`DELETE FROM character_buttons WHERE owner = ? AND "index" = ?`, owner, index); err != nil {
+		return err
+	}
+	if action == 0 {
+		return nil
+	}
+	return s.AddButton(owner, index, action)
+}
+
+func (s *Store) SetSpellButton(owner, spell, index int64) error {
+	_, err := s.db.Exec(`INSERT INTO character_spell_book (owner, "index", spell) VALUES (?, ?, ?) ON CONFLICT(owner, spell) DO UPDATE SET "index" = excluded."index"`, owner, index, spell)
+	return err
+}
+
 func (s *Store) Spells(owner int64) ([]Spell, error) {
 	rows, err := s.db.Query(`SELECT spell, active FROM character_spells WHERE guid = ? ORDER BY spell`, owner)
 	if err != nil {

@@ -52,14 +52,23 @@ const (
 	CMSGAddIgnore                 Opcode = 0x006c
 	CMSGDelIgnore                 Opcode = 0x006d
 	SMSGInitializeFactions        Opcode = 0x0115
+	CMSGSetActionButton           Opcode = 0x011b
 	SMSGActionButtons             Opcode = 0x011c
 	SMSGInitialSpells             Opcode = 0x011d
+	CMSGNewSpellSlot              Opcode = 0x0120
+	CMSGSetSelection              Opcode = 0x0130
+	CMSGSetTarget                 Opcode = 0x0131
 	SMSGUpdateObject              Opcode = 0x00a9
 	CMSGQueryTime                 Opcode = 0x01bf
 	SMSGQueryTimeResponse         Opcode = 0x01c0
+	CMSGPlayedTime                Opcode = 0x01bd
+	SMSGPlayedTime                Opcode = 0x01be
 	CMSGZoneUpdate                Opcode = 0x01e5
 	CMSGPing                      Opcode = 0x01cd
 	SMSGPong                      Opcode = 0x01ce
+	MSGRandomRoll                 Opcode = 0x01ec
+	MSGLookingForGroup            Opcode = 0x01f0
+	CMSGSetLookingForGroup        Opcode = 0x01f1
 	CMSGAuthSession               Opcode = 0x01de
 	SMSGAuthResponse              Opcode = 0x01df
 	SMSGCompressedUpdateObject    Opcode = 0x01e7
@@ -110,11 +119,20 @@ var opcodeNames = map[Opcode]string{
 	CMSGAddIgnore:                 "CMSG_ADD_IGNORE",
 	CMSGDelIgnore:                 "CMSG_DEL_IGNORE",
 	SMSGInitializeFactions:        "SMSG_INITIALIZE_FACTIONS",
+	CMSGSetActionButton:           "CMSG_SET_ACTION_BUTTON",
 	SMSGActionButtons:             "SMSG_ACTION_BUTTONS",
 	SMSGInitialSpells:             "SMSG_INITIAL_SPELLS",
+	CMSGNewSpellSlot:              "CMSG_NEW_SPELL_SLOT",
+	CMSGSetSelection:              "CMSG_SET_SELECTION",
+	CMSGSetTarget:                 "CMSG_SET_TARGET",
 	SMSGUpdateObject:              "SMSG_UPDATE_OBJECT",
 	CMSGPing:                      "CMSG_PING",
 	SMSGPong:                      "SMSG_PONG",
+	CMSGPlayedTime:                "CMSG_PLAYED_TIME",
+	SMSGPlayedTime:                "SMSG_PLAYED_TIME",
+	MSGRandomRoll:                 "MSG_RANDOM_ROLL",
+	MSGLookingForGroup:            "MSG_LOOKING_FOR_GROUP",
+	CMSGSetLookingForGroup:        "CMSG_SET_LOOKING_FOR_GROUP",
 	CMSGAuthSession:               "CMSG_AUTH_SESSION",
 	SMSGAuthResponse:              "SMSG_AUTH_RESPONSE",
 	SMSGCompressedUpdateObject:    "SMSG_COMPRESSED_UPDATE_OBJECT",
