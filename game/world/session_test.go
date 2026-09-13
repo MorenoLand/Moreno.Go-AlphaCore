@@ -79,6 +79,8 @@ func TestWorldSessionLifecycle(t *testing.T) {
 			t.Fatalf("initial[%d]=%#v err=%v", index, response, err)
 		}
 	}
+	message, _ = packet.Encode(packet.Opcode(0x7fff), nil)
+	client.Write(message)
 	pingData := []byte{1, 2, 3, 4}
 	message, _ = packet.Encode(packet.CMSGPing, pingData)
 	client.Write(message)

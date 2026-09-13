@@ -202,7 +202,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 			}
 		default:
 			if active == nil || !packet.IsMovement(message.Opcode) || len(message.Data) < 48 {
-				return
+				continue
 			}
 			active.PositionX = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[24:28]))
 			active.PositionY = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[28:32]))
