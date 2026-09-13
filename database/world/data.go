@@ -20,6 +20,24 @@ type StartingAction struct {
 	Action int64
 }
 
+type AreaTriggerTeleport struct {
+	ID, RequiredLevel, RequiredItem, RequiredItem2, RequiredQuestDone, TargetMap int64
+	Name                                                                         string
+	TargetPositionX, TargetPositionY, TargetPositionZ, TargetOrientation         float32
+}
+
+func (s *Store) AreaTriggerTeleport(id int64) (AreaTriggerTeleport, bool, error) {
+	var teleport AreaTriggerTeleport
+	err := s.db.QueryRow(`SELECT id, COALESCE(name, ''), required_level, required_item, required_item2, required_quest_done, target_map, target_position_x, target_position_y, target_position_z, target_orientation FROM areatrigger_teleport WHERE id = ?`, id).Scan(&teleport.ID, &teleport.Name, &teleport.RequiredLevel, &teleport.RequiredItem, &teleport.RequiredItem2, &teleport.RequiredQuestDone, &teleport.TargetMap, &teleport.TargetPositionX, &teleport.TargetPositionY, &teleport.TargetPositionZ, &teleport.TargetOrientation)
+	if err == sql.ErrNoRows {
+		return AreaTriggerTeleport{}, false, nil
+	}
+	if err != nil {
+		return AreaTriggerTeleport{}, false, fmt.Errorf("query area trigger teleport: %w", err)
+	}
+	return teleport, true, nil
+}
+
 func (s *Store) ClassStats(class, level uint8) (ClassStats, bool, error) {
 	var stats ClassStats
 	err := s.db.QueryRow(`SELECT basehp, basemana FROM player_classlevelstats WHERE "class" = ? AND level = ?`, class, level).Scan(&stats.BaseHealth, &stats.BaseMana)

@@ -128,6 +128,26 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.initialPlayerPackets(*active)
+		case packet.MSGMoveTeleportAck:
+			if active == nil {
+				return
+			}
+			response, err = s.initialPlayerPackets(*active)
+		case packet.CMSGWorldTeleport:
+			if active == nil {
+				return
+			}
+			response, err = s.worldTeleport(active, message.Data, account.GMLevel)
+		case packet.MSGMoveTeleportCheat:
+			if active == nil {
+				return
+			}
+			response, err = s.worldTeleport(active, message.Data, account.GMLevel)
+		case packet.CMSGAreaTrigger:
+			if active == nil {
+				return
+			}
+			response, err = s.areaTrigger(active, message.Data)
 		case packet.CMSGNameQuery:
 			if active == nil {
 				return

@@ -477,6 +477,19 @@ CREATE TABLE IF NOT EXISTS spawns_gameobjects (
     spawn_flags INTEGER NOT NULL DEFAULT 0,
     ignored INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS areatrigger_teleport (
+    id INTEGER PRIMARY KEY NOT NULL,
+    name TEXT,
+    required_level INTEGER NOT NULL DEFAULT 0,
+    required_item INTEGER NOT NULL DEFAULT 0,
+    required_item2 INTEGER NOT NULL DEFAULT 0,
+    required_quest_done INTEGER NOT NULL DEFAULT 0,
+    target_map INTEGER NOT NULL DEFAULT 0,
+    target_position_x REAL NOT NULL DEFAULT 0,
+    target_position_y REAL NOT NULL DEFAULT 0,
+    target_position_z REAL NOT NULL DEFAULT 0,
+    target_orientation REAL NOT NULL DEFAULT 0
+);
 `
 
 const dbcSchema = commonSchema + `
@@ -493,6 +506,29 @@ CREATE TABLE IF NOT EXISTS AreaTable (
     AreaNumber INTEGER NOT NULL DEFAULT 0,
     ContinentID INTEGER NOT NULL DEFAULT 0,
     ParentAreaNum INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS AreaTrigger (
+    ID INTEGER PRIMARY KEY NOT NULL,
+    ContinentID INTEGER NOT NULL DEFAULT 0,
+    X REAL NOT NULL DEFAULT 0,
+    Y REAL NOT NULL DEFAULT 0,
+    Z REAL NOT NULL DEFAULT 0,
+    Radius REAL NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS Map (
+    ID INTEGER PRIMARY KEY NOT NULL,
+    Directory TEXT,
+    PVP INTEGER NOT NULL DEFAULT 0,
+    IsInMap INTEGER NOT NULL DEFAULT 0,
+    MapName_enUS TEXT,
+    MapName_enGB TEXT,
+    MapName_koKR TEXT,
+    MapName_frFR TEXT,
+    MapName_deDE TEXT,
+    MapName_enCN TEXT,
+    MapName_zhCN TEXT,
+    MapName_enTW TEXT,
+    MapName_Mask INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS CreatureDisplayInfo (
     ID INTEGER PRIMARY KEY NOT NULL,

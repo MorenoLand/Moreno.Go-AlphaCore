@@ -23,14 +23,19 @@ type Area struct {
 	ParentAreaNum int64
 }
 
+type AreaTrigger struct {
+	ID, ContinentID int64
+	X, Y, Z, Radius float32
+}
+
 type EmoteText struct {
 	ID      int64
 	EmoteID int64
 }
 
 type CreatureDisplayInfo struct {
-	ID, ModelID     int64
-	ModelScale      float32
+	ID, ModelID int64
+	ModelScale  float32
 }
 
 type Store struct{ db *sql.DB }
@@ -71,6 +76,27 @@ func (s *Store) AreaByAreaNumber(number, mapID int64) (Area, bool, error) {
 		return Area{}, false, fmt.Errorf("query area by number: %w", err)
 	}
 	return area, true, nil
+}
+
+func (s *Store) AreaTriggerByID(id int64) (AreaTrigger, bool, error) {
+	var trigger AreaTrigger
+	err := s.db.QueryRow(`SELECT ID, ContinentID, X, Y, Z, Radius FROM AreaTrigger WHERE ID = ?`, id).Scan(&trigger.ID, &trigger.ContinentID, &trigger.X, &trigger.Y, &trigger.Z, &trigger.Radius)
+	if err == sql.ErrNoRows {
+		return AreaTrigger{}, false, nil
+	}
+	if err != nil {
+		return AreaTrigger{}, false, fmt.Errorf("query area trigger: %w", err)
+	}
+	return trigger, true, nil
+}
+
+func (s *Store) MapExists(id int64) (bool, error) {
+	var value int
+	err := s.db.QueryRow(`SELECT 1 FROM Map WHERE ID = ?`, id).Scan(&value)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func (s *Store) EmoteText(id int64) (EmoteText, bool, error) {

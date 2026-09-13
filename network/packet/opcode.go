@@ -3,6 +3,8 @@ package packet
 type Opcode uint32
 
 const (
+	CMSGWorldTeleport             Opcode = 0x0008
+	CMSGZoneMap                   Opcode = 0x000a
 	CMSGAuthSRP6Begin             Opcode = 0x0033
 	CMSGAuthSRP6Proof             Opcode = 0x0034
 	CMSGAuthSRP6Recode            Opcode = 0x0035
@@ -188,6 +190,7 @@ const (
 	SMSGPlayerMacro               Opcode = 0x01d5
 	MSGMinimapPing                Opcode = 0x01c6
 	CMSGZoneUpdate                Opcode = 0x01e5
+	CMSGAreaTrigger               Opcode = 0x00b4
 	CMSGPing                      Opcode = 0x01cd
 	SMSGPong                      Opcode = 0x01ce
 	MSGRandomRoll                 Opcode = 0x01ec
@@ -199,6 +202,8 @@ const (
 )
 
 var opcodeNames = map[Opcode]string{
+	CMSGWorldTeleport:             "CMSG_WORLD_TELEPORT",
+	CMSGZoneMap:                   "CMSG_ZONE_MAP",
 	CMSGAuthSRP6Begin:             "CMSG_AUTH_SRP6_BEGIN",
 	CMSGAuthSRP6Proof:             "CMSG_AUTH_SRP6_PROOF",
 	CMSGAuthSRP6Recode:            "CMSG_AUTH_SRP6_RECODE",
@@ -248,6 +253,7 @@ var opcodeNames = map[Opcode]string{
 	MSGMoveSetFacing:              "MSG_MOVE_SET_FACING",
 	MSGMoveSetPitch:               "MSG_MOVE_SET_PITCH",
 	MSGMoveWorldportAck:           "MSG_MOVE_WORLDPORT_ACK",
+	CMSGAreaTrigger:               "CMSG_AREATRIGGER",
 	SMSGForceSpeedChange:          "SMSG_FORCE_SPEED_CHANGE",
 	CMSGForceSpeedChangeAck:       "CMSG_FORCE_SPEED_CHANGE_ACK",
 	SMSGForceSwimSpeedChange:      "SMSG_FORCE_SWIM_SPEED_CHANGE",
