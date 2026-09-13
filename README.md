@@ -16,7 +16,7 @@
 This repository is the Go port of [The Alpha Project's Alpha Core](https://github.com/The-Alpha-Project/alpha-core). The upstream Python source remains the behavioral reference for this port.
 
 > [!NOTE]
-> The Go port is being developed in focused subsystems. The current slice provides SQLite workspace bootstrap, packet primitives, and SRP6 primitives; client-facing gameplay remains in progress.
+> The Go port is being developed in focused subsystems. The current slice provides SQLite data import, packet/SRP6 primitives, login, realm, proxy, world authentication, and character create/list/delete; broader gameplay remains in progress.
 
 - [Database Tool](https://db.thealphaproject.eu/)
 - [Original AlphaCore Discord](https://discord.gg/RzBMAKU)
@@ -35,6 +35,12 @@ go run . --work=bin/
 Bare `go run .` starts the translated listeners. Use `--bootstrap` when you only want to create or import the SQLite files and exit.
 
 This creates `auth.sqlite3`, `realm.sqlite3`, `world.sqlite3`, and `dbc.sqlite3` under the selected work directory. The upstream SQL assets remain under `etc/databases` for later schema and data porting.
+
+Create a local account with the legacy authentication path:
+
+```bash
+go run . --bootstrap --work=bin/ --create-account=PLAYER --password=PASSWORD
+```
 
 To load those retained SQL dumps into SQLite, run:
 

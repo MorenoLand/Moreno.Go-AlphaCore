@@ -92,6 +92,18 @@ const worldSchema = commonSchema + `
 CREATE TABLE IF NOT EXISTS applied_updates (
     id TEXT PRIMARY KEY NOT NULL DEFAULT '000000000'
 );
+CREATE TABLE IF NOT EXISTS playercreateinfo (
+    id INTEGER NOT NULL,
+    race INTEGER NOT NULL DEFAULT 0,
+    "class" INTEGER NOT NULL DEFAULT 0,
+    map INTEGER NOT NULL DEFAULT 0,
+    zone INTEGER NOT NULL DEFAULT 0,
+    position_x REAL NOT NULL DEFAULT 0,
+    position_y REAL NOT NULL DEFAULT 0,
+    position_z REAL NOT NULL DEFAULT 0,
+    orientation REAL NOT NULL DEFAULT 0,
+    PRIMARY KEY (race, "class", id)
+);
 `
 
 const dbcSchema = commonSchema
