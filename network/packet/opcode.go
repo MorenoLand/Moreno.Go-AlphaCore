@@ -205,6 +205,14 @@ const (
 	CMSGOpenItem                  Opcode = 0x00ac
 	CMSGInspect                   Opcode = 0x0107
 	SMSGInspect                   Opcode = 0x0108
+	CMSGSetDeathBindPoint         Opcode = 0x0147
+	SMSGBindPointUpdate           Opcode = 0x0148
+	CMSGGetDeathBindZone          Opcode = 0x0149
+	SMSGBindZoneReply             Opcode = 0x014a
+	SMSGPlayerBound               Opcode = 0x014b
+	CMSGRepopRequest              Opcode = 0x014d
+	CMSGResurrectResponse         Opcode = 0x014f
+	CMSGReclaimCorpse             Opcode = 0x01c3
 	CMSGReadItem                  Opcode = 0x00ad
 	SMSGReadItemOK                Opcode = 0x00ae
 	SMSGReadItemFailed            Opcode = 0x00af
@@ -439,6 +447,14 @@ var opcodeNames = map[Opcode]string{
 	CMSGOpenItem:                  "CMSG_OPEN_ITEM",
 	CMSGInspect:                   "CMSG_INSPECT",
 	SMSGInspect:                   "SMSG_INSPECT",
+	CMSGSetDeathBindPoint:         "CMSG_SETDEATHBINDPOINT",
+	SMSGBindPointUpdate:           "SMSG_BINDPOINTUPDATE",
+	CMSGGetDeathBindZone:          "CMSG_GETDEATHBINDZONE",
+	SMSGBindZoneReply:             "SMSG_BINDZONEREPLY",
+	SMSGPlayerBound:               "SMSG_PLAYERBOUND",
+	CMSGRepopRequest:              "CMSG_REPOP_REQUEST",
+	CMSGResurrectResponse:         "CMSG_RESURRECT_RESPONSE",
+	CMSGReclaimCorpse:             "CMSG_RECLAIM_CORPSE",
 	CMSGReadItem:                  "CMSG_READ_ITEM",
 	SMSGReadItemOK:                "SMSG_READ_ITEM_OK",
 	SMSGReadItemFailed:            "SMSG_READ_ITEM_FAILED",

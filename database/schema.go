@@ -114,6 +114,17 @@ CREATE TABLE IF NOT EXISTS tickets (
     text_body TEXT NOT NULL,
     submit_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS character_deathbind (
+    deathbind_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_guid INTEGER NOT NULL UNIQUE,
+    creature_binder_guid INTEGER NOT NULL DEFAULT 0,
+    deathbind_map INTEGER NOT NULL DEFAULT 0,
+    deathbind_zone INTEGER NOT NULL DEFAULT 0,
+    deathbind_position_x REAL NOT NULL DEFAULT 0,
+    deathbind_position_y REAL NOT NULL DEFAULT 0,
+    deathbind_position_z REAL NOT NULL DEFAULT 0,
+    FOREIGN KEY (player_guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
 CREATE TABLE IF NOT EXISTS character_inventory (
     guid INTEGER PRIMARY KEY AUTOINCREMENT,
     owner INTEGER NOT NULL DEFAULT 0,

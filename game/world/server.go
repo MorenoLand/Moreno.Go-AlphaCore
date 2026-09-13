@@ -158,6 +158,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.bankerActivate(*active, message.Data)
+		case packet.CMSGBinderActivate:
+			if active == nil {
+				return
+			}
+			responses, err = s.binderActivate(*active, message.Data)
 		case packet.MSGTabardVendorActivate:
 			if active == nil {
 				return
@@ -252,6 +257,21 @@ func (s *WorldServer) handle(connection net.Conn) {
 			if active == nil {
 				return
 			}
+		case packet.CMSGSetDeathBindPoint:
+			if active == nil {
+				return
+			}
+			response, err = s.setDeathBindPoint(*active)
+		case packet.CMSGGetDeathBindZone:
+			if active == nil {
+				return
+			}
+			response, err = s.deathBindZone(*active)
+		case packet.CMSGRepopRequest:
+			if active == nil {
+				return
+			}
+			response, err = s.repop(active)
 		case packet.CMSGGameObjectQuery:
 			if active == nil {
 				return
