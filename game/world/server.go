@@ -9,6 +9,7 @@ import (
 	"math"
 	"net"
 	"strings"
+	"time"
 
 	"Moreno.AlphaCore/database/auth"
 	"Moreno.AlphaCore/database/dbc"
@@ -63,6 +64,13 @@ func (s *WorldServer) accept(ctx context.Context, listener net.Listener) {
 
 func (s *WorldServer) handle(connection net.Conn) {
 	defer connection.Close()
+	var active *realm.Character
+	logoutPending := false
+	defer func() {
+		if active != nil {
+			s.Characters.SetOnline(active.GUID, active.AccountID, active.RealmID, false)
+		}
+	}()
 	challenge, err := packet.Encode(packet.SMSGAuthChallenge, s.ServerSeed)
 	if err != nil || sockets.WriteAll(connection, challenge) != nil {
 		return
@@ -81,6 +89,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 		if err != nil {
 			return
 		}
+		response = nil
 		switch message.Opcode {
 		case packet.CMSGCharEnum:
 			response, err = s.characterList(account.ID)
@@ -90,15 +99,59 @@ func (s *WorldServer) handle(connection net.Conn) {
 			response, err = s.characterDelete(account.ID, message.Data)
 		case packet.CMSGPlayerLogin:
 			response, err = s.playerLogin(account.ID, message.Data)
+			if err == nil && len(message.Data) >= 8 {
+				character, found, queryErr := s.Characters.Character(int64(binary.LittleEndian.Uint64(message.Data)), account.ID, 1)
+				if queryErr != nil {
+					err = queryErr
+				} else if found {
+					active = &character
+					err = s.Characters.SetOnline(character.GUID, account.ID, 1, true)
+				}
+			}
 		case packet.CMSGPing:
-			if len(message.Data) < 4 {
+			if active == nil || len(message.Data) < 4 {
 				return
 			}
 			response, err = packet.Encode(packet.SMSGPong, message.Data)
+		case packet.CMSGQueryTime:
+			data := make([]byte, 4)
+			binary.LittleEndian.PutUint32(data, uint32(time.Now().Unix()))
+			response, err = packet.Encode(packet.SMSGQueryTimeResponse, data)
+		case packet.CMSGLogoutRequest:
+			if active == nil {
+				return
+			}
+			logoutPending = true
+			response, err = packet.Encode(packet.SMSGLogoutResponse, []byte{1})
+		case packet.CMSGLogoutCancel:
+			if active == nil || !logoutPending {
+				return
+			}
+			logoutPending = false
+			response, err = packet.Encode(packet.SMSGLogoutCancelAck, nil)
+		case packet.CMSGPlayerLogout:
+			if active == nil {
+				return
+			}
+			response, err = packet.Encode(packet.SMSGLogoutComplete, nil)
+			if err == nil {
+				err = s.Characters.SetOnline(active.GUID, active.AccountID, active.RealmID, false)
+				active = nil
+			}
 		default:
+			if active == nil || !packet.IsMovement(message.Opcode) || len(message.Data) < 48 {
+				return
+			}
+			active.PositionX = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[24:28]))
+			active.PositionY = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[28:32]))
+			active.PositionZ = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[32:36]))
+			active.Orientation = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[36:40]))
+			err = s.Characters.UpdatePosition(active.GUID, active.AccountID, active.RealmID, active.PositionX, active.PositionY, active.PositionZ, active.Orientation)
+		}
+		if err != nil {
 			return
 		}
-		if err != nil || sockets.WriteAll(connection, response) != nil {
+		if response != nil && sockets.WriteAll(connection, response) != nil {
 			return
 		}
 	}

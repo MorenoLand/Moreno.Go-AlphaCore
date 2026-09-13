@@ -20,7 +20,13 @@ const (
 	SMSGAuthChallenge          Opcode = 0x01dd
 	CMSGPlayerLogout           Opcode = 0x004a
 	CMSGLogoutRequest          Opcode = 0x004b
+	SMSGLogoutResponse         Opcode = 0x004c
+	SMSGLogoutComplete         Opcode = 0x004d
+	CMSGLogoutCancel           Opcode = 0x004e
+	SMSGLogoutCancelAck        Opcode = 0x004f
 	SMSGUpdateObject           Opcode = 0x00a9
+	CMSGQueryTime              Opcode = 0x01bf
+	SMSGQueryTimeResponse      Opcode = 0x01c0
 	CMSGPing                   Opcode = 0x01cd
 	SMSGPong                   Opcode = 0x01ce
 	CMSGAuthSession            Opcode = 0x01de
@@ -53,6 +59,8 @@ var opcodeNames = map[Opcode]string{
 	SMSGAuthResponse:           "SMSG_AUTH_RESPONSE",
 	SMSGCompressedUpdateObject: "SMSG_COMPRESSED_UPDATE_OBJECT",
 }
+
+func IsMovement(opcode Opcode) bool { return opcode >= 0x00b5 && opcode <= 0x00e9 }
 
 func (o Opcode) String() string {
 	if name, ok := opcodeNames[o]; ok {

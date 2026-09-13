@@ -1,0 +1,115 @@
+package world
+
+import (
+	"context"
+	"encoding/binary"
+	"math"
+	"net"
+	"testing"
+
+	"Moreno.AlphaCore/database"
+	"Moreno.AlphaCore/database/auth"
+	"Moreno.AlphaCore/database/dbc"
+	"Moreno.AlphaCore/database/realm"
+	worlddb "Moreno.AlphaCore/database/world"
+	"Moreno.AlphaCore/network/packet"
+	"Moreno.AlphaCore/network/sockets"
+)
+
+func TestWorldSessionLifecycle(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	accounts := auth.NewStore(databases)
+	if err := accounts.CreateAccount("PLAYER", "PASSWORD", "", 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO ChrRaces (ID, FactionID, MaleDisplayId, FemaleDisplayId, CreatureType) VALUES (1, 1, 49, 50, 7)`); err != nil {
+		t.Fatal(err)
+	}
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Testone", Race: 1, Class: 1, Level: 1, PositionX: 1, PositionY: 2, PositionZ: 3, Orientation: 4, Health: 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Accounts: accounts, Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases), SupportedClient: 3368, ServerSeed: []byte{1, 2, 3, 4}}
+	client, connection := net.Pipe()
+	done := make(chan struct{})
+	go func() {
+		server.handle(connection)
+		close(done)
+	}()
+	defer client.Close()
+	stream := client
+	challenge, err := sockets.ReadPacket(stream)
+	if err != nil || challenge.Opcode != packet.SMSGAuthChallenge {
+		t.Fatalf("challenge=%#v err=%v", challenge, err)
+	}
+	authData := make([]byte, 8)
+	binary.LittleEndian.PutUint32(authData, 3368)
+	authData = append(authData, []byte("PLAYER\x00PASSWORD\x00")...)
+	message, _ := packet.Encode(packet.CMSGAuthSession, authData)
+	if _, err := client.Write(message); err != nil {
+		t.Fatal(err)
+	}
+	response, err := sockets.ReadPacket(stream)
+	if err != nil || response.Data[0] != byte(packet.AuthOK) {
+		t.Fatalf("auth=%#v err=%v", response, err)
+	}
+	loginData := make([]byte, 8)
+	binary.LittleEndian.PutUint64(loginData, uint64(guid))
+	message, _ = packet.Encode(packet.CMSGPlayerLogin, loginData)
+	client.Write(message)
+	for index, expected := range []packet.Opcode{packet.SMSGLoginSetTimeSpeed, packet.SMSGNewWorld, packet.SMSGCompressedUpdateObject} {
+		response, err = sockets.ReadPacket(stream)
+		if err != nil || response.Opcode != expected {
+			t.Fatalf("login[%d]=%#v err=%v", index, response, err)
+		}
+	}
+	pingData := []byte{1, 2, 3, 4}
+	message, _ = packet.Encode(packet.CMSGPing, pingData)
+	client.Write(message)
+	response, err = sockets.ReadPacket(stream)
+	if err != nil || response.Opcode != packet.SMSGPong {
+		t.Fatalf("pong=%#v err=%v", response, err)
+	}
+	message, _ = packet.Encode(packet.CMSGQueryTime, nil)
+	client.Write(message)
+	response, err = sockets.ReadPacket(stream)
+	if err != nil || response.Opcode != packet.SMSGQueryTimeResponse || len(response.Data) != 4 {
+		t.Fatalf("time=%#v err=%v", response, err)
+	}
+	moveData := make([]byte, 48)
+	binary.LittleEndian.PutUint32(moveData[24:], math.Float32bits(10))
+	binary.LittleEndian.PutUint32(moveData[28:], math.Float32bits(20))
+	binary.LittleEndian.PutUint32(moveData[32:], math.Float32bits(30))
+	binary.LittleEndian.PutUint32(moveData[36:], math.Float32bits(40))
+	message, _ = packet.Encode(packet.Opcode(0x00b5), moveData)
+	client.Write(message)
+	message, _ = packet.Encode(packet.CMSGLogoutRequest, nil)
+	client.Write(message)
+	response, err = sockets.ReadPacket(stream)
+	if err != nil || response.Opcode != packet.SMSGLogoutResponse || response.Data[0] != 1 {
+		t.Fatalf("logout request=%#v err=%v", response, err)
+	}
+	message, _ = packet.Encode(packet.CMSGLogoutCancel, nil)
+	client.Write(message)
+	response, err = sockets.ReadPacket(stream)
+	if err != nil || response.Opcode != packet.SMSGLogoutCancelAck {
+		t.Fatalf("logout cancel=%#v err=%v", response, err)
+	}
+	message, _ = packet.Encode(packet.CMSGPlayerLogout, nil)
+	client.Write(message)
+	response, err = sockets.ReadPacket(stream)
+	if err != nil || response.Opcode != packet.SMSGLogoutComplete {
+		t.Fatalf("logout=%#v err=%v", response, err)
+	}
+	client.Close()
+	<-done
+	stored, err := server.Characters.Characters(1, 1)
+	if err != nil || len(stored) != 1 || stored[0].Online != 0 || stored[0].PositionX != 10 || stored[0].PositionY != 20 || stored[0].PositionZ != 30 || stored[0].Orientation != 40 {
+		t.Fatalf("stored character=%#v err=%v", stored, err)
+	}
+}

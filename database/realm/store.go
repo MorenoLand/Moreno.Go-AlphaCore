@@ -133,3 +133,17 @@ func (s *Store) Delete(guid, accountID, realmID int64) (bool, error) {
 	count, err := result.RowsAffected()
 	return count == 1, err
 }
+
+func (s *Store) SetOnline(guid, accountID, realmID int64, online bool) error {
+	value := 0
+	if online {
+		value = 1
+	}
+	_, err := s.db.Exec(`UPDATE characters SET online = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, value, guid, accountID, realmID)
+	return err
+}
+
+func (s *Store) UpdatePosition(guid, accountID, realmID int64, x, y, z, o float32) error {
+	_, err := s.db.Exec(`UPDATE characters SET position_x = ?, position_y = ?, position_z = ?, orientation = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, x, y, z, o, guid, accountID, realmID)
+	return err
+}
