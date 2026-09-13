@@ -110,6 +110,9 @@ func (s *WorldServer) gameObjectUse(active realm.Character, data []byte) ([][]by
 		s.setGameObjectState(guid, state)
 		return s.sendLoot(active, guid, lootGameObjectSource, template.Entry, template, active.Zone)
 	}
+	if template.Type == 2 || template.Type == 10 {
+		return s.questGiverHello(active, data)
+	}
 	if template.Type == gameObjectTypeDoor || template.Type == gameObjectTypeButton {
 		now := time.Now()
 		if now.Before(state.cooldown) {

@@ -45,16 +45,16 @@ func (s *WorldServer) questGiverStatus(active realm.Character, data []byte) ([]b
 		return nil, nil
 	}
 	guid := binary.LittleEndian.Uint64(data)
-	_, creature, found, err := s.questGiverAt(active, guid)
+	entry, gameObject, found, err := s.questGiverEntry(active, guid)
 	if err != nil || !found {
 		return nil, err
 	}
 	status := questGiverNone
-	starters, err := s.WorldData.CreatureQuestRelations(creature.Entry, false)
+	starters, err := s.questRelations(entry, gameObject, false)
 	if err != nil {
 		return nil, err
 	}
-	finishers, err := s.WorldData.CreatureQuestRelations(creature.Entry, true)
+	finishers, err := s.questRelations(entry, gameObject, true)
 	if err != nil {
 		return nil, err
 	}
@@ -85,15 +85,15 @@ func (s *WorldServer) questGiverHello(active realm.Character, data []byte) ([][]
 		return nil, nil
 	}
 	guid := binary.LittleEndian.Uint64(data)
-	_, creature, found, err := s.questGiverAt(active, guid)
+	entry, gameObject, found, err := s.questGiverEntry(active, guid)
 	if err != nil || !found {
 		return nil, err
 	}
-	starters, err := s.WorldData.CreatureQuestRelations(creature.Entry, false)
+	starters, err := s.questRelations(entry, gameObject, false)
 	if err != nil {
 		return nil, err
 	}
-	finishers, err := s.WorldData.CreatureQuestRelations(creature.Entry, true)
+	finishers, err := s.questRelations(entry, gameObject, true)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (s *WorldServer) questGiverHello(active realm.Character, data []byte) ([][]
 		keys = append(keys, key)
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-	greeting, found, err := s.WorldData.QuestGreeting(creature.Entry)
+	greeting, found, err := s.WorldData.QuestGreeting(entry)
 	if err != nil {
 		return nil, err
 	}
@@ -151,15 +151,15 @@ func (s *WorldServer) questGiverQuery(active realm.Character, data []byte) ([][]
 		return nil, nil
 	}
 	guid, questID := binary.LittleEndian.Uint64(data), int64(binary.LittleEndian.Uint32(data[8:]))
-	_, creature, found, err := s.questGiverAt(active, guid)
+	entry, gameObject, found, err := s.questGiverEntry(active, guid)
 	if err != nil || !found {
 		return nil, err
 	}
-	starters, err := s.WorldData.CreatureQuestRelations(creature.Entry, false)
+	starters, err := s.questRelations(entry, gameObject, false)
 	if err != nil {
 		return nil, err
 	}
-	finishers, err := s.WorldData.CreatureQuestRelations(creature.Entry, true)
+	finishers, err := s.questRelations(entry, gameObject, true)
 	if err != nil {
 		return nil, err
 	}

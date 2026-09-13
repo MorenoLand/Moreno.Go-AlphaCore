@@ -19,11 +19,11 @@ func (s *WorldServer) questAccept(active realm.Character, data []byte) ([][]byte
 		return nil, nil
 	}
 	giverGUID, questID := binary.LittleEndian.Uint64(data), int64(binary.LittleEndian.Uint32(data[8:]))
-	_, creature, found, err := s.questGiverAt(active, giverGUID)
+	entry, gameObject, found, err := s.questGiverEntry(active, giverGUID)
 	if err != nil || !found {
 		return nil, err
 	}
-	if !s.questRelated(creature.Entry, questID, false) {
+	if !s.questRelated(entry, questID, gameObject, false) {
 		return nil, nil
 	}
 	quest, found, err := s.WorldData.QuestTemplate(questID)
@@ -51,11 +51,11 @@ func (s *WorldServer) questComplete(active realm.Character, data []byte) ([][]by
 		return nil, nil
 	}
 	giverGUID, questID := binary.LittleEndian.Uint64(data), int64(binary.LittleEndian.Uint32(data[8:]))
-	_, creature, found, err := s.questGiverAt(active, giverGUID)
+	entry, gameObject, found, err := s.questGiverEntry(active, giverGUID)
 	if err != nil || !found {
 		return nil, err
 	}
-	if !s.questRelated(creature.Entry, questID, true) {
+	if !s.questRelated(entry, questID, gameObject, true) {
 		return nil, nil
 	}
 	quest, found, err := s.WorldData.QuestTemplate(questID)
@@ -91,8 +91,8 @@ func (s *WorldServer) questRequestReward(active realm.Character, data []byte) ([
 		return nil, nil
 	}
 	giverGUID, questID := binary.LittleEndian.Uint64(data), int64(binary.LittleEndian.Uint32(data[8:]))
-	_, creature, found, err := s.questGiverAt(active, giverGUID)
-	if err != nil || !found || !s.questRelated(creature.Entry, questID, true) {
+	entry, gameObject, found, err := s.questGiverEntry(active, giverGUID)
+	if err != nil || !found || !s.questRelated(entry, questID, gameObject, true) {
 		return nil, err
 	}
 	quest, found, err := s.WorldData.QuestTemplate(questID)
@@ -133,8 +133,8 @@ func (s *WorldServer) questChooseReward(active *realm.Character, data []byte) ([
 	if err != nil || !found || state.State != questReward || state.Rewarded {
 		return nil, err
 	}
-	_, creature, giverFound, err := s.questGiverAt(*active, giverGUID)
-	if err != nil || !giverFound || !s.questRelated(creature.Entry, questID, true) {
+	entry, gameObject, giverFound, err := s.questGiverEntry(*active, giverGUID)
+	if err != nil || !giverFound || !s.questRelated(entry, questID, gameObject, true) {
 		return nil, err
 	}
 	choices, choiceCounts := questItems(quest.RewChoiceItemIDs[:], quest.RewChoiceItemCounts[:])
@@ -257,8 +257,8 @@ func (s *WorldServer) addQuestReward(active realm.Character, entry, count int64)
 	return err
 }
 
-func (s *WorldServer) questRelated(entry, quest int64, finisher bool) bool {
-	relations, err := s.WorldData.CreatureQuestRelations(entry, finisher)
+func (s *WorldServer) questRelated(entry, quest int64, gameObject, finisher bool) bool {
+	relations, err := s.questRelations(entry, gameObject, finisher)
 	if err != nil {
 		return false
 	}

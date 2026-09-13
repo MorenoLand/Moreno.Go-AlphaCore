@@ -22,6 +22,14 @@ func (s *Store) CreatureQuestRelations(entry int64, finisher bool) ([]QuestRelat
 	return s.questRelations(table, entry)
 }
 
+func (s *Store) GameObjectQuestRelations(entry int64, finisher bool) ([]QuestRelation, error) {
+	table := "gameobject_quest_starter"
+	if finisher {
+		table = "gameobject_quest_finisher"
+	}
+	return s.questRelations(table, entry)
+}
+
 func (s *Store) questRelations(table string, entry int64) ([]QuestRelation, error) {
 	rows, err := s.db.Query(`SELECT entry, quest FROM `+table+` WHERE entry = ? ORDER BY quest`, entry)
 	if err != nil {
