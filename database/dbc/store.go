@@ -125,6 +125,23 @@ func (s *Store) TaxiNodesByMap(mapID int64) ([]TaxiNode, error) {
 	return nodes, rows.Err()
 }
 
+func (s *Store) TaxiNodesAll() ([]TaxiNode, error) {
+	rows, err := s.db.Query(`SELECT ID, ContinentID, X, Y, Z, custom_Team FROM TaxiNodes ORDER BY ID`)
+	if err != nil {
+		return nil, fmt.Errorf("query all taxi nodes: %w", err)
+	}
+	defer rows.Close()
+	nodes := make([]TaxiNode, 0)
+	for rows.Next() {
+		var node TaxiNode
+		if err := rows.Scan(&node.ID, &node.ContinentID, &node.X, &node.Y, &node.Z, &node.Team); err != nil {
+			return nil, fmt.Errorf("scan all taxi node: %w", err)
+		}
+		nodes = append(nodes, node)
+	}
+	return nodes, rows.Err()
+}
+
 func (s *Store) TaxiPath(from, to int64) (TaxiPath, bool, error) {
 	var path TaxiPath
 	err := s.db.QueryRow(`SELECT ID, FromTaxiNode, ToTaxiNode, Cost FROM TaxiPath WHERE FromTaxiNode = ? AND ToTaxiNode = ? LIMIT 1`, from, to).Scan(&path.ID, &path.From, &path.To, &path.Cost)

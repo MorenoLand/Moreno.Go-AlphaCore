@@ -272,6 +272,16 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.taxiNodeStatus(*active, message.Data)
+		case packet.CMSGTaxiEnableAllNodes:
+			if active == nil {
+				return
+			}
+			err = s.taxiEnableAll(active, true, account.GMLevel)
+		case packet.CMSGTaxiClearAllNodes:
+			if active == nil {
+				return
+			}
+			err = s.taxiEnableAll(active, false, account.GMLevel)
 		case packet.CMSGGetDeathBindZone:
 			if active == nil {
 				return
