@@ -15,7 +15,54 @@ const (
 	SMSGCharDelete                Opcode = 0x003c
 	CMSGPlayerLogin               Opcode = 0x003d
 	SMSGNewWorld                  Opcode = 0x003e
+	MSGMoveStartForward           Opcode = 0x00b5
+	MSGMoveStartBackward          Opcode = 0x00b6
+	MSGMoveStop                   Opcode = 0x00b7
+	MSGMoveStartStrafeLeft        Opcode = 0x00b8
+	MSGMoveStartStrafeRight       Opcode = 0x00b9
+	MSGMoveStopStrafe             Opcode = 0x00ba
+	MSGMoveJump                   Opcode = 0x00bb
+	MSGMoveStartTurnLeft          Opcode = 0x00bc
+	MSGMoveStartTurnRight         Opcode = 0x00bd
+	MSGMoveStopTurn               Opcode = 0x00be
+	MSGMoveStartPitchUp           Opcode = 0x00bf
+	MSGMoveStartPitchDown         Opcode = 0x00c0
+	MSGMoveStopPitch              Opcode = 0x00c1
+	MSGMoveSetRunMode             Opcode = 0x00c2
+	MSGMoveSetWalkMode            Opcode = 0x00c3
+	MSGMoveToggleLogging          Opcode = 0x00c4
+	MSGMoveTeleport               Opcode = 0x00c5
+	MSGMoveTeleportCheat          Opcode = 0x00c6
+	MSGMoveTeleportAck            Opcode = 0x00c7
+	MSGMoveToggleFallLogging      Opcode = 0x00c8
+	MSGMoveCollideRedirect        Opcode = 0x00c9
+	MSGMoveCollideStuck           Opcode = 0x00ca
+	MSGMoveStartSwim              Opcode = 0x00cb
+	MSGMoveStopSwim               Opcode = 0x00cc
+	MSGMoveSetRunSpeedCheat       Opcode = 0x00cd
+	MSGMoveSetRunSpeed            Opcode = 0x00ce
+	MSGMoveSetWalkSpeedCheat      Opcode = 0x00cf
+	MSGMoveSetWalkSpeed           Opcode = 0x00d0
+	MSGMoveSetSwimSpeedCheat      Opcode = 0x00d1
+	MSGMoveSetSwimSpeed           Opcode = 0x00d2
+	MSGMoveSetAllSpeedCheat       Opcode = 0x00d3
+	MSGMoveSetTurnRateCheat       Opcode = 0x00d4
+	MSGMoveSetTurnRate            Opcode = 0x00d5
+	MSGMoveToggleCollisionCheat   Opcode = 0x00d6
+	MSGMoveSetFacing              Opcode = 0x00d7
+	MSGMoveSetPitch               Opcode = 0x00d8
 	MSGMoveWorldportAck           Opcode = 0x00d9
+	SMSGForceSpeedChange          Opcode = 0x00df
+	CMSGForceSpeedChangeAck       Opcode = 0x00e0
+	SMSGForceSwimSpeedChange      Opcode = 0x00e1
+	CMSGForceSwimSpeedChangeAck   Opcode = 0x00e2
+	SMSGForceMoveRoot             Opcode = 0x00e3
+	CMSGForceMoveRootAck          Opcode = 0x00e4
+	SMSGForceMoveUnroot           Opcode = 0x00e5
+	CMSGForceMoveUnrootAck        Opcode = 0x00e6
+	MSGMoveRoot                   Opcode = 0x00e7
+	MSGMoveUnroot                 Opcode = 0x00e8
+	MSGMoveHeartbeat              Opcode = 0x00e9
 	SMSGCharacterLoginFailed      Opcode = 0x0041
 	SMSGLoginSetTimeSpeed         Opcode = 0x0042
 	SMSGAuthChallenge             Opcode = 0x01dd
@@ -157,6 +204,54 @@ var opcodeNames = map[Opcode]string{
 	SMSGCharDelete:                "SMSG_CHAR_DELETE",
 	CMSGPlayerLogin:               "CMSG_PLAYER_LOGIN",
 	SMSGNewWorld:                  "SMSG_NEW_WORLD",
+	MSGMoveStartForward:           "MSG_MOVE_START_FORWARD",
+	MSGMoveStartBackward:          "MSG_MOVE_START_BACKWARD",
+	MSGMoveStop:                   "MSG_MOVE_STOP",
+	MSGMoveStartStrafeLeft:        "MSG_MOVE_START_STRAFE_LEFT",
+	MSGMoveStartStrafeRight:       "MSG_MOVE_START_STRAFE_RIGHT",
+	MSGMoveStopStrafe:             "MSG_MOVE_STOP_STRAFE",
+	MSGMoveJump:                   "MSG_MOVE_JUMP",
+	MSGMoveStartTurnLeft:          "MSG_MOVE_START_TURN_LEFT",
+	MSGMoveStartTurnRight:         "MSG_MOVE_START_TURN_RIGHT",
+	MSGMoveStopTurn:               "MSG_MOVE_STOP_TURN",
+	MSGMoveStartPitchUp:           "MSG_MOVE_START_PITCH_UP",
+	MSGMoveStartPitchDown:         "MSG_MOVE_START_PITCH_DOWN",
+	MSGMoveStopPitch:              "MSG_MOVE_STOP_PITCH",
+	MSGMoveSetRunMode:             "MSG_MOVE_SET_RUN_MODE",
+	MSGMoveSetWalkMode:            "MSG_MOVE_SET_WALK_MODE",
+	MSGMoveToggleLogging:          "MSG_MOVE_TOGGLE_LOGGING",
+	MSGMoveTeleport:               "MSG_MOVE_TELEPORT",
+	MSGMoveTeleportCheat:          "MSG_MOVE_TELEPORT_CHEAT",
+	MSGMoveTeleportAck:            "MSG_MOVE_TELEPORT_ACK",
+	MSGMoveToggleFallLogging:      "MSG_MOVE_TOGGLE_FALL_LOGGING",
+	MSGMoveCollideRedirect:        "MSG_MOVE_COLLIDE_REDIRECT",
+	MSGMoveCollideStuck:           "MSG_MOVE_COLLIDE_STUCK",
+	MSGMoveStartSwim:              "MSG_MOVE_START_SWIM",
+	MSGMoveStopSwim:               "MSG_MOVE_STOP_SWIM",
+	MSGMoveSetRunSpeedCheat:       "MSG_MOVE_SET_RUN_SPEED_CHEAT",
+	MSGMoveSetRunSpeed:            "MSG_MOVE_SET_RUN_SPEED",
+	MSGMoveSetWalkSpeedCheat:      "MSG_MOVE_SET_WALK_SPEED_CHEAT",
+	MSGMoveSetWalkSpeed:           "MSG_MOVE_SET_WALK_SPEED",
+	MSGMoveSetSwimSpeedCheat:      "MSG_MOVE_SET_SWIM_SPEED_CHEAT",
+	MSGMoveSetSwimSpeed:           "MSG_MOVE_SET_SWIM_SPEED",
+	MSGMoveSetAllSpeedCheat:       "MSG_MOVE_SET_ALL_SPEED_CHEAT",
+	MSGMoveSetTurnRateCheat:       "MSG_MOVE_SET_TURN_RATE_CHEAT",
+	MSGMoveSetTurnRate:            "MSG_MOVE_SET_TURN_RATE",
+	MSGMoveToggleCollisionCheat:   "MSG_MOVE_TOGGLE_COLLISION_CHEAT",
+	MSGMoveSetFacing:              "MSG_MOVE_SET_FACING",
+	MSGMoveSetPitch:               "MSG_MOVE_SET_PITCH",
+	MSGMoveWorldportAck:           "MSG_MOVE_WORLDPORT_ACK",
+	SMSGForceSpeedChange:          "SMSG_FORCE_SPEED_CHANGE",
+	CMSGForceSpeedChangeAck:       "CMSG_FORCE_SPEED_CHANGE_ACK",
+	SMSGForceSwimSpeedChange:      "SMSG_FORCE_SWIM_SPEED_CHANGE",
+	CMSGForceSwimSpeedChangeAck:   "CMSG_FORCE_SWIM_SPEED_CHANGE_ACK",
+	SMSGForceMoveRoot:             "SMSG_FORCE_MOVE_ROOT",
+	CMSGForceMoveRootAck:          "CMSG_FORCE_MOVE_ROOT_ACK",
+	SMSGForceMoveUnroot:           "SMSG_FORCE_MOVE_UNROOT",
+	CMSGForceMoveUnrootAck:        "CMSG_FORCE_MOVE_UNROOT_ACK",
+	MSGMoveRoot:                   "MSG_MOVE_ROOT",
+	MSGMoveUnroot:                 "MSG_MOVE_UNROOT",
+	MSGMoveHeartbeat:              "MSG_MOVE_HEARTBEAT",
 	SMSGCharacterLoginFailed:      "SMSG_CHARACTER_LOGIN_FAILED",
 	SMSGLoginSetTimeSpeed:         "SMSG_LOGIN_SETTIMESPEED",
 	SMSGAuthChallenge:             "SMSG_AUTH_CHALLENGE",

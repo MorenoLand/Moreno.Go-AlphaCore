@@ -444,15 +444,10 @@ func (s *WorldServer) handle(connection net.Conn) {
 				active = nil
 			}
 		default:
-			if active == nil || !packet.IsMovement(message.Opcode) || len(message.Data) < 48 {
+			if active == nil || !packet.IsMovement(message.Opcode) {
 				continue
 			}
-			active.PositionX = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[24:28]))
-			active.PositionY = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[28:32]))
-			active.PositionZ = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[32:36]))
-			active.Orientation = math.Float32frombits(binary.LittleEndian.Uint32(message.Data[36:40]))
-			err = s.Characters.UpdatePosition(active.GUID, active.AccountID, active.RealmID, active.PositionX, active.PositionY, active.PositionZ, active.Orientation)
-			s.updatePlayer(*active)
+			err = s.updateMovement(active, message.Opcode, message.Data)
 		}
 		if err != nil {
 			return
