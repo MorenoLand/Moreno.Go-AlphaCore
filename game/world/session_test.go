@@ -81,6 +81,26 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	if err != nil || response.Opcode != packet.SMSGQueryTimeResponse || len(response.Data) != 4 {
 		t.Fatalf("time=%#v err=%v", response, err)
 	}
+	queryData := make([]byte, 8)
+	binary.LittleEndian.PutUint64(queryData, uint64(guid))
+	message, _ = packet.Encode(packet.CMSGNameQuery, queryData)
+	client.Write(message)
+	response, err = sockets.ReadPacket(stream)
+	if err != nil || response.Opcode != packet.SMSGNameQueryResponse {
+		t.Fatalf("name=%#v err=%v", response, err)
+	}
+	chatData := []byte{0, 0, 0, 0, 7, 0, 0, 0}
+	chatData = append(chatData, []byte("Hello\x00")...)
+	message, _ = packet.Encode(packet.CMSGMessageChat, chatData)
+	client.Write(message)
+	response, err = sockets.ReadPacket(stream)
+	if err != nil || response.Opcode != packet.SMSGMessageChat {
+		t.Fatalf("chat=%#v err=%v", response, err)
+	}
+	zoneData := make([]byte, 4)
+	binary.LittleEndian.PutUint32(zoneData, 42)
+	message, _ = packet.Encode(packet.CMSGZoneUpdate, zoneData)
+	client.Write(message)
 	moveData := make([]byte, 48)
 	binary.LittleEndian.PutUint32(moveData[24:], math.Float32bits(10))
 	binary.LittleEndian.PutUint32(moveData[28:], math.Float32bits(20))
@@ -109,7 +129,7 @@ func TestWorldSessionLifecycle(t *testing.T) {
 	client.Close()
 	<-done
 	stored, err := server.Characters.Characters(1, 1)
-	if err != nil || len(stored) != 1 || stored[0].Online != 0 || stored[0].PositionX != 10 || stored[0].PositionY != 20 || stored[0].PositionZ != 30 || stored[0].Orientation != 40 {
+	if err != nil || len(stored) != 1 || stored[0].Online != 0 || stored[0].PositionX != 10 || stored[0].PositionY != 20 || stored[0].PositionZ != 30 || stored[0].Orientation != 40 || stored[0].Zone != 42 {
 		t.Fatalf("stored character=%#v err=%v", stored, err)
 	}
 }

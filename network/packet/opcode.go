@@ -24,9 +24,14 @@ const (
 	SMSGLogoutComplete         Opcode = 0x004d
 	CMSGLogoutCancel           Opcode = 0x004e
 	SMSGLogoutCancelAck        Opcode = 0x004f
+	CMSGNameQuery              Opcode = 0x0050
+	SMSGNameQueryResponse      Opcode = 0x0051
+	CMSGMessageChat            Opcode = 0x0095
+	SMSGMessageChat            Opcode = 0x0096
 	SMSGUpdateObject           Opcode = 0x00a9
 	CMSGQueryTime              Opcode = 0x01bf
 	SMSGQueryTimeResponse      Opcode = 0x01c0
+	CMSGZoneUpdate             Opcode = 0x01e5
 	CMSGPing                   Opcode = 0x01cd
 	SMSGPong                   Opcode = 0x01ce
 	CMSGAuthSession            Opcode = 0x01de
@@ -52,6 +57,10 @@ var opcodeNames = map[Opcode]string{
 	SMSGAuthChallenge:          "SMSG_AUTH_CHALLENGE",
 	CMSGPlayerLogout:           "CMSG_PLAYER_LOGOUT",
 	CMSGLogoutRequest:          "CMSG_LOGOUT_REQUEST",
+	CMSGNameQuery:              "CMSG_NAME_QUERY",
+	SMSGNameQueryResponse:      "SMSG_NAME_QUERY_RESPONSE",
+	CMSGMessageChat:            "CMSG_MESSAGECHAT",
+	SMSGMessageChat:            "SMSG_MESSAGECHAT",
 	SMSGUpdateObject:           "SMSG_UPDATE_OBJECT",
 	CMSGPing:                   "CMSG_PING",
 	SMSGPong:                   "SMSG_PONG",

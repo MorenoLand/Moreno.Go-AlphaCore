@@ -93,6 +93,17 @@ func (s *Store) Character(guid, accountID, realmID int64) (Character, bool, erro
 	return character, true, nil
 }
 
+func (s *Store) CharacterByGUID(guid int64) (Character, bool, error) {
+	character, err := scanCharacter(s.db.QueryRow(`SELECT `+characterColumns+` FROM characters WHERE guid = ? LIMIT 1`, guid))
+	if err == sql.ErrNoRows {
+		return Character{}, false, nil
+	}
+	if err != nil {
+		return Character{}, false, fmt.Errorf("query character by guid: %w", err)
+	}
+	return character, true, nil
+}
+
 func (s *Store) NameExists(name string, realmID int64) (bool, error) {
 	var value string
 	err := s.db.QueryRow(`SELECT name FROM characters WHERE name = ? COLLATE NOCASE AND realm_id = ? LIMIT 1`, name, realmID).Scan(&value)
@@ -145,5 +156,10 @@ func (s *Store) SetOnline(guid, accountID, realmID int64, online bool) error {
 
 func (s *Store) UpdatePosition(guid, accountID, realmID int64, x, y, z, o float32) error {
 	_, err := s.db.Exec(`UPDATE characters SET position_x = ?, position_y = ?, position_z = ?, orientation = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, x, y, z, o, guid, accountID, realmID)
+	return err
+}
+
+func (s *Store) UpdateZone(guid, accountID, realmID, zone int64) error {
+	_, err := s.db.Exec(`UPDATE characters SET zone = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, zone, guid, accountID, realmID)
 	return err
 }

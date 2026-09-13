@@ -108,6 +108,21 @@ func (s *WorldServer) handle(connection net.Conn) {
 					err = s.Characters.SetOnline(character.GUID, account.ID, 1, true)
 				}
 			}
+		case packet.CMSGNameQuery:
+			if active == nil {
+				return
+			}
+			response, err = s.nameQuery(message.Data)
+		case packet.CMSGMessageChat:
+			if active == nil {
+				return
+			}
+			response, err = s.chat(active.GUID, message.Data)
+		case packet.CMSGZoneUpdate:
+			if active == nil {
+				return
+			}
+			err = s.zoneUpdate(active.GUID, active.AccountID, message.Data)
 		case packet.CMSGPing:
 			if active == nil || len(message.Data) < 4 {
 				return
