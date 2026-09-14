@@ -57,6 +57,8 @@ type WorldServer struct {
 	nextDuel           uint64
 	petMu              sync.Mutex
 	pets               map[int64]*petManagerState
+	enchantmentMu      sync.Mutex
+	enchantmentTimers  map[int64][5]*time.Timer
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {

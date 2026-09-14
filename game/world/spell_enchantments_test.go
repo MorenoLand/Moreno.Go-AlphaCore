@@ -48,4 +48,12 @@ func TestEnchantSpellEffects(t *testing.T) {
 	if values[1].ID != 9 || values[1].Duration != 0 || values[1].Charges != 1 {
 		t.Fatalf("temporary enchantments=%#v", values)
 	}
+	if err := characters.UpdateItemEnchantments(item.GUID, item.Owner, itemEnchantmentsString([5]packet.ItemEnchantment{{ID: 9, Duration: 1}})); err != nil {
+		t.Fatal(err)
+	}
+	server.expireEnchantment(item.GUID, item.Owner, 0, 9)
+	stored, found, err = characters.ItemByGUID(guid, item.GUID)
+	if err != nil || !found || itemEnchantments(stored.Enchantments)[0].ID != 0 {
+		t.Fatalf("expired enchantment=%#v found=%v err=%v", stored, found, err)
+	}
 }

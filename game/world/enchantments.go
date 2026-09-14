@@ -3,8 +3,10 @@ package world
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"Moreno.AlphaCore/database/dbc"
+	"Moreno.AlphaCore/database/realm"
 	"Moreno.AlphaCore/network/packet"
 )
 
@@ -69,6 +71,7 @@ func (s *WorldServer) enchantItem(cast *spellCast, effect dbc.SpellEffect, tempo
 		}
 	}
 	if temporary && duration > 0 {
+		s.scheduleEnchantmentExpiry(item.GUID, item.Owner, slot, effect.MiscValue, time.Duration(duration)*time.Second)
 		data := append(encodeUint64(uint64(item.GUID)), encodeUint32(int64(slot))...)
 		data = append(data, encodeUint32(duration)...)
 		if update, updateErr := packet.Encode(packet.SMSGItemEnchantTimeUpdate, data); updateErr == nil {
@@ -81,5 +84,71 @@ func (s *WorldServer) enchantItem(cast *spellCast, effect dbc.SpellEffect, tempo
 	data = append(data, encodeUint32(item.ItemTemplate)...)
 	if logPacket, logErr := packet.Encode(packet.SMSGEnchantmentLog, data); logErr == nil {
 		s.sendSpell(cast.caster, logPacket)
+	}
+}
+
+func (s *WorldServer) scheduleItemEnchantments(item realm.InventoryItem) {
+	for slot, enchantment := range itemEnchantments(item.Enchantments) {
+		if enchantment.ID > 0 && enchantment.Duration > 0 {
+			s.scheduleEnchantmentExpiry(item.GUID, item.Owner, slot, enchantment.ID, time.Duration(enchantment.Duration)*time.Second)
+		}
+	}
+}
+
+func (s *WorldServer) scheduleEnchantmentExpiry(itemGUID, owner int64, slot int, enchantID int64, duration time.Duration) {
+	if slot < 0 || slot >= 5 || duration <= 0 {
+		return
+	}
+	s.enchantmentMu.Lock()
+	if s.enchantmentTimers == nil {
+		s.enchantmentTimers = make(map[int64][5]*time.Timer)
+	}
+	timers := s.enchantmentTimers[itemGUID]
+	if timers[slot] != nil {
+		timers[slot].Stop()
+	}
+	timers[slot] = time.AfterFunc(duration, func() { s.expireEnchantment(itemGUID, owner, slot, enchantID) })
+	s.enchantmentTimers[itemGUID] = timers
+	s.enchantmentMu.Unlock()
+}
+
+func (s *WorldServer) expireEnchantment(itemGUID, owner int64, slot int, enchantID int64) {
+	if s.Characters == nil {
+		return
+	}
+	item, found, err := s.Characters.ItemByGUID(owner, itemGUID)
+	if err != nil || !found {
+		return
+	}
+	values := itemEnchantments(item.Enchantments)
+	if slot < 0 || slot >= len(values) || values[slot].ID != enchantID {
+		return
+	}
+	values[slot] = packet.ItemEnchantment{}
+	if err := s.Characters.UpdateItemEnchantments(item.GUID, item.Owner, itemEnchantmentsString(values)); err != nil {
+		return
+	}
+	s.enchantmentMu.Lock()
+	if timers := s.enchantmentTimers[itemGUID]; timers[slot] != nil {
+		timers[slot] = nil
+		s.enchantmentTimers[itemGUID] = timers
+	}
+	s.enchantmentMu.Unlock()
+	guid := uint64(item.GUID) | 0x4000000000000000
+	for index := 0; index < 3; index++ {
+		if update, updateErr := packet.EncodeFieldUpdate(guid, itemFieldEnchantment+slot*3+index, 0); updateErr == nil {
+			s.sendPlayer(owner, update)
+		}
+	}
+	data := append(encodeUint64(uint64(item.GUID)), encodeUint32(int64(slot))...)
+	data = append(data, encodeUint32(0)...)
+	if update, updateErr := packet.Encode(packet.SMSGItemEnchantTimeUpdate, data); updateErr == nil {
+		s.sendPlayer(owner, update)
+	}
+	data = append(encodeUint32(1), encodeUint64(uint64(owner))...)
+	data = append(data, encodeUint32(enchantID)...)
+	data = append(data, encodeUint32(item.ItemTemplate)...)
+	if logPacket, logErr := packet.Encode(packet.SMSGEnchantmentLog, data); logErr == nil {
+		s.sendPlayer(owner, logPacket)
 	}
 }
