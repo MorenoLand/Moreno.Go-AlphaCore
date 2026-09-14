@@ -103,6 +103,9 @@ func (s *WorldServer) spellDurationMillis(cast *spellCast) int64 {
 	if err != nil || !found {
 		return 0
 	}
+	if duration.Duration == -1 {
+		return -1
+	}
 	level := cast.effectLevel
 	if !cast.ranked {
 		level = int64(cast.caster.Level) - cast.spell.BaseLevel
@@ -113,6 +116,9 @@ func (s *WorldServer) spellDurationMillis(cast *spellCast) int64 {
 	value := duration.Duration + duration.DurationPerLevel*level
 	if duration.MaxDuration > 0 && value > duration.MaxDuration {
 		value = duration.MaxDuration
+	}
+	if cast.spentComboPoints > 1 {
+		value += (cast.spentComboPoints - 1) * duration.Duration
 	}
 	return value
 }

@@ -58,6 +58,9 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 			if value.MaxDuration > 0 && duration > value.MaxDuration {
 				duration = value.MaxDuration
 			}
+			if cast.spentComboPoints > 1 {
+				duration += (cast.spentComboPoints - 1) * value.Duration
+			}
 		}
 	}
 	passive := packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributePassive != 0

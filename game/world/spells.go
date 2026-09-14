@@ -30,25 +30,26 @@ type spellTarget struct {
 }
 
 type spellCast struct {
-	caster         realm.Character
-	target         spellTarget
-	spell          dbc.Spell
-	targetMask     packet.SpellTargetMask
-	castTime       int64
-	powerCost      int64
-	targets        []realm.Character
-	effectTargets  map[int][]realm.Character
-	targetCreature *creatureState
-	sourceItem     *realm.InventoryItem
-	source         worlddb.ItemTemplate
-	sourceSlot     int
-	triggered      bool
-	started        time.Time
-	spellLevel     int64
-	effectLevel    int64
-	ranked         bool
-	castFlags      packet.SpellCastFlags
-	timer          *time.Timer
+	caster           realm.Character
+	target           spellTarget
+	spell            dbc.Spell
+	targetMask       packet.SpellTargetMask
+	castTime         int64
+	powerCost        int64
+	targets          []realm.Character
+	effectTargets    map[int][]realm.Character
+	targetCreature   *creatureState
+	sourceItem       *realm.InventoryItem
+	source           worlddb.ItemTemplate
+	sourceSlot       int
+	triggered        bool
+	started          time.Time
+	spellLevel       int64
+	effectLevel      int64
+	spentComboPoints int64
+	ranked           bool
+	castFlags        packet.SpellCastFlags
+	timer            *time.Timer
 }
 
 func (s *WorldServer) castSpellPacket(active realm.Character, data []byte) ([][]byte, error) {
@@ -257,6 +258,9 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 	}
 	if s.spellOnCooldown(active.GUID, spellID) {
 		return s.castFailure(active, spellID, packet.SpellFailedNotReady)
+	}
+	if requiresComboPoints(spell) && !s.validComboTarget(active, target) {
+		return s.castFailure(active, spellID, packet.SpellFailedNoComboPoints)
 	}
 	spellLevel := int64(active.Level)
 	ranked := false
@@ -491,6 +495,10 @@ func (s *WorldServer) performSpellCast(cast *spellCast) {
 	if err == nil {
 		s.sendSpell(cast.caster, goPacket)
 	}
+	if requiresComboPoints(cast.spell) {
+		cast.spentComboPoints, _ = s.comboState(cast.caster.GUID)
+		s.removeComboPoints(cast.caster.GUID)
+	}
 	s.setSpellCooldown(cast.caster, cast.spell)
 	if cast.powerCost > 0 {
 		_ = s.changePlayerPower(&cast.caster, cast.spell.PowerType, -cast.powerCost)
@@ -609,6 +617,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				}
 			case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura:
 				s.applyAura(cast, target, index, effect)
+			case packet.SpellEffectAddComboPoints:
+				s.addComboPoints(cast.caster.GUID, uint64(target.GUID), target.Health > 0, points)
 			case packet.SpellEffectDispel:
 				s.dispelSpellAuras(cast, target, points)
 			case packet.SpellEffectInterruptCast:
@@ -707,6 +717,8 @@ func (s *WorldServer) applyCreatureSpellEffect(cast *spellCast, target *creature
 			caster := cast.caster
 			_ = s.changePlayerPower(&caster, effect.MiscValue, amount)
 		}
+	case packet.SpellEffectAddComboPoints:
+		s.addComboPoints(cast.caster.GUID, target.GUID, target.Health > 0, points)
 	}
 }
 

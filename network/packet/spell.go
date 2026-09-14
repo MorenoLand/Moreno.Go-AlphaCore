@@ -102,16 +102,17 @@ const (
 type SpellAttributesEx uint32
 
 const (
-	SpellAttributeExDrainAllPower   SpellAttributesEx = 0x00000002
-	SpellAttributeExChanneled       SpellAttributesEx = 0x00000004
-	SpellAttributeExNoSkillIncrease SpellAttributesEx = 0x00000010
-	SpellAttributeExNotBreakStealth SpellAttributesEx = 0x00000020
-	SpellAttributeExNegative        SpellAttributesEx = 0x00000080
-	SpellAttributeExNoThreat        SpellAttributesEx = 0x00000400
-	SpellAttributeExUniqueAura      SpellAttributesEx = 0x00000800
-	SpellAttributeExCantTargetSelf  SpellAttributesEx = 0x00080000
-	SpellAttributeExRequireCombo    SpellAttributesEx = 0x00400000
-	SpellAttributeExCastWhenLearned SpellAttributesEx = 0x80000000
+	SpellAttributeExDrainAllPower      SpellAttributesEx = 0x00000002
+	SpellAttributeExChanneled          SpellAttributesEx = 0x00000004
+	SpellAttributeExNoSkillIncrease    SpellAttributesEx = 0x00000010
+	SpellAttributeExNotBreakStealth    SpellAttributesEx = 0x00000020
+	SpellAttributeExNegative           SpellAttributesEx = 0x00000080
+	SpellAttributeExNoThreat           SpellAttributesEx = 0x00000400
+	SpellAttributeExUniqueAura         SpellAttributesEx = 0x00000800
+	SpellAttributeExCantTargetSelf     SpellAttributesEx = 0x00080000
+	SpellAttributeExRequireTargetCombo SpellAttributesEx = 0x00100000
+	SpellAttributeExRequireCombo       SpellAttributesEx = 0x00400000
+	SpellAttributeExCastWhenLearned    SpellAttributesEx = 0x80000000
 )
 
 type SpellCastFlags byte
