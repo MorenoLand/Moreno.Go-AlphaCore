@@ -142,6 +142,9 @@ func (s *WorldServer) handle(connection net.Conn) {
 					err = s.Characters.SetOnline(character.GUID, account.ID, 1, true)
 					if err == nil {
 						s.registerPlayer(character)
+						err = s.initializePassiveSpells(character)
+					}
+					if err == nil {
 						writer = s.attachPlayer(character.GUID, connection)
 						err = s.loadGroup(character)
 						if err == nil {

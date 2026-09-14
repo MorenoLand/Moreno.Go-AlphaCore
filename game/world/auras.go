@@ -16,6 +16,8 @@ const (
 	positiveAuraStart  = 0
 	harmfulAuraStart   = 32
 	visibleAuraEnd     = 56
+	passiveAuraStart   = 56
+	passiveAuraEnd     = 192
 	auraUnitFlagsMask  = 0x00ea8000
 )
 
@@ -93,13 +95,17 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 			break
 		}
 	}
-	if aura.slot < 0 && !aura.passive {
+	if aura.slot < 0 {
 		start := positiveAuraStart
+		end := visibleAuraEnd
 		if aura.harmful {
 			start = harmfulAuraStart
 		}
+		if aura.passive {
+			start, end = passiveAuraStart, passiveAuraEnd
+		}
 		aura.slot = start
-		for slot := start; slot < visibleAuraEnd; slot++ {
+		for slot := start; slot < end; slot++ {
 			if _, exists := s.auras.active[target.GUID][slot]; !exists {
 				aura.slot = slot
 				break
