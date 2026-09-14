@@ -286,3 +286,41 @@ func TestMixedSpellEffectsUseSeparateTargets(t *testing.T) {
 		t.Fatalf("caster health=%d target health=%d", storedCaster.Health, storedTarget.Health)
 	}
 }
+
+func TestHarmfulSpellRejectsFriendlyTarget(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, Effect_1, EffectBasePoints_1) VALUES (42, 2, 3); INSERT INTO ChrRaces (ID, BaseLanguage) VALUES (1, 1), (2, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	characters := realm.NewStore(databases)
+	casterID, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Caster", Race: 1, Level: 1, Map: 0, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetID, err := characters.Create(realm.Character{AccountID: 2, RealmID: 1, Name: "Target", Race: 2, Level: 1, Map: 0, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := characters.AddSpell(casterID, 42); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases)}
+	caster := realm.Character{GUID: casterID, AccountID: 1, RealmID: 1, Name: "Caster", Race: 1, Level: 1, Map: 0, Health: 10}
+	target := realm.Character{GUID: targetID, AccountID: 2, RealmID: 1, Name: "Target", Race: 2, Level: 1, Map: 0, Health: 10}
+	server.registerPlayer(caster)
+	server.registerPlayer(target)
+	data := append(encodeUint32(42), byte(packet.SpellTargetUnit), 0)
+	data = append(data, encodeUint64(uint64(targetID))...)
+	responses, err := server.castSpellPacket(caster, data)
+	if err != nil || len(responses) != 1 {
+		t.Fatalf("responses=%d err=%v", len(responses), err)
+	}
+	response, err := packet.Parse(responses[0])
+	if err != nil || response.Opcode != packet.SMSGCastResult || len(response.Data) != 6 || response.Data[5] != byte(packet.SpellFailedTargetFriendly) {
+		t.Fatalf("response=%#v err=%v", response, err)
+	}
+}

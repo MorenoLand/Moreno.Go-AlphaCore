@@ -176,6 +176,9 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 			return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
 		}
 	}
+	if result := s.validateSpellTarget(active, spell, target, targetMask); result != packet.SpellNoError {
+		return s.castFailure(active, spellID, result)
+	}
 	if s.Characters != nil && sourceItem == nil {
 		known, err := s.Characters.Spells(active.GUID)
 		if err != nil {
@@ -210,6 +213,9 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 		return s.castFailure(active, spellID, packet.SpellFailedNotReady)
 	}
 	powerCost := spell.ManaCost + spell.ManaCostPerLevel*int64(active.Level)
+	if packet.SpellAttributesEx(spell.AttributesEx)&packet.SpellAttributeExDrainAllPower != 0 {
+		powerCost = playerPower(active, spell.PowerType)
+	}
 	if powerCost > playerPower(active, spell.PowerType) {
 		return s.castFailure(active, spellID, packet.SpellFailedNoPower)
 	}
@@ -273,6 +279,78 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 	}
 	s.sendSpell(active, start)
 	return nil, nil
+}
+
+func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spell, target spellTarget, mask packet.SpellTargetMask) packet.SpellCastResult {
+	attributes := packet.SpellAttributes(spell.Attributes)
+	attributesEx := packet.SpellAttributesEx(spell.AttributesEx)
+	if s.combatTarget(active.GUID) != 0 && attributes&packet.SpellAttributeCantCombat != 0 {
+		return packet.SpellFailedAffectingCombat
+	}
+	if target.UnitGUID == 0 {
+		if spell.Targets&int64(packet.SpellTargetItem) != 0 && target.ItemGUID == 0 {
+			return packet.SpellFailedBadTargets
+		}
+		return packet.SpellNoError
+	}
+	if target.UnitGUID == uint64(active.GUID) {
+		if attributesEx&packet.SpellAttributeExCantTargetSelf != 0 {
+			return packet.SpellFailedBadTargets
+		}
+		return packet.SpellNoError
+	}
+	targetPlayer, targetFound := s.playerByGUID(int64(target.UnitGUID))
+	if !targetFound {
+		if state, found, _ := s.creatureStateAt(active, target.UnitGUID, creatureViewDistance); found {
+			if state.Health <= 0 && spell.Targets&int64(packet.SpellTargetDead) == 0 && !spellHasEffect(spell, packet.SpellEffectResurrect) {
+				return packet.SpellFailedTargetsDead
+			}
+			if state.Health > 0 && spellHasEffect(spell, packet.SpellEffectResurrect) {
+				return packet.SpellFailedTargetNotDead
+			}
+			return packet.SpellNoError
+		}
+		return packet.SpellFailedBadTargets
+	}
+	if targetPlayer.Health <= 0 && spell.Targets&int64(packet.SpellTargetDead) == 0 && !spellHasEffect(spell, packet.SpellEffectResurrect) {
+		return packet.SpellFailedTargetsDead
+	}
+	if targetPlayer.Health > 0 && spellHasEffect(spell, packet.SpellEffectResurrect) {
+		return packet.SpellFailedTargetNotDead
+	}
+	team, targetTeam, err := s.teams(active, targetPlayer)
+	if err != nil || team == 0 || targetTeam == 0 {
+		return packet.SpellNoError
+	}
+	if spellHarmful(spell) && team == targetTeam {
+		return packet.SpellFailedTargetFriendly
+	}
+	if !spellHarmful(spell) && team != targetTeam && mask&packet.SpellTargetDead == 0 {
+		return packet.SpellFailedTargetEnemy
+	}
+	return packet.SpellNoError
+}
+
+func spellHasEffect(spell dbc.Spell, effect packet.SpellEffect) bool {
+	for _, value := range spell.Effects {
+		if packet.SpellEffect(value.Type) == effect {
+			return true
+		}
+	}
+	return false
+}
+
+func spellHarmful(spell dbc.Spell) bool {
+	if packet.SpellAttributes(spell.Attributes)&packet.SpellAttributeAuraDebuff != 0 {
+		return true
+	}
+	for _, effect := range spell.Effects {
+		switch packet.SpellEffect(effect.Type) {
+		case packet.SpellEffectInstantKill, packet.SpellEffectSchoolDamage, packet.SpellEffectPowerBurn, packet.SpellEffectHealthLeech, packet.SpellEffectPowerDrain:
+			return true
+		}
+	}
+	return false
 }
 
 func (s *WorldServer) finishSpellCast(guid int64, cast *spellCast) {

@@ -48,6 +48,9 @@ const (
 	SpellFailedSpellProgress   SpellCastResult = 0x3b
 	SpellFailedUnavailable     SpellCastResult = 0x3d
 	SpellFailedTargetsDead     SpellCastResult = 0x3f
+	SpellFailedTargetEnemy     SpellCastResult = 0x42
+	SpellFailedTargetFriendly  SpellCastResult = 0x44
+	SpellFailedTargetNotDead   SpellCastResult = 0x46
 	SpellFailedNoComboPoints   SpellCastResult = 0x52
 	SpellFailedUnknown         SpellCastResult = 0x57
 	SpellFailedDontReport      SpellCastResult = 0x0b
