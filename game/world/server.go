@@ -691,6 +691,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.cancelAura(*active, message.Data)
+		case packet.CMSGRecharge, packet.CMSGLearnSpell, packet.CMSGCreateItem, packet.CMSGEnableDebugCombatLogging, packet.CMSGGodMode, packet.CMSGCheatSetMoney, packet.CMSGLevelCheat, packet.CMSGLevelUpCheat, packet.CMSGCooldownCheat:
+			if active == nil {
+				return
+			}
+			responses, err = s.gmCheat(active, message.Opcode, message.Data, account.GMLevel)
 		case packet.CMSGMountSpecialAnim:
 			if active == nil {
 				return

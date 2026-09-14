@@ -205,6 +205,11 @@ func (s *Store) UpdateMoney(guid, accountID, realmID, money int64) error {
 	return err
 }
 
+func (s *Store) UpdateLevelState(guid, accountID, realmID int64, level uint8, talentpoints, skillpoints int64) error {
+	_, err := s.db.Exec(`UPDATE characters SET level = ?, talentpoints = ?, skillpoints = ?, leveltime = 0 WHERE guid = ? AND account_id = ? AND realm_id = ?`, level, talentpoints, skillpoints, guid, accountID, realmID)
+	return err
+}
+
 func (s *Store) UpdateSkillpoints(guid, accountID, realmID, points int64) error {
 	_, err := s.db.Exec(`UPDATE characters SET skillpoints = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, points, guid, accountID, realmID)
 	return err
@@ -236,6 +241,15 @@ func (s *Store) AddInventoryItemAt(owner, itemTemplate, bag, slot, amount int64)
 
 func (s *Store) AddSpell(owner, spell int64) error {
 	_, err := s.db.Exec(`INSERT OR IGNORE INTO character_spells (guid, spell, active, disabled) VALUES (?, ?, 1, 0)`, owner, spell)
+	return err
+}
+
+func (s *Store) SetSpellActive(owner, spell int64, active bool) error {
+	value := 0
+	if active {
+		value = 1
+	}
+	_, err := s.db.Exec(`UPDATE character_spells SET active = ? WHERE guid = ? AND spell = ?`, value, owner, spell)
 	return err
 }
 

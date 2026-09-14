@@ -5,6 +5,16 @@ type Opcode uint32
 const (
 	CMSGWorldTeleport             Opcode = 0x0008
 	CMSGZoneMap                   Opcode = 0x000a
+	CMSGRecharge                  Opcode = 0x000f
+	CMSGLearnSpell                Opcode = 0x0010
+	CMSGCreateItem                Opcode = 0x0013
+	CMSGEnableDebugCombatLogging  Opcode = 0x0017
+	CMSGGodMode                   Opcode = 0x0022
+	SMSGGodMode                   Opcode = 0x0023
+	CMSGCheatSetMoney             Opcode = 0x0024
+	CMSGLevelCheat                Opcode = 0x0025
+	CMSGLevelUpCheat              Opcode = 0x0027
+	CMSGCooldownCheat             Opcode = 0x0028
 	CMSGEnablePVP                 Opcode = 0x0030
 	CMSGPVPPort                   Opcode = 0x0032
 	CMSGAuthSRP6Begin             Opcode = 0x0033
@@ -213,7 +223,9 @@ const (
 	MSGChannelStart               Opcode = 0x012c
 	MSGChannelUpdate              Opcode = 0x012d
 	CMSGCancelChannelling         Opcode = 0x012e
+	SMSGLevelupInfo               Opcode = 0x01c5
 	SMSGClearCooldown             Opcode = 0x01cf
+	SMSGCooldownCheat             Opcode = 0x01d2
 	CMSGMountSpecialAnim          Opcode = 0x0164
 	SMSGMountSpecialAnim          Opcode = 0x0165
 	CMSGListInventory             Opcode = 0x016e
@@ -341,6 +353,16 @@ const (
 var opcodeNames = map[Opcode]string{
 	CMSGWorldTeleport:             "CMSG_WORLD_TELEPORT",
 	CMSGZoneMap:                   "CMSG_ZONE_MAP",
+	CMSGRecharge:                  "CMSG_RECHARGE",
+	CMSGLearnSpell:                "CMSG_LEARN_SPELL",
+	CMSGCreateItem:                "CMSG_CREATEITEM",
+	CMSGEnableDebugCombatLogging:  "CMSG_ENABLEDEBUGCOMBATLOGGING",
+	CMSGGodMode:                   "CMSG_GODMODE",
+	SMSGGodMode:                   "SMSG_GODMODE",
+	CMSGCheatSetMoney:             "CMSG_CHEAT_SETMONEY",
+	CMSGLevelCheat:                "CMSG_LEVEL_CHEAT",
+	CMSGLevelUpCheat:              "CMSG_LEVELUP_CHEAT",
+	CMSGCooldownCheat:             "CMSG_COOLDOWN_CHEAT",
 	CMSGEnablePVP:                 "CMSG_ENABLE_PVP",
 	CMSGPVPPort:                   "CMSG_PVP_PORT",
 	CMSGAuthSRP6Begin:             "CMSG_AUTH_SRP6_BEGIN",
@@ -546,7 +568,9 @@ var opcodeNames = map[Opcode]string{
 	MSGChannelStart:               "MSG_CHANNEL_START",
 	MSGChannelUpdate:              "MSG_CHANNEL_UPDATE",
 	CMSGCancelChannelling:         "CMSG_CANCEL_CHANNELLING",
+	SMSGLevelupInfo:               "SMSG_LEVELUP_INFO",
 	SMSGClearCooldown:             "SMSG_CLEAR_COOLDOWN",
+	SMSGCooldownCheat:             "SMSG_COOLDOWN_CHEAT",
 	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",
 	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
 	CMSGListInventory:             "CMSG_LIST_INVENTORY",

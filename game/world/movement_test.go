@@ -29,7 +29,7 @@ func TestMovementPersistsAndBroadcasts(t *testing.T) {
 		t.Fatal(err)
 	}
 	server := &WorldServer{Characters: characters}
-	sender := realm.Character{GUID: senderID, AccountID: 1, RealmID: 1, Name: "Sender", PositionX: 1, PositionY: 2, PositionZ: 3}
+	sender := realm.Character{GUID: senderID, AccountID: 1, RealmID: 1, Name: "Sender", Health: 1, PositionX: 1, PositionY: 2, PositionZ: 3}
 	target := realm.Character{GUID: targetID, AccountID: 2, RealmID: 1, Name: "Target"}
 	server.registerPlayer(sender)
 	server.registerPlayer(target)

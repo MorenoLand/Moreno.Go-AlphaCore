@@ -736,6 +736,9 @@ func minPower(current, amount int64) int64 {
 }
 
 func (s *WorldServer) changePlayerHealth(player *realm.Character, delta int64) error {
+	if delta < 0 && s.isGodMode(player.GUID) {
+		return nil
+	}
 	player.Health += delta
 	if player.Health < 0 {
 		player.Health = 0

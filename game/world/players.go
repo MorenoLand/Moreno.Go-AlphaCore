@@ -19,6 +19,7 @@ type playerRegistry struct {
 	pvpSource    map[int64]pvpLocation
 	maxHealth    map[int64]int64
 	unitFlags    map[int64]uint32
+	godMode      map[int64]bool
 	connections  map[int64]*playerConnection
 }
 
@@ -35,7 +36,11 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.pvpSource = make(map[int64]pvpLocation)
 		s.players.maxHealth = make(map[int64]int64)
 		s.players.unitFlags = make(map[int64]uint32)
+		s.players.godMode = make(map[int64]bool)
 		s.players.connections = make(map[int64]*playerConnection)
+	}
+	if s.players.godMode == nil {
+		s.players.godMode = make(map[int64]bool)
 	}
 	s.players.players[character.GUID] = character
 	if _, found := s.players.maxHealth[character.GUID]; !found {
@@ -70,6 +75,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.pvpSource, guid)
 	delete(s.players.maxHealth, guid)
 	delete(s.players.unitFlags, guid)
+	delete(s.players.godMode, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
 	for _, loot := range s.loots {
@@ -85,6 +91,31 @@ func (s *WorldServer) playerMaxHealth(guid int64) int64 {
 	value := s.players.maxHealth[guid]
 	s.players.mu.RUnlock()
 	return maxInt64(value, 1)
+}
+
+func (s *WorldServer) setPlayerMaxHealth(guid, value int64) {
+	s.players.mu.Lock()
+	if s.players.maxHealth == nil {
+		s.players.maxHealth = make(map[int64]int64)
+	}
+	s.players.maxHealth[guid] = maxInt64(value, 1)
+	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) setGodMode(guid int64, enabled bool) {
+	s.players.mu.Lock()
+	if s.players.godMode == nil {
+		s.players.godMode = make(map[int64]bool)
+	}
+	s.players.godMode[guid] = enabled
+	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) isGodMode(guid int64) bool {
+	s.players.mu.RLock()
+	enabled := s.players.godMode[guid]
+	s.players.mu.RUnlock()
+	return enabled
 }
 
 func (s *WorldServer) setUnitFlags(character realm.Character, flags uint32) {
