@@ -23,6 +23,9 @@ func (s *WorldServer) attack(active realm.Character, data []byte) ([][]byte, err
 			return s.attackStop(active)
 		}
 	}
+	if s.isSanctuary(int64(targetGUID)) {
+		return s.attackStop(active)
+	}
 	s.setCombatTarget(active.GUID, targetGUID)
 	body := append(encodeGUID(active.GUID), encodeGUID(int64(targetGUID))...)
 	start, err := packet.Encode(packet.SMSGAttackStart, body)

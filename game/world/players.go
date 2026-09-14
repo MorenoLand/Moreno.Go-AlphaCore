@@ -2,6 +2,7 @@ package world
 
 import (
 	"sync"
+	"time"
 
 	"Moreno.AlphaCore/database/realm"
 	"Moreno.AlphaCore/network/packet"
@@ -20,6 +21,7 @@ type playerRegistry struct {
 	maxHealth    map[int64]int64
 	unitFlags    map[int64]uint32
 	godMode      map[int64]bool
+	sanctuary    map[int64]time.Time
 	connections  map[int64]*playerConnection
 }
 
@@ -37,10 +39,14 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.maxHealth = make(map[int64]int64)
 		s.players.unitFlags = make(map[int64]uint32)
 		s.players.godMode = make(map[int64]bool)
+		s.players.sanctuary = make(map[int64]time.Time)
 		s.players.connections = make(map[int64]*playerConnection)
 	}
 	if s.players.godMode == nil {
 		s.players.godMode = make(map[int64]bool)
+	}
+	if s.players.sanctuary == nil {
+		s.players.sanctuary = make(map[int64]time.Time)
 	}
 	s.players.players[character.GUID] = character
 	if _, found := s.players.maxHealth[character.GUID]; !found {
@@ -76,6 +82,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.maxHealth, guid)
 	delete(s.players.unitFlags, guid)
 	delete(s.players.godMode, guid)
+	delete(s.players.sanctuary, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
 	for _, loot := range s.loots {
@@ -116,6 +123,30 @@ func (s *WorldServer) isGodMode(guid int64) bool {
 	enabled := s.players.godMode[guid]
 	s.players.mu.RUnlock()
 	return enabled
+}
+
+func (s *WorldServer) setSanctuary(guid int64, duration time.Duration) {
+	s.players.mu.Lock()
+	if s.players.sanctuary == nil {
+		s.players.sanctuary = make(map[int64]time.Time)
+	}
+	if duration > 0 {
+		s.players.sanctuary[guid] = time.Now().Add(duration)
+	} else {
+		delete(s.players.sanctuary, guid)
+	}
+	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) isSanctuary(guid int64) bool {
+	s.players.mu.Lock()
+	until, found := s.players.sanctuary[guid]
+	if found && !time.Now().Before(until) {
+		delete(s.players.sanctuary, guid)
+		found = false
+	}
+	s.players.mu.Unlock()
+	return found
 }
 
 func (s *WorldServer) setUnitFlags(character realm.Character, flags uint32) {

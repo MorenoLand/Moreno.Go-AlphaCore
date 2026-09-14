@@ -318,6 +318,9 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 	if targetPlayer.Health > 0 && spellHasEffect(spell, packet.SpellEffectResurrect) {
 		return packet.SpellFailedTargetNotDead
 	}
+	if spellHarmful(spell) && s.isSanctuary(targetPlayer.GUID) {
+		return packet.SpellFailedTargetFriendly
+	}
 	team, targetTeam, err := s.teams(active, targetPlayer)
 	if err != nil || team == 0 || targetTeam == 0 {
 		return packet.SpellNoError
@@ -467,6 +470,17 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				}
 			case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura:
 				s.applyAura(cast, target, index, effect)
+			case packet.SpellEffectDispel:
+				s.dispelSpellAuras(cast, target, points)
+			case packet.SpellEffectInterruptCast:
+				s.interruptSpellTarget(target, s.spellDurationMillis(cast))
+			case packet.SpellEffectTeleportUnits:
+				s.teleportSpellTarget(cast, target)
+			case packet.SpellEffectSanctuary:
+				s.setCombatTarget(cast.caster.GUID, 0)
+				s.setSanctuary(cast.caster.GUID, time.Second)
+			case packet.SpellEffectSummonPlayer:
+				s.summonSpellTarget(cast, target)
 			case packet.SpellEffectTriggerSpell:
 				targetMask := packet.SpellTargetSelf
 				if target.GUID != cast.caster.GUID {
