@@ -29,7 +29,9 @@ type auraState struct {
 	duration          int64
 	passive, harmful  bool
 	cancelable        bool
-	timer             *time.Timer
+	target            realm.Character
+	effect            dbc.SpellEffect
+	timer, periodic   *time.Timer
 }
 
 func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectIndex int, effect dbc.SpellEffect) {
@@ -52,7 +54,14 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 	}
 	passive := packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributePassive != 0
 	harmful := packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeAuraDebuff != 0
-	aura := &auraState{spellID: cast.spell.ID, casterID: cast.caster.GUID, slot: -1, effectIndex: effectIndex, duration: duration, passive: passive, harmful: harmful, cancelable: !harmful && packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeCantCancel == 0}
+	period := effect.AuraPeriod
+	if period == 0 {
+		switch packet.AuraType(effect.Aura) {
+		case packet.AuraPeriodicDamage, packet.AuraPeriodicHeal, packet.AuraPeriodicTriggerSpell, packet.AuraPeriodicEnergize, packet.AuraPeriodicLeech, packet.AuraPeriodicManaFunnel, packet.AuraPeriodicManaLeech:
+			period = 5000
+		}
+	}
+	aura := &auraState{spellID: cast.spell.ID, casterID: cast.caster.GUID, slot: -1, effectIndex: effectIndex, duration: duration, passive: passive, harmful: harmful, cancelable: !harmful && packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeCantCancel == 0, target: target, effect: effect, periodic: nil}
 	s.auras.mu.Lock()
 	if s.auras.active == nil {
 		s.auras.active = make(map[int64]map[int]*auraState)
@@ -90,7 +99,53 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 	if duration > 0 {
 		aura.timer = time.AfterFunc(time.Duration(duration)*time.Millisecond, func() { s.removeAura(target, aura.slot) })
 	}
+	if period > 0 {
+		aura.periodic = time.AfterFunc(time.Duration(period)*time.Millisecond, func() { s.tickAura(target.GUID, aura.slot, aura, period) })
+	}
 	s.writeAura(target, aura, false)
+}
+
+func (s *WorldServer) tickAura(guid int64, slot int, aura *auraState, period int64) {
+	s.auras.mu.Lock()
+	if s.auras.active[guid][slot] != aura {
+		s.auras.mu.Unlock()
+		return
+	}
+	target, found := s.playerByGUID(guid)
+	if !found {
+		target = aura.target
+	}
+	s.auras.mu.Unlock()
+	points := spellEffectPoints(aura.effect, 0)
+	switch packet.AuraType(aura.effect.Aura) {
+	case packet.AuraPeriodicDamage:
+		_ = s.changePlayerHealth(&target, -points)
+	case packet.AuraPeriodicHeal:
+		_ = s.changePlayerHealth(&target, points)
+	case packet.AuraPeriodicEnergize:
+		_ = s.changePlayerPower(&target, aura.effect.MiscValue, points)
+	case packet.AuraPeriodicManaLeech:
+		amount := minPower(playerPower(target, aura.effect.MiscValue), points)
+		if amount > 0 {
+			_ = s.changePlayerPower(&target, aura.effect.MiscValue, -amount)
+			caster, casterFound := s.playerByGUID(aura.casterID)
+			if casterFound {
+				_ = s.changePlayerPower(&caster, aura.effect.MiscValue, amount)
+			}
+		}
+	case packet.AuraPeriodicLeech:
+		if s.changePlayerHealth(&target, -points) == nil {
+			caster, casterFound := s.playerByGUID(aura.casterID)
+			if casterFound {
+				_ = s.changePlayerHealth(&caster, points)
+			}
+		}
+	}
+	s.auras.mu.Lock()
+	if s.auras.active[guid][slot] == aura {
+		aura.periodic = time.AfterFunc(time.Duration(period)*time.Millisecond, func() { s.tickAura(guid, slot, aura, period) })
+	}
+	s.auras.mu.Unlock()
 }
 
 func (s *WorldServer) cancelAura(active realm.Character, data []byte) ([][]byte, error) {
@@ -127,6 +182,9 @@ func (s *WorldServer) removeAura(target realm.Character, slot int) {
 	}
 	if aura.timer != nil {
 		aura.timer.Stop()
+	}
+	if aura.periodic != nil {
+		aura.periodic.Stop()
 	}
 	delete(s.auras.active[target.GUID], slot)
 	if len(s.auras.active[target.GUID]) == 0 {

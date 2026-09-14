@@ -173,6 +173,18 @@ const (
 	SpellEffectActivateObject   SpellEffect = 86
 )
 
+type AuraType int64
+
+const (
+	AuraPeriodicDamage       AuraType = 3
+	AuraPeriodicHeal         AuraType = 8
+	AuraPeriodicTriggerSpell AuraType = 23
+	AuraPeriodicEnergize     AuraType = 24
+	AuraPeriodicLeech        AuraType = 53
+	AuraPeriodicManaFunnel   AuraType = 63
+	AuraPeriodicManaLeech    AuraType = 64
+)
+
 type SpellImplicitTarget int64
 
 const (
