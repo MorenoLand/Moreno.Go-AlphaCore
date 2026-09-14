@@ -1023,6 +1023,9 @@ func spellGoPacket(cast *spellCast) ([]byte, error) {
 	data = append(data, encodeUint32(cast.spell.ID)...)
 	data = append(data, 0, 0)
 	targets := cast.targets
+	if cast.effectTargets != nil {
+		targets = cast.effectTargets[0]
+	}
 	if len(targets) == 0 {
 		if cast.target.UnitGUID != 0 {
 			targets = []realm.Character{{GUID: int64(cast.target.UnitGUID)}}

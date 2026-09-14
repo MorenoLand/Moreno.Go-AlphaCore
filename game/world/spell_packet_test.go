@@ -1,0 +1,25 @@
+package world
+
+import (
+	"encoding/binary"
+	"testing"
+
+	"Moreno.AlphaCore/database/dbc"
+	"Moreno.AlphaCore/database/realm"
+	"Moreno.AlphaCore/network/packet"
+)
+
+func TestSpellGoUsesPrimaryEffectTargets(t *testing.T) {
+	cast := &spellCast{caster: realm.Character{GUID: 1}, spell: dbc.Spell{ID: 42}, targets: []realm.Character{{GUID: 2}, {GUID: 3}}, effectTargets: map[int][]realm.Character{0: {{GUID: 2}}, 1: {{GUID: 3}}}}
+	encoded, err := spellGoPacket(cast)
+	if err != nil {
+		t.Fatal(err)
+	}
+	message, err := packet.Parse(encoded)
+	if err != nil || message.Opcode != packet.SMSGSpellGo || len(message.Data) < 32 {
+		t.Fatalf("packet=%#v err=%v", message, err)
+	}
+	if message.Data[22] != 1 || binary.LittleEndian.Uint64(message.Data[23:31]) != 2 || message.Data[31] != 0 {
+		t.Fatalf("primary target data=%#v", message.Data)
+	}
+}
