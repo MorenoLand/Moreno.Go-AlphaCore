@@ -86,6 +86,9 @@ func (s *WorldServer) changeCreatureHealth(state *creatureState, delta int64) {
 	if current.Health < 0 {
 		current.Health = 0
 	}
+	if current.Health > current.MaxHealth {
+		current.Health = current.MaxHealth
+	}
 	value := current.Health
 	viewer := realm.Character{GUID: int64(current.GUID), Map: current.Spawn.Map, PositionX: current.Spawn.PositionX, PositionY: current.Spawn.PositionY, PositionZ: current.Spawn.PositionZ}
 	s.creatures.mu.Unlock()

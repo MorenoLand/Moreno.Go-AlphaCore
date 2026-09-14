@@ -437,7 +437,6 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 			points := spellEffectPoints(effect, effectiveLevel)
 			switch packet.SpellEffect(effect.Type) {
 			case packet.SpellEffectInstantKill:
-				s.sendSpellDamage(cast.caster, target.GUID, target.Health, cast.spell.ID)
 				_ = s.changePlayerHealth(&target, -target.Health)
 			case packet.SpellEffectSchoolDamage, packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus:
 				s.sendSpellDamage(cast.caster, target.GUID, minPower(target.Health, points), cast.spell.ID)
@@ -452,12 +451,17 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 			case packet.SpellEffectHeal:
 				_ = s.changePlayerHealth(&target, points)
 			case packet.SpellEffectHealMaxHealth:
-				_ = s.changePlayerHealth(&target, s.playerMaxHealth(cast.caster.GUID)-target.Health)
+				_ = s.changePlayerHealth(&target, s.playerMaxHealth(cast.caster.GUID))
 			case packet.SpellEffectHealthLeech:
+				before := target.Health
 				if s.changePlayerHealth(&target, -points) == nil {
-					s.sendSpellDamage(cast.caster, target.GUID, minPower(target.Health+points, points), cast.spell.ID)
+					amount := before - target.Health
+					if amount <= 0 {
+						continue
+					}
+					s.sendSpellDamage(cast.caster, target.GUID, amount, cast.spell.ID)
 					caster := cast.caster
-					_ = s.changePlayerHealth(&caster, points)
+					_ = s.changePlayerHealth(&caster, amount)
 				}
 			case packet.SpellEffectEnergize:
 				_ = s.changePlayerPower(&target, effect.MiscValue, points)
@@ -545,7 +549,6 @@ func (s *WorldServer) applyCreatureSpellEffect(cast *spellCast, target *creature
 		s.sendSpellDamage(cast.caster, int64(target.GUID), minPower(target.Health, points), cast.spell.ID)
 		s.changeCreatureHealth(target, -points)
 	case packet.SpellEffectInstantKill:
-		s.sendSpellDamage(cast.caster, int64(target.GUID), target.Health, cast.spell.ID)
 		s.changeCreatureHealth(target, -target.Health)
 	case packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus:
 		s.sendSpellDamage(cast.caster, int64(target.GUID), minPower(target.Health, points), cast.spell.ID)
@@ -559,7 +562,7 @@ func (s *WorldServer) applyCreatureSpellEffect(cast *spellCast, target *creature
 	case packet.SpellEffectHeal:
 		s.changeCreatureHealth(target, points)
 	case packet.SpellEffectHealMaxHealth:
-		s.changeCreatureHealth(target, target.MaxHealth-target.Health)
+		s.changeCreatureHealth(target, s.playerMaxHealth(cast.caster.GUID))
 	case packet.SpellEffectPowerDrain:
 		amount := minPower(target.Mana, points)
 		if amount > 0 {

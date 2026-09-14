@@ -277,6 +277,8 @@ func TestMixedSpellEffectsUseSeparateTargets(t *testing.T) {
 	target := realm.Character{GUID: targetID, AccountID: 2, RealmID: 1, Name: "Target", Level: 1, Map: 0, PositionX: 3, Health: 10}
 	server.registerPlayer(caster)
 	server.registerPlayer(target)
+	server.setPlayerMaxHealth(casterID, 100)
+	server.setPlayerMaxHealth(targetID, 100)
 	if _, err := server.castSpellPacket(caster, append(encodeUint32(42), 0, 0)); err != nil {
 		t.Fatal(err)
 	}

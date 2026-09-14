@@ -69,17 +69,19 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 	s.players.players[character.GUID] = character
 	if _, found := s.players.maxHealth[character.GUID]; !found {
 		value := maxInt64(character.Health, 1)
+		known := s.WorldData == nil
 		if s.WorldData != nil {
 			if stats, statsFound, err := s.WorldData.ClassStats(character.Class, character.Level); err == nil && statsFound {
 				if stats.BaseHealth > value {
 					value = stats.BaseHealth
 				}
 				if stats.BaseHealth > 0 {
-					s.players.maxHealthKnown[character.GUID] = true
+					known = true
 				}
 			}
 		}
 		s.players.maxHealth[character.GUID] = value
+		s.players.maxHealthKnown[character.GUID] = known
 	}
 	if _, found := s.players.unitFlags[character.GUID]; !found {
 		s.players.unitFlags[character.GUID] = unitFlagPlayer

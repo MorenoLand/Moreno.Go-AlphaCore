@@ -72,3 +72,26 @@ func TestSpellEffectStateTransitions(t *testing.T) {
 		t.Fatalf("summoned=%#v found=%v", summoned, found)
 	}
 }
+
+func TestSpellDamageAndHealingSemantics(t *testing.T) {
+	server := &WorldServer{}
+	caster := realm.Character{GUID: 1, Name: "Caster", Health: 50}
+	target := realm.Character{GUID: 2, Name: "Target", Health: 20}
+	server.registerPlayer(caster)
+	server.registerPlayer(target)
+	server.setPlayerMaxHealth(caster.GUID, 100)
+	server.setPlayerMaxHealth(target.GUID, 100)
+	server.applySpellEffects(&spellCast{caster: caster, spell: dbc.Spell{Effects: [3]dbc.SpellEffect{{Type: int64(packet.SpellEffectHealthLeech), BasePoints: 5}}}, effectTargets: map[int][]realm.Character{0: {target}}})
+	updatedCaster, casterFound := server.playerByGUID(caster.GUID)
+	updatedTarget, targetFound := server.playerByGUID(target.GUID)
+	if !casterFound || !targetFound || updatedCaster.Health != 55 || updatedTarget.Health != 15 {
+		t.Fatalf("leech caster=%#v target=%#v", updatedCaster, updatedTarget)
+	}
+	updatedTarget.Health = 20
+	server.updatePlayer(updatedTarget)
+	server.applySpellEffects(&spellCast{caster: caster, spell: dbc.Spell{Effects: [3]dbc.SpellEffect{{Type: int64(packet.SpellEffectHealMaxHealth)}}}, effectTargets: map[int][]realm.Character{0: {updatedTarget}}})
+	updatedTarget, targetFound = server.playerByGUID(target.GUID)
+	if !targetFound || updatedTarget.Health != 100 {
+		t.Fatalf("max heal target=%#v", updatedTarget)
+	}
+}
