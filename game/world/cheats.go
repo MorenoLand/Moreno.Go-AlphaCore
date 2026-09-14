@@ -3,6 +3,7 @@ package world
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 
 	"Moreno.AlphaCore/database/realm"
 	"Moreno.AlphaCore/network/packet"
@@ -63,6 +64,10 @@ func (s *WorldServer) gmCheat(active *realm.Character, opcode packet.Opcode, dat
 			flags &^= unitFlagDebugCombatLog
 		}
 		s.setUnitFlags(*active, flags)
+	case packet.CMSGTeleportToPlayer:
+		return s.cheatGoPlayer(active, data)
+	case packet.MSGGMSummon:
+		return s.cheatSummon(active, data)
 	}
 	return nil, nil
 }
@@ -386,6 +391,67 @@ func (s *WorldServer) cheatRecharge(active *realm.Character) ([][]byte, error) {
 		return nil, err
 	}
 	return [][]byte{update}, nil
+}
+
+func (s *WorldServer) cheatGoPlayer(active *realm.Character, data []byte) ([][]byte, error) {
+	name, err := packet.ReadString(data, 0, 0)
+	if err != nil || strings.TrimSpace(name) == "" {
+		return nil, nil
+	}
+	target, found := s.playerByName(strings.TrimSpace(name))
+	if !found && s.Characters != nil {
+		target, found, err = s.Characters.CharacterByName(strings.TrimSpace(name))
+		if err != nil {
+			return nil, err
+		}
+	}
+	if found {
+		response, err := s.teleportPlayer(active, target.Map, target.PositionX, target.PositionY, target.PositionZ, target.Orientation)
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{response}, nil
+	}
+	if s.WorldData == nil {
+		return nil, nil
+	}
+	port, found, err := s.WorldData.WorldportByName(strings.TrimSpace(name))
+	if err != nil || !found {
+		return nil, err
+	}
+	response, err := s.teleportPlayer(active, port.Map, port.X, port.Y, port.Z, port.O)
+	if err != nil {
+		return nil, err
+	}
+	return [][]byte{response}, nil
+}
+
+func (s *WorldServer) cheatSummon(active *realm.Character, data []byte) ([][]byte, error) {
+	name, err := packet.ReadString(data, 0, 0)
+	if err != nil || strings.TrimSpace(name) == "" {
+		return nil, nil
+	}
+	name = strings.TrimSpace(name)
+	target, online := s.playerByName(name)
+	if online {
+		response, err := s.teleportPlayer(&target, active.Map, active.PositionX, active.PositionY, active.PositionZ, active.Orientation)
+		if err != nil {
+			return nil, err
+		}
+		s.sendPlayer(target.GUID, response)
+		return nil, nil
+	}
+	if s.Characters == nil {
+		return nil, nil
+	}
+	target, found, err := s.Characters.CharacterByName(name)
+	if err != nil || !found {
+		return nil, err
+	}
+	if err := s.Characters.UpdateLocation(target.GUID, target.AccountID, target.RealmID, active.Map, active.PositionX, active.PositionY, active.PositionZ, active.Orientation); err != nil {
+		return nil, err
+	}
+	return nil, s.Characters.UpdateZone(target.GUID, target.AccountID, target.RealmID, active.Zone)
 }
 
 func (s *WorldServer) playerFieldUpdate(active realm.Character, field int, value uint32) ([]byte, error) {

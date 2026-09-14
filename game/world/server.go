@@ -691,7 +691,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.cancelAura(*active, message.Data)
-		case packet.CMSGRecharge, packet.CMSGLearnSpell, packet.CMSGCreateItem, packet.CMSGEnableDebugCombatLogging, packet.CMSGGodMode, packet.CMSGCheatSetMoney, packet.CMSGLevelCheat, packet.CMSGLevelUpCheat, packet.CMSGCooldownCheat:
+		case packet.CMSGRecharge, packet.CMSGLearnSpell, packet.CMSGCreateItem, packet.CMSGEnableDebugCombatLogging, packet.CMSGGodMode, packet.CMSGCheatSetMoney, packet.CMSGLevelCheat, packet.CMSGLevelUpCheat, packet.CMSGCooldownCheat, packet.CMSGTeleportToPlayer, packet.MSGGMSummon:
 			if active == nil {
 				return
 			}

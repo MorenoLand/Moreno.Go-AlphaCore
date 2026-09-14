@@ -3,6 +3,7 @@ package world
 import (
 	"context"
 	"encoding/binary"
+	"net"
 	"testing"
 
 	"Moreno.AlphaCore/database"
@@ -10,6 +11,7 @@ import (
 	"Moreno.AlphaCore/database/realm"
 	worlddb "Moreno.AlphaCore/database/world"
 	"Moreno.AlphaCore/network/packet"
+	"Moreno.AlphaCore/network/sockets"
 )
 
 func TestGMCheats(t *testing.T) {
@@ -96,6 +98,67 @@ func TestGMCheats(t *testing.T) {
 	stored, found, err := characters.CharacterByGUID(guid)
 	if err != nil || !found || stored.Level != 3 || stored.Money != 110 || stored.Power1 != 1000 {
 		t.Fatalf("stored=%#v found=%v err=%v", stored, found, err)
+	}
+}
+
+func TestGMTeleportCheats(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	characters := realm.NewStore(databases)
+	senderID, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Sender", Health: 1, Map: 1, Zone: 10, PositionX: 1, PositionY: 2, PositionZ: 3, Orientation: 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetID, err := characters.Create(realm.Character{AccountID: 2, RealmID: 1, Name: "Target", Health: 1, Map: 2, Zone: 20, PositionX: 10, PositionY: 20, PositionZ: 30, Orientation: 40})
+	if err != nil {
+		t.Fatal(err)
+	}
+	offlineID, err := characters.Create(realm.Character{AccountID: 3, RealmID: 1, Name: "Offline", Health: 1, Map: 3, Zone: 30, PositionX: 7, PositionY: 8, PositionZ: 9})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO worldports (entry, name, map, x, y, z, o) VALUES (1, 'Stormwind', 4, 100, 200, 300, 0.5)`); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, WorldData: worlddb.NewStore(databases)}
+	active := realm.Character{GUID: senderID, AccountID: 1, RealmID: 1, Name: "Sender", Health: 1, Map: 1, Zone: 10, PositionX: 1, PositionY: 2, PositionZ: 3, Orientation: 4}
+	server.registerPlayer(active)
+	server.registerPlayer(realm.Character{GUID: targetID, AccountID: 2, RealmID: 1, Name: "Target", Health: 1, Map: 2, PositionX: 10, PositionY: 20, PositionZ: 30, Orientation: 40})
+	if responses, err := server.gmCheat(&active, packet.CMSGTeleportToPlayer, append([]byte("Target"), 0), 1); err != nil || len(responses) != 1 || active.Map != 2 || active.PositionX != 10 {
+		t.Fatalf("goplayer responses=%d err=%v active=%#v", len(responses), err, active)
+	} else if message, parseErr := packet.Parse(responses[0]); parseErr != nil || message.Opcode != packet.SMSGNewWorld || message.Data[0] != 2 {
+		t.Fatalf("goplayer packet=%#v err=%v", message, parseErr)
+	}
+	client, connection := net.Pipe()
+	defer client.Close()
+	server.attachPlayer(targetID, connection)
+	done := make(chan error, 1)
+	go func() {
+		_, summonErr := server.gmCheat(&active, packet.MSGGMSummon, append([]byte("Target"), 0), 1)
+		done <- summonErr
+	}()
+	message, err := sockets.ReadPacket(client)
+	if err != nil || message.Opcode != packet.SMSGNewWorld || message.Data[0] != 2 {
+		t.Fatalf("summon packet=%#v err=%v", message, err)
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if target, found := server.playerByGUID(targetID); !found || target.PositionX != active.PositionX || target.PositionY != active.PositionY {
+		t.Fatalf("online target=%#v found=%v", target, found)
+	}
+	if _, err := server.gmCheat(&active, packet.MSGGMSummon, append([]byte("Offline"), 0), 1); err != nil {
+		t.Fatal(err)
+	}
+	stored, found, err := characters.CharacterByGUID(offlineID)
+	if err != nil || !found || stored.Map != active.Map || stored.Zone != active.Zone || stored.PositionZ != active.PositionZ {
+		t.Fatalf("offline target=%#v found=%v err=%v", stored, found, err)
+	}
+	if responses, err := server.gmCheat(&active, packet.CMSGTeleportToPlayer, append([]byte("Stormwind"), 0), 1); err != nil || len(responses) != 1 || active.Map != 4 || active.PositionZ != 300 {
+		t.Fatalf("worldport responses=%d err=%v active=%#v", len(responses), err, active)
 	}
 }
 

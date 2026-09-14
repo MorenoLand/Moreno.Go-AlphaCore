@@ -4,6 +4,7 @@ type Opcode uint32
 
 const (
 	CMSGWorldTeleport             Opcode = 0x0008
+	CMSGTeleportToPlayer          Opcode = 0x0009
 	CMSGZoneMap                   Opcode = 0x000a
 	CMSGRecharge                  Opcode = 0x000f
 	CMSGLearnSpell                Opcode = 0x0010
@@ -226,6 +227,7 @@ const (
 	SMSGLevelupInfo               Opcode = 0x01c5
 	SMSGClearCooldown             Opcode = 0x01cf
 	SMSGCooldownCheat             Opcode = 0x01d2
+	MSGGMSummon                   Opcode = 0x01da
 	CMSGMountSpecialAnim          Opcode = 0x0164
 	SMSGMountSpecialAnim          Opcode = 0x0165
 	CMSGListInventory             Opcode = 0x016e
@@ -352,6 +354,7 @@ const (
 
 var opcodeNames = map[Opcode]string{
 	CMSGWorldTeleport:             "CMSG_WORLD_TELEPORT",
+	CMSGTeleportToPlayer:          "CMSG_TELEPORT_TO_PLAYER",
 	CMSGZoneMap:                   "CMSG_ZONE_MAP",
 	CMSGRecharge:                  "CMSG_RECHARGE",
 	CMSGLearnSpell:                "CMSG_LEARN_SPELL",
@@ -571,6 +574,7 @@ var opcodeNames = map[Opcode]string{
 	SMSGLevelupInfo:               "SMSG_LEVELUP_INFO",
 	SMSGClearCooldown:             "SMSG_CLEAR_COOLDOWN",
 	SMSGCooldownCheat:             "SMSG_COOLDOWN_CHEAT",
+	MSGGMSummon:                   "MSG_GM_SUMMON",
 	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",
 	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
 	CMSGListInventory:             "CMSG_LIST_INVENTORY",
