@@ -200,6 +200,8 @@ const (
 	AuraModIncreaseHealth    AuraType = 34
 	AuraModIncreaseMana      AuraType = 35
 	AuraModRoot              AuraType = 26
+	AuraModSchoolImmunity    AuraType = 39
+	AuraModDamageImmunity    AuraType = 40
 	AuraModDisarm            AuraType = 67
 	AuraPeriodicDamage       AuraType = 3
 	AuraPeriodicHeal         AuraType = 8

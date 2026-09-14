@@ -434,6 +434,43 @@ func spellAuraHarmful(spell dbc.Spell, effect dbc.SpellEffect) bool {
 	}
 }
 
+func spellDamageEffect(effect dbc.SpellEffect) bool {
+	switch packet.SpellEffect(effect.Type) {
+	case packet.SpellEffectInstantKill, packet.SpellEffectSchoolDamage, packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus, packet.SpellEffectPowerBurn, packet.SpellEffectHealthLeech, packet.SpellEffectPowerDrain:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *WorldServer) spellDamageImmune(guid, school int64) bool {
+	if school < 0 || school > 6 {
+		return false
+	}
+	mask := int64(1) << school
+	s.auras.mu.Lock()
+	defer s.auras.mu.Unlock()
+	for _, aura := range s.auras.active[guid] {
+		switch packet.AuraType(aura.effect.Aura) {
+		case packet.AuraModSchoolImmunity, packet.AuraModDamageImmunity:
+			immunity := aura.effect.MiscValue
+			if immunity == -1 {
+				immunity = 0x7e
+			} else if immunity == -2 {
+				immunity = 0x7f
+			} else if immunity >= 0 && immunity <= 6 {
+				immunity = int64(1) << immunity
+			} else {
+				continue
+			}
+			if immunity&mask != 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (s *WorldServer) finishSpellCast(guid int64, cast *spellCast) {
 	s.spells.mu.Lock()
 	if s.spells.casts[guid] != cast {
@@ -527,6 +564,9 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 		}
 		for _, target := range targets {
 			points := spellEffectPoints(effect, effectiveLevel)
+			if spellDamageEffect(effect) && s.spellDamageImmune(target.GUID, cast.spell.School) {
+				continue
+			}
 			switch packet.SpellEffect(effect.Type) {
 			case packet.SpellEffectInstantKill:
 				_ = s.changePlayerHealth(&target, -target.Health)
