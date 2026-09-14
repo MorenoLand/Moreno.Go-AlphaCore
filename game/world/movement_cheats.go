@@ -14,6 +14,9 @@ func (s *WorldServer) movementSpeedCheat(active *realm.Character, opcode packet.
 	if active == nil || gmLevel <= 0 || len(data) < 52 {
 		return nil
 	}
+	if opcode == packet.MSGMoveSetAllSpeedCheat {
+		return nil
+	}
 	speed := math.Float32frombits(binary.LittleEndian.Uint32(data[48:]))
 	speeds := s.playerSpeeds(active.GUID)
 	speedType, responseOpcode := 1, packet.SMSGForceSpeedChange

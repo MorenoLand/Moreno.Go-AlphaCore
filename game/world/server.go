@@ -243,7 +243,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.debugAIState(*active, message.Data)
-		case packet.MSGMoveSetRunSpeedCheat, packet.MSGMoveSetSwimSpeedCheat, packet.MSGMoveSetWalkSpeedCheat, packet.MSGMoveSetTurnRateCheat:
+		case packet.MSGMoveSetRunSpeedCheat, packet.MSGMoveSetSwimSpeedCheat, packet.MSGMoveSetWalkSpeedCheat, packet.MSGMoveSetAllSpeedCheat, packet.MSGMoveSetTurnRateCheat:
 			if active == nil {
 				return
 			}
