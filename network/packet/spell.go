@@ -124,6 +124,12 @@ const (
 )
 
 const (
+	SpellInterruptMovement     int64 = 0x01
+	SpellAuraInterruptMovement int64 = 0x08
+	SpellAuraInterruptTurning  int64 = 0x10
+)
+
+const (
 	AuraFlagCancelable AuraFlags = 0x01
 	AuraFlagEffect2    AuraFlags = 0x02
 	AuraFlagEffect1    AuraFlags = 0x04
@@ -177,6 +183,7 @@ const (
 	SpellEffectSanctuary        SpellEffect = 79
 	SpellEffectAddComboPoints   SpellEffect = 80
 	SpellEffectDuel             SpellEffect = 83
+	SpellEffectStuck            SpellEffect = 84
 	SpellEffectSummonPlayer     SpellEffect = 85
 	SpellEffectActivateObject   SpellEffect = 86
 )

@@ -831,6 +831,34 @@ func (s *WorldServer) hasAuraType(guid int64, auraType packet.AuraType) bool {
 	return false
 }
 
+func (s *WorldServer) interruptMovement(active realm.Character, moved, turned bool) {
+	if moved || turned {
+		s.interruptAuras(active, moved, turned)
+	}
+	if !moved {
+		return
+	}
+	s.spells.mu.Lock()
+	cast := s.spells.casts[active.GUID]
+	if cast == nil || cast.spell.InterruptFlags&packet.SpellInterruptMovement == 0 {
+		s.spells.mu.Unlock()
+		return
+	}
+	delete(s.spells.casts, active.GUID)
+	if cast.timer != nil {
+		cast.timer.Stop()
+	}
+	s.spells.mu.Unlock()
+	result, err := spellCastResult(cast.spell.ID, packet.SpellFailedInterrupted)
+	if err == nil {
+		s.sendPlayer(active.GUID, result)
+	}
+	if failure, err := packet.Encode(packet.SMSGSpellFailure, append(encodeGUID(active.GUID), append(encodeUint32(cast.spell.ID), byte(packet.SpellFailedInterrupted))...)); err == nil {
+		s.broadcastPlayer(active, failure)
+		s.sendPlayer(active.GUID, failure)
+	}
+}
+
 func (s *WorldServer) spellOnCooldown(guid, spellID int64) bool {
 	now := time.Now()
 	s.spells.mu.Lock()

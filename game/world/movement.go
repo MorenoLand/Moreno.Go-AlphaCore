@@ -9,9 +9,13 @@ import (
 )
 
 func (s *WorldServer) updateMovement(active *realm.Character, opcode packet.Opcode, data []byte) error {
-	if active == nil || len(data) < 48 {
+	if active == nil || active.Health <= 0 || len(data) < 48 {
 		return nil
 	}
+	if movementForceAck(opcode) {
+		return nil
+	}
+	oldX, oldY, oldZ, oldO := active.PositionX, active.PositionY, active.PositionZ, active.Orientation
 	x := math.Float32frombits(binary.LittleEndian.Uint32(data[24:28]))
 	y := math.Float32frombits(binary.LittleEndian.Uint32(data[28:32]))
 	z := math.Float32frombits(binary.LittleEndian.Uint32(data[32:36]))
@@ -34,10 +38,8 @@ func (s *WorldServer) updateMovement(active *realm.Character, opcode packet.Opco
 			}
 		}
 	}
+	s.interruptMovement(*active, oldX != x || oldY != y || oldZ != z, oldO != o)
 	s.updatePlayer(*active)
-	if movementForceAck(opcode) {
-		return nil
-	}
 	payload := append(encodeGUID(active.GUID), data...)
 	if opcode == packet.MSGMoveCollideRedirect || opcode == packet.MSGMoveCollideStuck {
 		flags := binary.LittleEndian.Uint32(payload[52:56])

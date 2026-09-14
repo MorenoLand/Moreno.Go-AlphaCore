@@ -31,6 +31,7 @@ type auraState struct {
 	cancelable        bool
 	target            realm.Character
 	effect            dbc.SpellEffect
+	interruptFlags    int64
 	timer, periodic   *time.Timer
 }
 
@@ -61,7 +62,7 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 			period = 5000
 		}
 	}
-	aura := &auraState{spellID: cast.spell.ID, casterID: cast.caster.GUID, slot: -1, effectIndex: effectIndex, duration: duration, passive: passive, harmful: harmful, cancelable: !harmful && packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeCantCancel == 0, target: target, effect: effect, periodic: nil}
+	aura := &auraState{spellID: cast.spell.ID, casterID: cast.caster.GUID, slot: -1, effectIndex: effectIndex, duration: duration, passive: passive, harmful: harmful, cancelable: !harmful && packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeCantCancel == 0, target: target, effect: effect, interruptFlags: cast.spell.AuraInterruptFlags}
 	s.auras.mu.Lock()
 	if s.auras.active == nil {
 		s.auras.active = make(map[int64]map[int]*auraState)
@@ -104,6 +105,23 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 	}
 	s.writeAura(target, aura, false)
 	s.refreshAuraUnitFlags(target)
+}
+
+func (s *WorldServer) interruptAuras(target realm.Character, moved, turned bool) {
+	s.auras.mu.Lock()
+	remove := make([]int, 0)
+	for slot, aura := range s.auras.active[target.GUID] {
+		if aura.passive {
+			continue
+		}
+		if moved && aura.interruptFlags&packet.SpellAuraInterruptMovement != 0 || turned && aura.interruptFlags&packet.SpellAuraInterruptTurning != 0 {
+			remove = append(remove, slot)
+		}
+	}
+	s.auras.mu.Unlock()
+	for _, slot := range remove {
+		s.removeAura(target, slot)
+	}
 }
 
 func (s *WorldServer) tickAura(guid int64, slot int, aura *auraState, period int64) {
