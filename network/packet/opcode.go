@@ -9,7 +9,10 @@ const (
 	CMSGZoneMap                   Opcode = 0x000a
 	CMSGRecharge                  Opcode = 0x000f
 	CMSGLearnSpell                Opcode = 0x0010
+	CMSGCreateMonster             Opcode = 0x0011
+	CMSGDestroyMonster            Opcode = 0x0012
 	CMSGCreateItem                Opcode = 0x0013
+	CMSGMakeMonsterAttackMe       Opcode = 0x0015
 	CMSGEnableDebugCombatLogging  Opcode = 0x0017
 	CMSGBeastMaster               Opcode = 0x0021
 	CMSGGodMode                   Opcode = 0x0022
@@ -363,7 +366,10 @@ var opcodeNames = map[Opcode]string{
 	CMSGZoneMap:                   "CMSG_ZONE_MAP",
 	CMSGRecharge:                  "CMSG_RECHARGE",
 	CMSGLearnSpell:                "CMSG_LEARN_SPELL",
+	CMSGCreateMonster:             "CMSG_CREATEMONSTER",
+	CMSGDestroyMonster:            "CMSG_DESTROYMONSTER",
 	CMSGCreateItem:                "CMSG_CREATEITEM",
+	CMSGMakeMonsterAttackMe:       "CMSG_MAKEMONSTERATTACKME",
 	CMSGEnableDebugCombatLogging:  "CMSG_ENABLEDEBUGCOMBATLOGGING",
 	CMSGBeastMaster:               "CMSG_BEASTMASTER",
 	CMSGGodMode:                   "CMSG_GODMODE",

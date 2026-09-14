@@ -9,14 +9,16 @@ import (
 )
 
 type creatureRegistry struct {
-	mu     sync.Mutex
-	active map[uint64]*creatureState
+	mu          sync.Mutex
+	active      map[uint64]*creatureState
+	nextDynamic uint64
 }
 
 type creatureState struct {
 	GUID                           uint64
 	Spawn                          worlddb.CreatureSpawn
 	Template                       worlddb.CreatureTemplate
+	Stats                          worlddb.CreatureClassLevelStats
 	Level, Health, MaxHealth, Mana int64
 }
 
@@ -47,10 +49,38 @@ func (s *WorldServer) creatureStateAt(active realm.Character, guid uint64, dista
 		health = 1
 	}
 	mana := int64(float64(stats.Mana) * float64(template.ManaMultiplier) * float64(spawn.ManaPercent) / 100)
-	state := &creatureState{GUID: guid, Spawn: spawn, Template: template, Level: level, Health: health, MaxHealth: health, Mana: mana}
+	state := &creatureState{GUID: guid, Spawn: spawn, Template: template, Stats: stats, Level: level, Health: health, MaxHealth: health, Mana: mana}
 	s.creatures.active[guid] = state
 	s.creatures.mu.Unlock()
 	return state, true, nil
+}
+
+func (s *WorldServer) nextCreatureGUID() uint64 {
+	s.creatures.mu.Lock()
+	if s.creatures.active == nil {
+		s.creatures.active = make(map[uint64]*creatureState)
+	}
+	for {
+		s.creatures.nextDynamic++
+		guid := uint64(0xf130000000000000) | s.creatures.nextDynamic
+		if _, found := s.creatures.active[guid]; !found {
+			s.creatures.mu.Unlock()
+			return guid
+		}
+	}
+}
+
+func (s *WorldServer) removeCreature(guid uint64) (creatureState, bool) {
+	s.creatures.mu.Lock()
+	state, found := s.creatures.active[guid]
+	if found {
+		delete(s.creatures.active, guid)
+	}
+	s.creatures.mu.Unlock()
+	if !found {
+		return creatureState{}, false
+	}
+	return *state, true
 }
 
 func (s *WorldServer) setCreatureState(state creatureState) {
