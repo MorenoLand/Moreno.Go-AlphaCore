@@ -630,6 +630,9 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 		if packet.SpellEffect(effect.Type) == packet.SpellEffectAddFarsight {
 			s.farsightSpell(cast, effect)
 		}
+		if packet.SpellEffect(effect.Type) == packet.SpellEffectSendEvent {
+			s.sendEventSpell(cast, effect)
+		}
 	}
 	for index, effect := range cast.spell.Effects {
 		targets := cast.effectTargets[index]
