@@ -360,6 +360,9 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 		return packet.SpellNoError
 	}
 	if target.UnitGUID == uint64(active.GUID) {
+		if spellHasEffect(spell, packet.SpellEffectPickpocket) {
+			return packet.SpellFailedTargetFriendly
+		}
 		if spellHasEffect(spell, packet.SpellEffectDuel) {
 			return packet.SpellFailedBadTargets
 		}
@@ -380,6 +383,17 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 			if state.Health > 0 && spellHasEffect(spell, packet.SpellEffectResurrect) {
 				return packet.SpellFailedTargetNotDead
 			}
+			if spellHasEffect(spell, packet.SpellEffectPickpocket) {
+				if !s.creatureHostile(active, state) {
+					return packet.SpellFailedTargetFriendly
+				}
+				if state.CombatTarget != 0 {
+					return packet.SpellFailedAffectingCombat
+				}
+				if state.Template.PickpocketLootID <= 0 {
+					return packet.SpellFailedTargetNoPockets
+				}
+			}
 			return packet.SpellNoError
 		}
 		return packet.SpellFailedBadTargets
@@ -389,6 +403,13 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 	}
 	if targetPlayer.Health > 0 && spellHasEffect(spell, packet.SpellEffectResurrect) {
 		return packet.SpellFailedTargetNotDead
+	}
+	if spellHasEffect(spell, packet.SpellEffectPickpocket) {
+		team, targetTeam, err := s.teams(active, targetPlayer)
+		if err == nil && team != 0 && targetTeam != 0 && team == targetTeam {
+			return packet.SpellFailedTargetFriendly
+		}
+		return packet.SpellFailedTargetNoPockets
 	}
 	if spellHasEffect(spell, packet.SpellEffectDuel) {
 		if s.duelForPlayer(active.GUID) != nil && s.duelTarget(active.GUID) == targetPlayer.GUID {
@@ -592,6 +613,9 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 		targets := cast.effectTargets[index]
 		if len(targets) == 0 && cast.targetCreature != nil {
 			s.applyCreatureSpellEffect(cast, cast.targetCreature, effect, spellEffectPoints(effect, effectiveLevel))
+			if packet.SpellEffect(effect.Type) == packet.SpellEffectPickpocket {
+				s.pickpocketSpell(cast, cast.targetCreature)
+			}
 			if packet.SpellEffect(effect.Type) == packet.SpellEffectTameCreature {
 				s.tameCreature(cast, cast.targetCreature)
 			}

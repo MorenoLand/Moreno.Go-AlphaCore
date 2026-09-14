@@ -42,8 +42,9 @@ type WorldServer struct {
 	tradeMu            sync.Mutex
 	trades             map[int64]*tradeState
 	lootMu             sync.Mutex
-	loots              map[uint64]*lootState
+	loots              map[lootKey]*lootState
 	lootSelections     map[int64]uint64
+	lootSelectionTypes map[int64]byte
 	spells             spellRegistry
 	auras              auraRegistry
 	creatures          creatureRegistry

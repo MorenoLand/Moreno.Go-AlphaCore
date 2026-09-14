@@ -437,6 +437,7 @@ CREATE TABLE IF NOT EXISTS creature_template (
     unit_flags INTEGER NOT NULL DEFAULT 0,
     npc_flags INTEGER NOT NULL DEFAULT 0,
     type INTEGER NOT NULL DEFAULT 0,
+    pickpocket_loot_id INTEGER NOT NULL DEFAULT 0,
     beast_family INTEGER NOT NULL DEFAULT 0,
     health_multiplier REAL NOT NULL DEFAULT 1,
     mana_multiplier REAL NOT NULL DEFAULT 1,
@@ -549,6 +550,16 @@ CREATE TABLE IF NOT EXISTS fishing_loot_template (
     PRIMARY KEY (entry, item)
 );
 CREATE TABLE IF NOT EXISTS reference_loot_template (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    ChanceOrQuestChance REAL NOT NULL DEFAULT 100,
+    groupid INTEGER NOT NULL DEFAULT 0,
+    mincountOrRef INTEGER NOT NULL DEFAULT 1,
+    maxcount INTEGER NOT NULL DEFAULT 1,
+    condition_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
+);
+CREATE TABLE IF NOT EXISTS pickpocketing_loot_template (
     entry INTEGER NOT NULL DEFAULT 0,
     item INTEGER NOT NULL DEFAULT 0,
     ChanceOrQuestChance REAL NOT NULL DEFAULT 100,

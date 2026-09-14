@@ -23,11 +23,18 @@ const (
 	lootItemSource       byte   = 1
 	lootGameObjectSource byte   = 2
 	lootCreatureSource   byte   = 3
+	lootPickpocketSource byte   = 4
+	lootTypePicklock     uint32 = 2
 )
 
 type lootItem struct {
 	entry, quantity int64
 	claimed         bool
+}
+
+type lootKey struct {
+	guid       uint64
+	sourceType byte
 }
 
 type lootState struct {
@@ -41,12 +48,13 @@ type lootState struct {
 
 func (s *WorldServer) lootStateLocked(guid uint64, sourceType byte, entry int64) *lootState {
 	if s.loots == nil {
-		s.loots = make(map[uint64]*lootState)
+		s.loots = make(map[lootKey]*lootState)
 	}
-	state := s.loots[guid]
+	key := lootKey{guid: guid, sourceType: sourceType}
+	state := s.loots[key]
 	if state == nil {
 		state = &lootState{guid: guid, sourceType: sourceType, sourceEntry: uint64(entry), active: make(map[int64]bool)}
-		s.loots[guid] = state
+		s.loots[key] = state
 	}
 	return state
 }
@@ -123,6 +131,8 @@ func (s *WorldServer) lootTemplates(sourceType byte, entry int64, object worlddb
 			return s.WorldData.FishingLootTemplates(zone)
 		}
 		return s.WorldData.GameObjectLootTemplates(object.Data[1])
+	case lootPickpocketSource:
+		return s.WorldData.PickpocketLootTemplates(entry)
 	default:
 		return s.WorldData.CreatureLootTemplates(entry)
 	}
@@ -158,12 +168,16 @@ func (s *WorldServer) generateLoot(state *lootState, sourceType byte, entry int6
 	return nil
 }
 
-func (s *WorldServer) setLootSelection(guid int64, object uint64) {
+func (s *WorldServer) setLootSelection(guid int64, object uint64, sourceType byte) {
 	s.lootMu.Lock()
 	if s.lootSelections == nil {
 		s.lootSelections = make(map[int64]uint64)
 	}
+	if s.lootSelectionTypes == nil {
+		s.lootSelectionTypes = make(map[int64]byte)
+	}
 	s.lootSelections[guid] = object
+	s.lootSelectionTypes[guid] = sourceType
 	s.lootMu.Unlock()
 }
 
@@ -172,6 +186,22 @@ func (s *WorldServer) lootSelection(guid int64) uint64 {
 	object := s.lootSelections[guid]
 	s.lootMu.Unlock()
 	return object
+}
+
+func (s *WorldServer) selectedLootStateLocked(guid int64) (uint64, *lootState) {
+	object := s.lootSelections[guid]
+	if object == 0 {
+		return 0, nil
+	}
+	if state := s.loots[lootKey{guid: object, sourceType: s.lootSelectionTypes[guid]}]; state != nil {
+		return object, state
+	}
+	for key, state := range s.loots {
+		if key.guid == object && state.active[guid] {
+			return object, state
+		}
+	}
+	return object, nil
 }
 
 func (s *WorldServer) sendLoot(active realm.Character, guid uint64, sourceType byte, entry int64, object worlddb.GameObjectTemplate, zone int64) ([][]byte, error) {
@@ -187,7 +217,7 @@ func (s *WorldServer) sendLoot(active realm.Character, guid uint64, sourceType b
 	items := append([]lootItem(nil), state.items...)
 	money := state.money
 	s.lootMu.Unlock()
-	s.setLootSelection(active.GUID, guid)
+	s.setLootSelection(active.GUID, guid, sourceType)
 	itemData := make([]byte, 0, len(items)*17)
 	templates := make([]worlddb.ItemTemplate, 0, len(items))
 	count := 0
@@ -209,7 +239,11 @@ func (s *WorldServer) sendLoot(active realm.Character, guid uint64, sourceType b
 		templates = append(templates, template)
 		count++
 	}
-	body := append(encodeUint64(guid), encodeUint32(int64(lootTypeCorpse))...)
+	lootType := lootTypeCorpse
+	if sourceType == lootPickpocketSource {
+		lootType = lootTypePicklock
+	}
+	body := append(encodeUint64(guid), encodeUint32(int64(lootType))...)
 	if sourceType == lootGameObjectSource && object.Type == gameObjectTypeFishingNode {
 		binary.LittleEndian.PutUint32(body[8:], lootTypeFishing)
 	}
@@ -285,12 +319,8 @@ func (s *WorldServer) lootItem(active realm.Character, data []byte) ([][]byte, e
 	if len(data) < 1 {
 		return nil, nil
 	}
-	guid := s.lootSelection(active.GUID)
-	if guid == 0 {
-		return nil, nil
-	}
 	s.lootMu.Lock()
-	state := s.loots[guid]
+	_, state := s.selectedLootStateLocked(active.GUID)
 	if state == nil || !state.active[active.GUID] || int(data[0]) >= len(state.items) || state.items[data[0]].claimed {
 		s.lootMu.Unlock()
 		return nil, nil
@@ -343,15 +373,11 @@ func (s *WorldServer) lootItem(active realm.Character, data []byte) ([][]byte, e
 }
 
 func (s *WorldServer) lootMoney(active *realm.Character) ([][]byte, error) {
-	if active == nil {
-		return nil, nil
-	}
-	guid := s.lootSelection(active.GUID)
-	if guid == 0 || s.Characters == nil {
+	if active == nil || s.Characters == nil {
 		return nil, nil
 	}
 	s.lootMu.Lock()
-	state := s.loots[guid]
+	_, state := s.selectedLootStateLocked(active.GUID)
 	if state == nil || !state.active[active.GUID] || state.money <= 0 {
 		s.lootMu.Unlock()
 		return nil, nil
@@ -383,16 +409,18 @@ func (s *WorldServer) lootRelease(active realm.Character, data []byte) ([][]byte
 		return nil, nil
 	}
 	guid := binary.LittleEndian.Uint64(data)
-	if s.lootSelection(active.GUID) != guid {
+	s.lootMu.Lock()
+	if s.lootSelections[active.GUID] != guid {
+		s.lootMu.Unlock()
 		return nil, nil
 	}
-	s.lootMu.Lock()
-	state := s.loots[guid]
+	_, state := s.selectedLootStateLocked(active.GUID)
 	noLoot := state != nil && !stateHasLoot(state)
 	if state != nil {
 		delete(state.active, active.GUID)
 	}
 	delete(s.lootSelections, active.GUID)
+	delete(s.lootSelectionTypes, active.GUID)
 	s.lootMu.Unlock()
 	response, err := packet.Encode(packet.SMSGLootReleaseResponse, append(encodeUint64(guid), 1))
 	if err != nil {

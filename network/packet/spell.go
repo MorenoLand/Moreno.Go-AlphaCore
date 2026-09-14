@@ -52,6 +52,7 @@ const (
 	SpellFailedTargetEnemy     SpellCastResult = 0x42
 	SpellFailedTargetFriendly  SpellCastResult = 0x44
 	SpellFailedTargetNotDead   SpellCastResult = 0x46
+	SpellFailedTargetNoPockets SpellCastResult = 0x48
 	SpellFailedNoComboPoints   SpellCastResult = 0x52
 	SpellFailedTargetDueling   SpellCastResult = 0x54
 	SpellFailedUnknown         SpellCastResult = 0x57

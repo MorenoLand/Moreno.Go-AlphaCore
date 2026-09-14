@@ -162,6 +162,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.speeds, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
+	delete(s.lootSelectionTypes, guid)
 	for _, loot := range s.loots {
 		delete(loot.active, guid)
 	}

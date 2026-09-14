@@ -8,7 +8,7 @@ type LootTemplate struct {
 }
 
 func (s *Store) lootTemplates(table string, entry int64) ([]LootTemplate, error) {
-	allowed := map[string]bool{"item_loot_template": true, "creature_loot_template": true, "gameobject_loot_template": true, "fishing_loot_template": true, "reference_loot_template": true}
+	allowed := map[string]bool{"item_loot_template": true, "creature_loot_template": true, "gameobject_loot_template": true, "fishing_loot_template": true, "reference_loot_template": true, "pickpocketing_loot_template": true}
 	if !allowed[table] {
 		return nil, fmt.Errorf("unknown loot table %q", table)
 	}
@@ -49,4 +49,8 @@ func (s *Store) FishingLootTemplates(entry int64) ([]LootTemplate, error) {
 
 func (s *Store) ReferenceLootTemplates(entry int64) ([]LootTemplate, error) {
 	return s.lootTemplates("reference_loot_template", entry)
+}
+
+func (s *Store) PickpocketLootTemplates(entry int64) ([]LootTemplate, error) {
+	return s.lootTemplates("pickpocketing_loot_template", entry)
 }
