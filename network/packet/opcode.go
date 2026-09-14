@@ -129,6 +129,13 @@ const (
 	SMSGLootMoneyNotify           Opcode = 0x0156
 	SMSGLootItemNotify            Opcode = 0x0157
 	SMSGLootClearMoney            Opcode = 0x0158
+	SMSGDuelRequested             Opcode = 0x015a
+	SMSGDuelOutOfBounds           Opcode = 0x015b
+	SMSGDuelInBounds              Opcode = 0x015c
+	SMSGDuelComplete              Opcode = 0x015d
+	SMSGDuelWinner                Opcode = 0x015e
+	CMSGDuelAccepted              Opcode = 0x015f
+	CMSGDuelCancelled             Opcode = 0x0160
 	CMSGPetitionShowlist          Opcode = 0x01ad
 	SMSGPetitionShowlist          Opcode = 0x01ae
 	CMSGPetitionBuy               Opcode = 0x01af
@@ -486,6 +493,13 @@ var opcodeNames = map[Opcode]string{
 	SMSGLootMoneyNotify:           "SMSG_LOOT_MONEY_NOTIFY",
 	SMSGLootItemNotify:            "SMSG_LOOT_ITEM_NOTIFY",
 	SMSGLootClearMoney:            "SMSG_LOOT_CLEAR_MONEY",
+	SMSGDuelRequested:             "SMSG_DUEL_REQUESTED",
+	SMSGDuelOutOfBounds:           "SMSG_DUEL_OUTOFBOUNDS",
+	SMSGDuelInBounds:              "SMSG_DUEL_INBOUNDS",
+	SMSGDuelComplete:              "SMSG_DUEL_COMPLETE",
+	SMSGDuelWinner:                "SMSG_DUEL_WINNER",
+	CMSGDuelAccepted:              "CMSG_DUEL_ACCEPTED",
+	CMSGDuelCancelled:             "CMSG_DUEL_CANCELLED",
 	CMSGPetitionShowlist:          "CMSG_PETITION_SHOWLIST",
 	SMSGPetitionShowlist:          "SMSG_PETITION_SHOWLIST",
 	CMSGPetitionBuy:               "CMSG_PETITION_BUY",

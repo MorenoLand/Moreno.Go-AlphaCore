@@ -360,6 +360,9 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 		return packet.SpellNoError
 	}
 	if target.UnitGUID == uint64(active.GUID) {
+		if spellHasEffect(spell, packet.SpellEffectDuel) {
+			return packet.SpellFailedBadTargets
+		}
 		if attributesEx&packet.SpellAttributeExCantTargetSelf != 0 {
 			return packet.SpellFailedBadTargets
 		}
@@ -367,6 +370,9 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 	}
 	targetPlayer, targetFound := s.playerByGUID(int64(target.UnitGUID))
 	if !targetFound {
+		if spellHasEffect(spell, packet.SpellEffectDuel) {
+			return packet.SpellFailedBadTargets
+		}
 		if state, found, _ := s.creatureStateAt(active, target.UnitGUID, creatureViewDistance); found {
 			if state.Health <= 0 && spell.Targets&int64(packet.SpellTargetDead) == 0 && !spellHasEffect(spell, packet.SpellEffectResurrect) {
 				return packet.SpellFailedTargetsDead
@@ -383,6 +389,22 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 	}
 	if targetPlayer.Health > 0 && spellHasEffect(spell, packet.SpellEffectResurrect) {
 		return packet.SpellFailedTargetNotDead
+	}
+	if spellHasEffect(spell, packet.SpellEffectDuel) {
+		if s.duelForPlayer(active.GUID) != nil && s.duelTarget(active.GUID) == targetPlayer.GUID {
+			return packet.SpellFailedError
+		}
+		if s.duelForPlayer(targetPlayer.GUID) != nil {
+			return packet.SpellFailedTargetDueling
+		}
+		team, targetTeam, err := s.teams(active, targetPlayer)
+		if err == nil && team != 0 && targetTeam != 0 && team != targetTeam {
+			return packet.SpellFailedTargetEnemy
+		}
+		if s.hasAuraType(active.GUID, packet.AuraModStealth) {
+			return packet.SpellFailedError
+		}
+		return packet.SpellNoError
 	}
 	if spellHarmful(spell) && s.isSanctuary(targetPlayer.GUID) {
 		return packet.SpellFailedTargetFriendly
@@ -628,6 +650,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 			case packet.SpellEffectSanctuary:
 				s.setCombatTarget(cast.caster.GUID, 0)
 				s.setSanctuary(cast.caster.GUID, time.Second)
+			case packet.SpellEffectDuel:
+				s.requestDuel(cast, target, effect)
 			case packet.SpellEffectSummonPlayer:
 				s.summonSpellTarget(cast, target)
 			case packet.SpellEffectTriggerSpell:
@@ -655,6 +679,9 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				s.bindSpellTarget(cast, target)
 			case packet.SpellEffectStuck:
 				s.stuckSpellTarget(target)
+			}
+			if duelDamageEffect(effect) && target.Health <= 0 {
+				s.duelKnockout(cast.caster.GUID, target.GUID)
 			}
 		}
 	}

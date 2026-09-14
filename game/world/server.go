@@ -46,6 +46,9 @@ type WorldServer struct {
 	auras             auraRegistry
 	creatures         creatureRegistry
 	resurrections     resurrectionRegistry
+	duelMu            sync.Mutex
+	duels             map[int64]*duelState
+	nextDuel          uint64
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -153,6 +156,16 @@ func (s *WorldServer) handle(connection net.Conn) {
 					}
 				}
 			}
+		case packet.CMSGDuelAccepted:
+			if active == nil {
+				return
+			}
+			s.duelAccept(active.GUID)
+		case packet.CMSGDuelCancelled:
+			if active == nil {
+				return
+			}
+			s.duelCancel(active.GUID)
 		case packet.MSGMoveWorldportAck:
 			if active == nil {
 				return

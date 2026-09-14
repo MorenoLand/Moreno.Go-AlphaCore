@@ -127,6 +127,7 @@ func (s *WorldServer) updatePlayer(character realm.Character) {
 }
 
 func (s *WorldServer) unregisterPlayer(guid int64) {
+	s.endDuelForPlayer(guid)
 	s.players.mu.Lock()
 	delete(s.players.players, guid)
 	delete(s.players.groupStatus, guid)

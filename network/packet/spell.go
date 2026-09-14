@@ -30,6 +30,7 @@ type SpellCastResult byte
 
 const (
 	SpellFailedAffectingCombat SpellCastResult = 0x00
+	SpellFailedError           SpellCastResult = 0x0e
 	SpellFailedBadImplicit     SpellCastResult = 0x05
 	SpellFailedBadTargets      SpellCastResult = 0x06
 	SpellFailedCasterDead      SpellCastResult = 0x0a
@@ -52,6 +53,7 @@ const (
 	SpellFailedTargetFriendly  SpellCastResult = 0x44
 	SpellFailedTargetNotDead   SpellCastResult = 0x46
 	SpellFailedNoComboPoints   SpellCastResult = 0x52
+	SpellFailedTargetDueling   SpellCastResult = 0x54
 	SpellFailedUnknown         SpellCastResult = 0x57
 	SpellFailedDontReport      SpellCastResult = 0x0b
 	SpellNoError               SpellCastResult = 0xff

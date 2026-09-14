@@ -40,6 +40,7 @@ func (s *WorldServer) updateMovement(active *realm.Character, opcode packet.Opco
 	}
 	s.interruptMovement(*active, oldX != x || oldY != y || oldZ != z, oldO != o)
 	s.updatePlayer(*active)
+	s.duelMovement(*active)
 	payload := append(encodeGUID(active.GUID), data...)
 	if opcode == packet.MSGMoveCollideRedirect || opcode == packet.MSGMoveCollideStuck {
 		flags := binary.LittleEndian.Uint32(payload[52:56])
