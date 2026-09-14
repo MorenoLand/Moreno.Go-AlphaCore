@@ -47,6 +47,7 @@ type spellCast struct {
 	spellLevel     int64
 	effectLevel    int64
 	ranked         bool
+	castFlags      packet.SpellCastFlags
 	timer          *time.Timer
 }
 
@@ -476,7 +477,7 @@ func (s *WorldServer) triggerSpell(caster realm.Character, spellID int64, target
 	if effectLevel < 0 {
 		effectLevel = 0
 	}
-	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, targets: s.spellTargets(caster, spell, target), effectTargets: s.spellEffectTargetsAll(caster, spell, target), triggered: true, started: time.Now(), spellLevel: spellLevel, effectLevel: effectLevel, ranked: ranked}
+	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, targets: s.spellTargets(caster, spell, target), effectTargets: s.spellEffectTargetsAll(caster, spell, target), triggered: true, started: time.Now(), spellLevel: spellLevel, effectLevel: effectLevel, ranked: ranked, castFlags: packet.SpellCastFlagProc}
 	s.performSpellCast(cast)
 }
 
@@ -1080,7 +1081,7 @@ func spellStartPacket(cast *spellCast) ([]byte, error) {
 	}
 	data := append(encodeGUID(source), encodeGUID(cast.caster.GUID)...)
 	data = append(data, encodeUint32(cast.spell.ID)...)
-	data = append(data, 0, 0)
+	data = append(data, encodeUint16(int64(cast.castFlags))...)
 	data = append(data, encodeInt32(cast.castTime)...)
 	data = append(data, byte(cast.targetMask), byte(cast.targetMask>>8))
 	if cast.targetMask != packet.SpellTargetSelf {
@@ -1096,7 +1097,7 @@ func spellGoPacket(cast *spellCast) ([]byte, error) {
 	}
 	data := append(encodeGUID(source), encodeGUID(cast.caster.GUID)...)
 	data = append(data, encodeUint32(cast.spell.ID)...)
-	data = append(data, 0, 0)
+	data = append(data, encodeUint16(int64(cast.castFlags&^packet.SpellCastFlagProc))...)
 	targets := cast.targets
 	if cast.effectTargets != nil {
 		targets = cast.effectTargets[0]
