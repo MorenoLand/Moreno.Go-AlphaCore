@@ -74,7 +74,7 @@ func TestGMCheats(t *testing.T) {
 	}
 	active.Power1 = 10
 	server.updatePlayer(active)
-	if responses, err := server.gmCheat(&active, packet.CMSGRecharge, nil, 1); err != nil || len(responses) != 1 || active.Power1 != 1000 {
+	if responses, err := server.gmCheat(&active, packet.CMSGRecharge, nil, 1); err != nil || len(responses) != 1 || active.Power1 != 200 {
 		t.Fatalf("recharge responses=%d err=%v power=%d", len(responses), err, active.Power1)
 	}
 	server.setSpellCooldown(active, dbc.Spell{ID: 9001, RecoveryTime: 1000})
@@ -107,7 +107,7 @@ func TestGMCheats(t *testing.T) {
 		t.Fatalf("debug logging err=%v flags=%x", err, server.unitFlags(guid))
 	}
 	stored, found, err := characters.CharacterByGUID(guid)
-	if err != nil || !found || stored.Level != 3 || stored.Money != 110 || stored.Power1 != 1000 {
+	if err != nil || !found || stored.Level != 3 || stored.Money != 110 || stored.Power1 != 200 {
 		t.Fatalf("stored=%#v found=%v err=%v", stored, found, err)
 	}
 }

@@ -133,6 +133,11 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 		}
 	}
 	values := buildPlayerFields(character, race, inventory)
+	values[27] = uint32(maxInt64(s.playerMaxHealth(character.GUID), int64(values[27])))
+	values[28] = uint32(s.playerMaxPower(character.GUID, 0))
+	values[29] = uint32(s.playerMaxPower(character.GUID, 1))
+	values[30] = uint32(s.playerMaxPower(character.GUID, 2))
+	values[31] = uint32(s.playerMaxPower(character.GUID, 3))
 	createPacket, err := packet.EncodePlayerCreate(uint64(character.GUID), values, packet.Movement{X: character.PositionX, Y: character.PositionY, Z: character.PositionZ, O: character.Orientation, WalkSpeed: 2.5, RunSpeed: 7, SwimSpeed: 4.722222, TurnRate: 3.141594})
 	if err != nil {
 		return nil, err

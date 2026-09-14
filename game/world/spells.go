@@ -757,6 +757,9 @@ func (s *WorldServer) changePlayerHealth(player *realm.Character, delta int64) e
 	if player.Health < 0 {
 		player.Health = 0
 	}
+	if s.playerMaxHealthKnown(player.GUID) && player.Health > s.playerMaxHealth(player.GUID) {
+		player.Health = s.playerMaxHealth(player.GUID)
+	}
 	if s.Characters != nil {
 		if err := s.Characters.UpdateHealth(player.GUID, player.AccountID, player.RealmID, player.Health); err != nil {
 			return err
@@ -775,6 +778,9 @@ func (s *WorldServer) changePlayerPower(player *realm.Character, powerType, delt
 	power := playerPower(*player, powerType) + delta
 	if power < 0 {
 		power = 0
+	}
+	if maximum := s.playerMaxPower(player.GUID, powerType); power > maximum {
+		power = maximum
 	}
 	setPlayerPower(player, powerType, power)
 	if s.Characters != nil {

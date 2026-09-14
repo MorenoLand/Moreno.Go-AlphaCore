@@ -71,6 +71,7 @@ func TestPeriodicAuraChangesHealth(t *testing.T) {
 	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases)}
 	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Caster", Map: 0, Health: 10}
 	server.registerPlayer(active)
+	server.setPlayerMaxHealth(guid, 100)
 	spell := dbc.Spell{ID: 44, DurationIndex: 1}
 	effect := dbc.SpellEffect{Type: int64(packet.SpellEffectApplyAura), Aura: int64(packet.AuraPeriodicHeal), AuraPeriod: 5, BasePoints: 2}
 	server.applyAura(&spellCast{caster: active, spell: spell}, active, 0, effect)

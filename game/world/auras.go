@@ -29,6 +29,7 @@ type auraState struct {
 	duration          int64
 	passive, harmful  bool
 	cancelable        bool
+	points            int64
 	target            realm.Character
 	effect            dbc.SpellEffect
 	interruptFlags    int64
@@ -62,7 +63,7 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 			period = 5000
 		}
 	}
-	aura := &auraState{spellID: cast.spell.ID, casterID: cast.caster.GUID, slot: -1, effectIndex: effectIndex, duration: duration, passive: passive, harmful: harmful, cancelable: !harmful && packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeCantCancel == 0, target: target, effect: effect, interruptFlags: cast.spell.AuraInterruptFlags}
+	aura := &auraState{spellID: cast.spell.ID, casterID: cast.caster.GUID, slot: -1, effectIndex: effectIndex, duration: duration, passive: passive, harmful: harmful, cancelable: !harmful && packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeCantCancel == 0, points: spellEffectPoints(effect, maxSpellLevel(cast.caster.Level, cast.spell.BaseLevel)), target: target, effect: effect, interruptFlags: cast.spell.AuraInterruptFlags}
 	s.auras.mu.Lock()
 	if s.auras.active == nil {
 		s.auras.active = make(map[int64]map[int]*auraState)
@@ -94,6 +95,7 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 	}
 	s.auras.active[target.GUID][aura.slot] = aura
 	s.auras.mu.Unlock()
+	s.auraEffectChange(target, aura, false)
 	if aura.passive {
 		return
 	}
@@ -215,6 +217,7 @@ func (s *WorldServer) removeAura(target realm.Character, slot int) {
 		delete(s.auras.active, target.GUID)
 	}
 	s.auras.mu.Unlock()
+	s.auraEffectChange(target, aura, true)
 	if aura.passive {
 		return
 	}

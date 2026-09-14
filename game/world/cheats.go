@@ -158,7 +158,11 @@ func (s *WorldServer) cheatLevel(active *realm.Character, level uint32, gm bool)
 			active.Health = maxInt64(stats.BaseHealth, 1)
 			if powerType == 0 {
 				active.Power1 = maxInt64(stats.BaseMana, 0)
+				if stats.BaseMana > 0 {
+					s.setPlayerMaxPower(active.GUID, powerType, stats.BaseMana)
+				}
 			} else {
+				s.setPlayerMaxPower(active.GUID, powerType, maxPowerValue(powerType))
 				setPlayerPower(active, powerType, maxPowerValue(powerType))
 			}
 			s.setPlayerMaxHealth(active.GUID, active.Health)
@@ -198,7 +202,7 @@ func (s *WorldServer) cheatLevel(active *realm.Character, level uint32, gm bool)
 		}{23 + int(powerType), uint32(playerPower(*active, powerType))}, struct {
 			field int
 			value uint32
-		}{28 + int(powerType), uint32(maxPowerValue(powerType))})
+		}{28 + int(powerType), uint32(s.playerMaxPower(active.GUID, powerType))})
 	}
 	responses := make([][]byte, 0, len(updates)+1)
 	for _, update := range updates {
@@ -399,7 +403,7 @@ func (s *WorldServer) cheatCooldowns(guid int64) ([][]byte, error) {
 
 func (s *WorldServer) cheatRecharge(active *realm.Character) ([][]byte, error) {
 	powerType := int64(playerPowerType(active.Class))
-	setPlayerPower(active, powerType, maxPowerValue(powerType))
+	setPlayerPower(active, powerType, s.playerMaxPower(active.GUID, powerType))
 	if s.Characters != nil {
 		if err := s.Characters.UpdatePower(active.GUID, active.AccountID, active.RealmID, powerType, playerPower(*active, powerType)); err != nil {
 			return nil, err

@@ -197,6 +197,8 @@ const (
 	AuraModStealth           AuraType = 16
 	AuraModPacify            AuraType = 25
 	AuraModSilence           AuraType = 27
+	AuraModIncreaseHealth    AuraType = 34
+	AuraModIncreaseMana      AuraType = 35
 	AuraModDisarm            AuraType = 67
 	AuraPeriodicDamage       AuraType = 3
 	AuraPeriodicHeal         AuraType = 8

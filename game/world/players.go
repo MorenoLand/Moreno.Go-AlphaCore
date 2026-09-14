@@ -9,21 +9,23 @@ import (
 )
 
 type playerRegistry struct {
-	mu           sync.RWMutex
-	players      map[int64]realm.Character
-	groupStatus  map[int64]uint32
-	selection    map[int64]uint64
-	target       map[int64]uint64
-	standState   map[int64]uint32
-	weaponMode   map[int64]uint32
-	combatTarget map[int64]uint64
-	pvpSource    map[int64]pvpLocation
-	maxHealth    map[int64]int64
-	unitFlags    map[int64]uint32
-	godMode      map[int64]bool
-	beastMaster  map[int64]bool
-	sanctuary    map[int64]time.Time
-	connections  map[int64]*playerConnection
+	mu             sync.RWMutex
+	players        map[int64]realm.Character
+	groupStatus    map[int64]uint32
+	selection      map[int64]uint64
+	target         map[int64]uint64
+	standState     map[int64]uint32
+	weaponMode     map[int64]uint32
+	combatTarget   map[int64]uint64
+	pvpSource      map[int64]pvpLocation
+	maxHealth      map[int64]int64
+	maxHealthKnown map[int64]bool
+	maxPower       map[int64][5]int64
+	unitFlags      map[int64]uint32
+	godMode        map[int64]bool
+	beastMaster    map[int64]bool
+	sanctuary      map[int64]time.Time
+	connections    map[int64]*playerConnection
 }
 
 func (s *WorldServer) registerPlayer(character realm.Character) {
@@ -38,6 +40,8 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.combatTarget = make(map[int64]uint64)
 		s.players.pvpSource = make(map[int64]pvpLocation)
 		s.players.maxHealth = make(map[int64]int64)
+		s.players.maxHealthKnown = make(map[int64]bool)
+		s.players.maxPower = make(map[int64][5]int64)
 		s.players.unitFlags = make(map[int64]uint32)
 		s.players.godMode = make(map[int64]bool)
 		s.players.beastMaster = make(map[int64]bool)
@@ -53,12 +57,46 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 	if s.players.sanctuary == nil {
 		s.players.sanctuary = make(map[int64]time.Time)
 	}
+	if s.players.maxPower == nil {
+		s.players.maxPower = make(map[int64][5]int64)
+	}
+	if s.players.maxHealth == nil {
+		s.players.maxHealth = make(map[int64]int64)
+	}
+	if s.players.maxHealthKnown == nil {
+		s.players.maxHealthKnown = make(map[int64]bool)
+	}
 	s.players.players[character.GUID] = character
 	if _, found := s.players.maxHealth[character.GUID]; !found {
-		s.players.maxHealth[character.GUID] = maxInt64(character.Health, 1)
+		value := maxInt64(character.Health, 1)
+		if s.WorldData != nil {
+			if stats, statsFound, err := s.WorldData.ClassStats(character.Class, character.Level); err == nil && statsFound {
+				if stats.BaseHealth > value {
+					value = stats.BaseHealth
+				}
+				if stats.BaseHealth > 0 {
+					s.players.maxHealthKnown[character.GUID] = true
+				}
+			}
+		}
+		s.players.maxHealth[character.GUID] = value
 	}
 	if _, found := s.players.unitFlags[character.GUID]; !found {
 		s.players.unitFlags[character.GUID] = unitFlagPlayer
+	}
+	if _, found := s.players.maxPower[character.GUID]; !found {
+		values := [5]int64{1000, 100, 100, 100, 0}
+		if s.WorldData != nil {
+			if stats, statsFound, err := s.WorldData.ClassStats(character.Class, character.Level); err == nil && statsFound && stats.BaseMana > 0 {
+				values[0] = stats.BaseMana
+			}
+		}
+		for index, value := range []int64{character.Power1, character.Power2, character.Power3, character.Power4, character.Power5} {
+			if value > values[index] {
+				values[index] = value
+			}
+		}
+		s.players.maxPower[character.GUID] = values
 	}
 	s.players.mu.Unlock()
 }
@@ -85,6 +123,8 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.combatTarget, guid)
 	delete(s.players.pvpSource, guid)
 	delete(s.players.maxHealth, guid)
+	delete(s.players.maxHealthKnown, guid)
+	delete(s.players.maxPower, guid)
 	delete(s.players.unitFlags, guid)
 	delete(s.players.godMode, guid)
 	delete(s.players.beastMaster, guid)
@@ -106,12 +146,50 @@ func (s *WorldServer) playerMaxHealth(guid int64) int64 {
 	return maxInt64(value, 1)
 }
 
+func (s *WorldServer) playerMaxHealthKnown(guid int64) bool {
+	s.players.mu.RLock()
+	known := s.players.maxHealthKnown[guid]
+	s.players.mu.RUnlock()
+	return known
+}
+
+func (s *WorldServer) playerMaxPower(guid, powerType int64) int64 {
+	s.players.mu.RLock()
+	values := s.players.maxPower[guid]
+	s.players.mu.RUnlock()
+	if powerType < 0 || powerType >= int64(len(values)) || values[powerType] <= 0 {
+		if powerType == 0 {
+			return 1000
+		}
+		return 100
+	}
+	return values[powerType]
+}
+
+func (s *WorldServer) setPlayerMaxPower(guid, powerType, value int64) {
+	if powerType < 0 || powerType >= 5 {
+		return
+	}
+	s.players.mu.Lock()
+	if s.players.maxPower == nil {
+		s.players.maxPower = make(map[int64][5]int64)
+	}
+	values := s.players.maxPower[guid]
+	values[powerType] = maxInt64(value, 1)
+	s.players.maxPower[guid] = values
+	s.players.mu.Unlock()
+}
+
 func (s *WorldServer) setPlayerMaxHealth(guid, value int64) {
 	s.players.mu.Lock()
 	if s.players.maxHealth == nil {
 		s.players.maxHealth = make(map[int64]int64)
 	}
 	s.players.maxHealth[guid] = maxInt64(value, 1)
+	if s.players.maxHealthKnown == nil {
+		s.players.maxHealthKnown = make(map[int64]bool)
+	}
+	s.players.maxHealthKnown[guid] = true
 	s.players.mu.Unlock()
 }
 
