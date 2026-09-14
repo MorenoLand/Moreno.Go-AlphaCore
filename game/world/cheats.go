@@ -39,7 +39,7 @@ func (s *WorldServer) gmCheat(active *realm.Character, opcode packet.Opcode, dat
 		if len(data) < 4 {
 			return nil, nil
 		}
-		return s.cheatLearnSpell(*active, int64(binary.LittleEndian.Uint32(data)))
+		return s.learnSpell(*active, int64(binary.LittleEndian.Uint32(data)))
 	case packet.CMSGCreateItem:
 		if len(data) < 4 {
 			return nil, nil
@@ -244,7 +244,7 @@ func maxPowerValue(powerType int64) int64 {
 	return 100
 }
 
-func (s *WorldServer) cheatLearnSpell(active realm.Character, spellID int64) ([][]byte, error) {
+func (s *WorldServer) learnSpell(active realm.Character, spellID int64) ([][]byte, error) {
 	if s.Characters == nil || s.DBC == nil || spellID <= 0 {
 		return nil, nil
 	}

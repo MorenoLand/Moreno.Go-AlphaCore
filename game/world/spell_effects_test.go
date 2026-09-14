@@ -16,6 +16,9 @@ func TestSpellEffectStateTransitions(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer databases.Close()
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID) VALUES (9010)`); err != nil {
+		t.Fatal(err)
+	}
 	characters := realm.NewStore(databases)
 	casterID, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Caster", Health: 100, Map: 1, PositionX: 1, PositionY: 2, PositionZ: 3, Orientation: 4})
 	if err != nil {
@@ -46,6 +49,11 @@ func TestSpellEffectStateTransitions(t *testing.T) {
 	server.spells.mu.Unlock()
 	if casting {
 		t.Fatal("interrupt effect left target cast active")
+	}
+	server.applySpellEffects(&spellCast{caster: caster, spell: dbc.Spell{Effects: [3]dbc.SpellEffect{{Type: int64(packet.SpellEffectLearnSpell), TriggerSpell: 9010}}}, effectTargets: map[int][]realm.Character{0: {target}}})
+	learned, err := characters.Spells(targetID)
+	if err != nil || len(learned) != 1 || learned[0].ID != 9010 {
+		t.Fatalf("learned=%#v err=%v", learned, err)
 	}
 	server.setCombatTarget(casterID, uint64(targetID))
 	server.applySpellEffects(&spellCast{caster: caster, spell: dbc.Spell{Effects: [3]dbc.SpellEffect{{Type: int64(packet.SpellEffectSanctuary)}}}, effectTargets: map[int][]realm.Character{0: {caster}}})

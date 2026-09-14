@@ -488,15 +488,11 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				}
 				s.triggerSpell(cast.caster, effect.TriggerSpell, spellTarget{UnitGUID: uint64(target.GUID)}, targetMask)
 			case packet.SpellEffectLearnSpell:
-				if s.Characters == nil || effect.TriggerSpell <= 0 {
-					continue
-				}
-				if err := s.Characters.AddSpell(target.GUID, effect.TriggerSpell); err != nil {
-					continue
-				}
-				learned := append(encodeUint16(effect.TriggerSpell), encodeUint16(0)...)
-				if update, err := packet.Encode(packet.SMSGLearnedSpell, learned); err == nil {
-					s.sendPlayer(target.GUID, update)
+				updates, err := s.learnSpell(target, effect.TriggerSpell)
+				if err == nil {
+					for _, update := range updates {
+						s.sendPlayer(target.GUID, update)
+					}
 				}
 			case packet.SpellEffectCreateItem:
 				s.createSpellItem(cast, target, effect, points)
