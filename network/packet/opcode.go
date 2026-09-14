@@ -124,6 +124,7 @@ const (
 	SMSGGameObjectQueryResponse   Opcode = 0x005f
 	CMSGCreatureQuery             Opcode = 0x0060
 	SMSGCreatureQueryResponse     Opcode = 0x0061
+	CMSGUseItem                   Opcode = 0x00ab
 	CMSGMessageChat               Opcode = 0x0095
 	SMSGMessageChat               Opcode = 0x0096
 	CMSGWho                       Opcode = 0x0062
@@ -195,7 +196,23 @@ const (
 	CMSGSetActionButton           Opcode = 0x011b
 	SMSGActionButtons             Opcode = 0x011c
 	SMSGInitialSpells             Opcode = 0x011d
+	SMSGLearnedSpell              Opcode = 0x011e
+	SMSSupersededSpell            Opcode = 0x011f
 	CMSGNewSpellSlot              Opcode = 0x0120
+	CMSGCastSpell                 Opcode = 0x0121
+	CMSGCancelCast                Opcode = 0x0122
+	SMSGCastResult                Opcode = 0x0123
+	SMSGSpellStart                Opcode = 0x0124
+	SMSGSpellGo                   Opcode = 0x0125
+	SMSGSpellFailure              Opcode = 0x0126
+	SMSGSpellCooldown             Opcode = 0x0127
+	SMSGCooldownEvent             Opcode = 0x0128
+	CMSGCancelAura                Opcode = 0x0129
+	SMSGUpdateAuraDuration        Opcode = 0x012a
+	SMSGPetCastFailed             Opcode = 0x012b
+	MSGChannelStart               Opcode = 0x012c
+	MSGChannelUpdate              Opcode = 0x012d
+	CMSGCancelChannelling         Opcode = 0x012e
 	CMSGMountSpecialAnim          Opcode = 0x0164
 	SMSGMountSpecialAnim          Opcode = 0x0165
 	CMSGListInventory             Opcode = 0x016e
@@ -330,6 +347,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGCharCreate:                "CMSG_CHAR_CREATE",
 	CMSGCharEnum:                  "CMSG_CHAR_ENUM",
 	CMSGCharDelete:                "CMSG_CHAR_DELETE",
+	CMSGUseItem:                   "CMSG_USE_ITEM",
 	SMSGAuthSRP6Response:          "SMSG_AUTH_SRP6_RESPONSE",
 	SMSGCharCreate:                "SMSG_CHAR_CREATE",
 	SMSGCharEnum:                  "SMSG_CHAR_ENUM",
@@ -509,7 +527,23 @@ var opcodeNames = map[Opcode]string{
 	CMSGSetActionButton:           "CMSG_SET_ACTION_BUTTON",
 	SMSGActionButtons:             "SMSG_ACTION_BUTTONS",
 	SMSGInitialSpells:             "SMSG_INITIAL_SPELLS",
+	SMSGLearnedSpell:              "SMSG_LEARNED_SPELL",
+	SMSSupersededSpell:            "SMSG_SUPERCEDED_SPELL",
 	CMSGNewSpellSlot:              "CMSG_NEW_SPELL_SLOT",
+	CMSGCastSpell:                 "CMSG_CAST_SPELL",
+	CMSGCancelCast:                "CMSG_CANCEL_CAST",
+	SMSGCastResult:                "SMSG_CAST_RESULT",
+	SMSGSpellStart:                "SMSG_SPELL_START",
+	SMSGSpellGo:                   "SMSG_SPELL_GO",
+	SMSGSpellFailure:              "SMSG_SPELL_FAILURE",
+	SMSGSpellCooldown:             "SMSG_SPELL_COOLDOWN",
+	SMSGCooldownEvent:             "SMSG_COOLDOWN_EVENT",
+	CMSGCancelAura:                "CMSG_CANCEL_AURA",
+	SMSGUpdateAuraDuration:        "SMSG_UPDATE_AURA_DURATION",
+	SMSGPetCastFailed:             "SMSG_PET_CAST_FAILED",
+	MSGChannelStart:               "MSG_CHANNEL_START",
+	MSGChannelUpdate:              "MSG_CHANNEL_UPDATE",
+	CMSGCancelChannelling:         "CMSG_CANCEL_CHANNELLING",
 	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",
 	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
 	CMSGListInventory:             "CMSG_LIST_INVENTORY",
