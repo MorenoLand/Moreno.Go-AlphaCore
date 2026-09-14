@@ -188,3 +188,29 @@ func TestSpellCreatesItem(t *testing.T) {
 		t.Fatalf("item=%#v found=%v err=%v", item, found, err)
 	}
 }
+
+func TestSpellCooldownExpiresOnWire(t *testing.T) {
+	server := &WorldServer{}
+	active := realm.Character{GUID: 1, AccountID: 1, RealmID: 1, Map: 0, Health: 10}
+	server.registerPlayer(active)
+	client, connection := net.Pipe()
+	defer client.Close()
+	server.attachPlayer(active.GUID, connection)
+	done := make(chan struct{})
+	go func() {
+		server.setSpellCooldown(active, dbc.Spell{ID: 42, RecoveryTime: 20})
+		close(done)
+	}()
+	cooldown, err := sockets.ReadPacket(client)
+	if err != nil || cooldown.Opcode != packet.SMSGSpellCooldown || len(cooldown.Data) != 14 || binary.LittleEndian.Uint32(cooldown.Data) != 42 {
+		t.Fatalf("cooldown=%#v err=%v", cooldown, err)
+	}
+	clear, err := sockets.ReadPacket(client)
+	if err != nil || clear.Opcode != packet.SMSGClearCooldown || len(clear.Data) != 12 || binary.LittleEndian.Uint32(clear.Data) != 42 {
+		t.Fatalf("clear=%#v err=%v", clear, err)
+	}
+	<-done
+	if server.spellOnCooldown(active.GUID, 42) {
+		t.Fatal("spell cooldown remained after expiry")
+	}
+}

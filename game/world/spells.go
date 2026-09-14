@@ -244,7 +244,7 @@ func (s *WorldServer) performSpellCast(cast *spellCast) {
 	if err == nil {
 		s.sendSpell(cast.caster, goPacket)
 	}
-	s.setSpellCooldown(cast.caster.GUID, cast.spell)
+	s.setSpellCooldown(cast.caster, cast.spell)
 	if cast.powerCost > 0 {
 		_ = s.changePlayerPower(&cast.caster, cast.spell.PowerType, -cast.powerCost)
 	}
@@ -505,7 +505,7 @@ func (s *WorldServer) spellOnCooldown(guid, spellID int64) bool {
 	return false
 }
 
-func (s *WorldServer) setSpellCooldown(guid int64, spell dbc.Spell) {
+func (s *WorldServer) setSpellCooldown(caster realm.Character, spell dbc.Spell) {
 	cooldown := spell.RecoveryTime
 	if spell.CategoryRecoveryTime > cooldown {
 		cooldown = spell.CategoryRecoveryTime
@@ -517,11 +517,31 @@ func (s *WorldServer) setSpellCooldown(guid int64, spell dbc.Spell) {
 	if s.spells.cooldowns == nil {
 		s.spells.cooldowns = make(map[int64]map[int64]time.Time)
 	}
-	if s.spells.cooldowns[guid] == nil {
-		s.spells.cooldowns[guid] = make(map[int64]time.Time)
+	if s.spells.cooldowns[caster.GUID] == nil {
+		s.spells.cooldowns[caster.GUID] = make(map[int64]time.Time)
 	}
-	s.spells.cooldowns[guid][spell.ID] = time.Now().Add(time.Duration(cooldown) * time.Millisecond)
+	expires := time.Now().Add(time.Duration(cooldown) * time.Millisecond)
+	s.spells.cooldowns[caster.GUID][spell.ID] = expires
 	s.spells.mu.Unlock()
+	data := append(encodeUint32(spell.ID), encodeGUID(caster.GUID)...)
+	data = append(data, encodeUint16(cooldown)...)
+	if update, err := packet.Encode(packet.SMSGSpellCooldown, data); err == nil {
+		s.sendPlayer(caster.GUID, update)
+	}
+	time.AfterFunc(time.Duration(cooldown)*time.Millisecond, func() {
+		s.spells.mu.Lock()
+		current, found := s.spells.cooldowns[caster.GUID][spell.ID]
+		if found && !current.After(time.Now()) {
+			delete(s.spells.cooldowns[caster.GUID], spell.ID)
+		}
+		s.spells.mu.Unlock()
+		if found && !current.After(time.Now()) {
+			clear := append(encodeUint32(spell.ID), encodeGUID(caster.GUID)...)
+			if update, err := packet.Encode(packet.SMSGClearCooldown, clear); err == nil {
+				s.sendPlayer(caster.GUID, update)
+			}
+		}
+	})
 }
 
 func (s *WorldServer) cancelSpell(active realm.Character, data []byte) ([][]byte, error) {
@@ -544,6 +564,12 @@ func (s *WorldServer) cancelSpell(active realm.Character, data []byte) ([][]byte
 	if err != nil {
 		return nil, err
 	}
+	failure, err := packet.Encode(packet.SMSGSpellFailure, append(encodeGUID(active.GUID), append(encodeUint32(id), byte(packet.SpellFailedInterrupted))...))
+	if err != nil {
+		return nil, err
+	}
+	s.broadcastPlayer(active, failure)
+	s.sendPlayer(active.GUID, failure)
 	return [][]byte{result}, nil
 }
 

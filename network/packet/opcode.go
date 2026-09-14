@@ -213,6 +213,7 @@ const (
 	MSGChannelStart               Opcode = 0x012c
 	MSGChannelUpdate              Opcode = 0x012d
 	CMSGCancelChannelling         Opcode = 0x012e
+	SMSGClearCooldown             Opcode = 0x01cf
 	CMSGMountSpecialAnim          Opcode = 0x0164
 	SMSGMountSpecialAnim          Opcode = 0x0165
 	CMSGListInventory             Opcode = 0x016e
@@ -544,6 +545,7 @@ var opcodeNames = map[Opcode]string{
 	MSGChannelStart:               "MSG_CHANNEL_START",
 	MSGChannelUpdate:              "MSG_CHANNEL_UPDATE",
 	CMSGCancelChannelling:         "CMSG_CANCEL_CHANNELLING",
+	SMSGClearCooldown:             "SMSG_CLEAR_COOLDOWN",
 	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",
 	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
 	CMSGListInventory:             "CMSG_LIST_INVENTORY",
