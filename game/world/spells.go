@@ -561,6 +561,9 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 		targets := cast.effectTargets[index]
 		if len(targets) == 0 && cast.targetCreature != nil {
 			s.applyCreatureSpellEffect(cast, cast.targetCreature, effect, spellEffectPoints(effect, effectiveLevel))
+			if packet.SpellEffect(effect.Type) == packet.SpellEffectQuestComplete {
+				s.completeSpellQuest(cast, realm.Character{}, effect)
+			}
 		}
 		for _, target := range targets {
 			points := spellEffectPoints(effect, effectiveLevel)
@@ -630,6 +633,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 						s.sendPlayer(target.GUID, update)
 					}
 				}
+			case packet.SpellEffectQuestComplete:
+				s.completeSpellQuest(cast, target, effect)
 			case packet.SpellEffectCreateItem:
 				s.createSpellItem(cast, target, effect, points)
 			case packet.SpellEffectResurrect:
