@@ -46,6 +46,12 @@ type SpellRadius struct {
 	RadiusMax      float32
 }
 
+type SpellItemEnchantment struct {
+	ID, ItemVisual                                      int64
+	Effect, EffectPointsMin, EffectPointsMax, EffectArg [3]int64
+	Name                                                string
+}
+
 const spellColumns = `ID, School, Category, CastUI, Attributes, AttributesEx, ShapeshiftMask, Targets, TargetCreatureType, RequiresSpellFocus, CasterAuraState, TargetAuraState, CastingTimeIndex, RecoveryTime, CategoryRecoveryTime, InterruptFlags, AuraInterruptFlags, ChannelInterruptFlags, ProcFlags, ProcChance, ProcCharges, MaxLevel, BaseLevel, SpellLevel, DurationIndex, PowerType, ManaCost, ManaCostPerLevel, ManaPerSecond, ManaPerSecondPerLevel, RangeIndex, Speed, ManaCostPct, StartRecoveryCategory, StartRecoveryTime, EquippedItemClass, EquippedItemSubclass, Effect_1, Effect_2, Effect_3, EffectDieSides_1, EffectDieSides_2, EffectDieSides_3, EffectBaseDice_1, EffectBaseDice_2, EffectBaseDice_3, EffectDicePerLevel_1, EffectDicePerLevel_2, EffectDicePerLevel_3, EffectRealPointsPerLevel_1, EffectRealPointsPerLevel_2, EffectRealPointsPerLevel_3, EffectBasePoints_1, EffectBasePoints_2, EffectBasePoints_3, ImplicitTargetA_1, ImplicitTargetA_2, ImplicitTargetA_3, ImplicitTargetB_1, ImplicitTargetB_2, ImplicitTargetB_3, EffectRadiusIndex_1, EffectRadiusIndex_2, EffectRadiusIndex_3, EffectAura_1, EffectAura_2, EffectAura_3, EffectAuraPeriod_1, EffectAuraPeriod_2, EffectAuraPeriod_3, EffectChainTargets_1, EffectChainTargets_2, EffectChainTargets_3, EffectItemType_1, EffectItemType_2, EffectItemType_3, EffectMiscValue_1, EffectMiscValue_2, EffectMiscValue_3, EffectTriggerSpell_1, EffectTriggerSpell_2, EffectTriggerSpell_3, SpellVisualID, COALESCE(Name_enUS, '')`
 
 func (s *Store) Spell(id int64) (Spell, bool, error) {
@@ -166,6 +172,32 @@ func (s *Store) SpellRadius(id int64) (SpellRadius, bool, error) {
 	}
 	if err != nil {
 		return SpellRadius{}, false, fmt.Errorf("query spell radius: %w", err)
+	}
+	return value, true, nil
+}
+
+func (s *Store) SpellItemEnchantment(id int64) (SpellItemEnchantment, bool, error) {
+	var value SpellItemEnchantment
+	values := []any{&value.ID}
+	for index := range value.Effect {
+		values = append(values, &value.Effect[index])
+	}
+	for index := range value.EffectPointsMin {
+		values = append(values, &value.EffectPointsMin[index])
+	}
+	for index := range value.EffectPointsMax {
+		values = append(values, &value.EffectPointsMax[index])
+	}
+	for index := range value.EffectArg {
+		values = append(values, &value.EffectArg[index])
+	}
+	values = append(values, &value.Name, &value.ItemVisual)
+	err := s.db.QueryRow(`SELECT ID, Effect_1, Effect_2, Effect_3, EffectPointsMin_1, EffectPointsMin_2, EffectPointsMin_3, EffectPointsMax_1, EffectPointsMax_2, EffectPointsMax_3, EffectArg_1, EffectArg_2, EffectArg_3, COALESCE(Name_enUS, ''), ItemVisual FROM SpellItemEnchantment WHERE ID = ?`, id).Scan(values...)
+	if err == sql.ErrNoRows {
+		return SpellItemEnchantment{}, false, nil
+	}
+	if err != nil {
+		return SpellItemEnchantment{}, false, fmt.Errorf("query spell item enchantment: %w", err)
 	}
 	return value, true, nil
 }

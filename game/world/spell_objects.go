@@ -12,6 +12,10 @@ func (s *WorldServer) applySpellObjectEffects(cast *spellCast) {
 			s.summonGameObject(cast, effect, packet.SpellEffect(effect.Type) == packet.SpellEffectSummonObjectWild)
 		case packet.SpellEffectActivateObject:
 			s.activateGameObject(cast)
+		case packet.SpellEffectEnchantPermanent:
+			s.enchantItem(cast, effect, false)
+		case packet.SpellEffectEnchantTemporary:
+			s.enchantItem(cast, effect, true)
 		}
 	}
 	if cast.target.GameObjectGUID != 0 {

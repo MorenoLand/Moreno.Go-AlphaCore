@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-const inventoryColumns = `guid, owner, creator, bag, slot, item_template, stackcount, duration, item_flags, SpellCharges1, SpellCharges2, SpellCharges3, SpellCharges4, SpellCharges5`
+const inventoryColumns = `guid, owner, creator, bag, slot, item_template, stackcount, duration, item_flags, SpellCharges1, SpellCharges2, SpellCharges3, SpellCharges4, SpellCharges5, COALESCE(enchantments, '')`
 
 func scanInventory(row rowScanner) (InventoryItem, error) {
 	var item InventoryItem
@@ -13,6 +13,7 @@ func scanInventory(row rowScanner) (InventoryItem, error) {
 	for index := range item.SpellCharges {
 		values = append(values, &item.SpellCharges[index])
 	}
+	values = append(values, &item.Enchantments)
 	return item, row.Scan(values...)
 }
 
@@ -70,6 +71,11 @@ func (s *Store) UpdateItemSpellCharges(guid, owner, slot, charges int64) error {
 
 func (s *Store) UpdateItemFlags(guid, owner, flags int64) error {
 	_, err := s.db.Exec(`UPDATE character_inventory SET item_flags = ? WHERE guid = ? AND owner = ?`, flags, guid, owner)
+	return err
+}
+
+func (s *Store) UpdateItemEnchantments(guid, owner int64, enchantments string) error {
+	_, err := s.db.Exec(`UPDATE character_inventory SET enchantments = ? WHERE guid = ? AND owner = ?`, enchantments, guid, owner)
 	return err
 }
 

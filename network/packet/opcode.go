@@ -380,6 +380,8 @@ const (
 	MSGTabardVendorActivate       Opcode = 0x01e3
 	CMSGBug                       Opcode = 0x01bb
 	SMSGCompressedUpdateObject    Opcode = 0x01e7
+	SMSGEnchantmentLog            Opcode = 0x01c8
+	SMSGItemEnchantTimeUpdate     Opcode = 0x01dc
 )
 
 var opcodeNames = map[Opcode]string{
@@ -623,6 +625,8 @@ var opcodeNames = map[Opcode]string{
 	CMSGCancelChannelling:         "CMSG_CANCEL_CHANNELLING",
 	SMSGLevelupInfo:               "SMSG_LEVELUP_INFO",
 	SMSGClearCooldown:             "SMSG_CLEAR_COOLDOWN",
+	SMSGEnchantmentLog:            "SMSG_ENCHANTMENTLOG",
+	SMSGItemEnchantTimeUpdate:     "SMSG_ITEM_ENCHANT_TIME_UPDATE",
 	SMSGCooldownCheat:             "SMSG_COOLDOWN_CHEAT",
 	MSGGMSummon:                   "MSG_GM_SUMMON",
 	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",

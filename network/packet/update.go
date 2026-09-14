@@ -91,7 +91,13 @@ func EncodePlayerCreate(guid uint64, values []uint32, movement Movement) ([]byte
 	return Encode(SMSGUpdateObject, body)
 }
 
+type ItemEnchantment struct{ ID, Duration, Charges int64 }
+
 func EncodeItemCreate(guid uint64, entry uint32, owner, creator uint64, stack uint32, duration int32, flags uint32, charges [5]int64, movement Movement) ([]byte, error) {
+	return EncodeItemCreateWithEnchantments(guid, entry, owner, creator, stack, duration, flags, charges, [5]ItemEnchantment{}, movement)
+}
+
+func EncodeItemCreateWithEnchantments(guid uint64, entry uint32, owner, creator uint64, stack uint32, duration int32, flags uint32, charges [5]int64, enchantments [5]ItemEnchantment, movement Movement) ([]byte, error) {
 	var data bytes.Buffer
 	write := func(value any) { binary.Write(&data, binary.LittleEndian, value) }
 	data.WriteByte(UpdateCreateObject)
@@ -135,6 +141,11 @@ func EncodeItemCreate(guid uint64, entry uint32, owner, creator uint64, stack ui
 		}
 	}
 	values[19] = flags
+	for index, enchantment := range enchantments {
+		values[20+index*3] = uint32(enchantment.ID)
+		values[21+index*3] = uint32(enchantment.Duration)
+		values[22+index*3] = uint32(enchantment.Charges)
+	}
 	data.WriteByte(2)
 	write(uint32(0xffffffff))
 	write(uint32(0xf))

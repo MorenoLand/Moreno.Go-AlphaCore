@@ -51,6 +51,7 @@ type Character struct {
 type InventoryItem struct {
 	GUID, Owner, Creator, Bag, Slot, ItemTemplate, StackCount, Duration, Flags int64
 	SpellCharges                                                               [5]int64
+	Enchantments                                                               string
 }
 
 type Spell struct {
@@ -344,7 +345,7 @@ func (s *Store) Inventory(owner int64) ([]InventoryItem, error) {
 }
 
 func (s *Store) WorldInventory(owner int64) ([]InventoryItem, error) {
-	rows, err := s.db.Query(`SELECT guid, owner, creator, bag, slot, item_template, stackcount, duration, item_flags, SpellCharges1, SpellCharges2, SpellCharges3, SpellCharges4, SpellCharges5 FROM character_inventory WHERE owner = ? AND bag = 23 AND slot BETWEEN 0 AND 39 ORDER BY slot, guid`, owner)
+	rows, err := s.db.Query(`SELECT guid, owner, creator, bag, slot, item_template, stackcount, duration, item_flags, SpellCharges1, SpellCharges2, SpellCharges3, SpellCharges4, SpellCharges5, COALESCE(enchantments, '') FROM character_inventory WHERE owner = ? AND bag = 23 AND slot BETWEEN 0 AND 39 ORDER BY slot, guid`, owner)
 	if err != nil {
 		return nil, fmt.Errorf("query world inventory: %w", err)
 	}
@@ -356,6 +357,7 @@ func (s *Store) WorldInventory(owner int64) ([]InventoryItem, error) {
 		for index := range item.SpellCharges {
 			values = append(values, &item.SpellCharges[index])
 		}
+		values = append(values, &item.Enchantments)
 		if err := rows.Scan(values...); err != nil {
 			return nil, fmt.Errorf("scan world inventory: %w", err)
 		}

@@ -122,7 +122,7 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 	packets = append(packets, itemQueryPackets...)
 	for index, item := range items {
 		instance := instances[index]
-		itemPacket, err := packet.EncodeItemCreate(uint64(instance.GUID)|0x4000000000000000, uint32(item.Entry), uint64(instance.Owner), uint64(instance.Creator), uint32(instance.StackCount), int32(instance.Duration), uint32(instance.Flags), instance.SpellCharges, packet.Movement{X: character.PositionX, Y: character.PositionY, Z: character.PositionZ, O: character.Orientation})
+		itemPacket, err := packet.EncodeItemCreateWithEnchantments(uint64(instance.GUID)|0x4000000000000000, uint32(item.Entry), uint64(instance.Owner), uint64(instance.Creator), uint32(instance.StackCount), int32(instance.Duration), uint32(instance.Flags), instance.SpellCharges, itemEnchantments(instance.Enchantments), packet.Movement{X: character.PositionX, Y: character.PositionY, Z: character.PositionZ, O: character.Orientation})
 		if err != nil {
 			return nil, err
 		}

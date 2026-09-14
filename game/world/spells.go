@@ -223,6 +223,15 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 			return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
 		}
 	}
+	if target.ItemGUID != 0 && s.Characters != nil && (spellHasEffect(spell, packet.SpellEffectEnchantPermanent) || spellHasEffect(spell, packet.SpellEffectEnchantTemporary)) {
+		item, found, itemErr := s.Characters.ItemByGUID(active.GUID, int64(target.ItemGUID&0x3fffffffffffffff))
+		if itemErr != nil {
+			return nil, itemErr
+		}
+		if !found || item.Owner != active.GUID {
+			return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
+		}
+	}
 	if result := s.validateSpellTarget(active, spell, target, targetMask); result != packet.SpellNoError {
 		return s.castFailure(active, spellID, result)
 	}
@@ -351,6 +360,11 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 		return packet.SpellFailedAffectingCombat
 	}
 	if target.UnitGUID == 0 {
+		if spellHasEffect(spell, packet.SpellEffectEnchantPermanent) || spellHasEffect(spell, packet.SpellEffectEnchantTemporary) {
+			if target.ItemGUID == 0 {
+				return packet.SpellFailedBadTargets
+			}
+		}
 		if spell.Targets&int64(packet.SpellTargetItem) != 0 && target.ItemGUID == 0 {
 			return packet.SpellFailedBadTargets
 		}
