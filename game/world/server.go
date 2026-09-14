@@ -1189,6 +1189,28 @@ func (s *WorldServer) characterList(accountID int64) ([]byte, error) {
 			value = append(value, encoded...)
 		}
 		value = append(value, make([]byte, 16)...)
+		if s.WorldData != nil {
+			if pets, petErr := s.Characters.Pets(character.GUID); petErr != nil {
+				return nil, petErr
+			} else {
+				for _, pet := range pets {
+					if !pet.Active {
+						continue
+					}
+					template, templateFound, templateErr := s.WorldData.CreatureTemplate(pet.CreatureID)
+					if templateErr != nil {
+						return nil, templateErr
+					}
+					if templateFound {
+						start := len(value) - 12
+						binary.LittleEndian.PutUint32(value[start:], uint32(template.DisplayID1))
+						binary.LittleEndian.PutUint32(value[start+4:], uint32(pet.Level))
+						binary.LittleEndian.PutUint32(value[start+8:], uint32(template.BeastFamily))
+					}
+					break
+				}
+			}
+		}
 		inventory, err := s.Characters.Inventory(character.GUID)
 		if err != nil {
 			return nil, err

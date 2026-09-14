@@ -13,6 +13,10 @@ type CreatureClassLevelStats struct {
 	Spirit, Armor                         int64
 }
 
+type PetLevelStats struct {
+	CreatureEntry, Level, Health, Mana, Armor, Strength, Agility, Stamina, Intellect, Spirit int64
+}
+
 type CreatureSpawn struct {
 	SpawnID, Entry, Map, MovementType, SpawnFlags int64
 	PositionX, PositionY, PositionZ, Orientation  float32
@@ -33,6 +37,18 @@ func (s *Store) CreatureClassLevelStats(class, level int64) (CreatureClassLevelS
 	}
 	if err != nil {
 		return CreatureClassLevelStats{}, false, fmt.Errorf("query creature class stats: %w", err)
+	}
+	return stats, true, nil
+}
+
+func (s *Store) PetLevelStats(entry, level int64) (PetLevelStats, bool, error) {
+	var stats PetLevelStats
+	err := s.db.QueryRow(`SELECT creature_entry, level, hp, mana, armor, str, agi, sta, inte, spi FROM pet_levelstats WHERE creature_entry = ? AND level = ?`, entry, level).Scan(&stats.CreatureEntry, &stats.Level, &stats.Health, &stats.Mana, &stats.Armor, &stats.Strength, &stats.Agility, &stats.Stamina, &stats.Intellect, &stats.Spirit)
+	if err == sql.ErrNoRows {
+		return PetLevelStats{}, false, nil
+	}
+	if err != nil {
+		return PetLevelStats{}, false, fmt.Errorf("query pet level stats: %w", err)
 	}
 	return stats, true, nil
 }

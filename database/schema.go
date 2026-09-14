@@ -240,6 +240,31 @@ CREATE TABLE IF NOT EXISTS guild_member (
     FOREIGN KEY (guild_id) REFERENCES guild (guild_id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
 );
+CREATE TABLE IF NOT EXISTS character_pets (
+    pet_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_guid INTEGER NOT NULL DEFAULT 0,
+    creature_id INTEGER NOT NULL DEFAULT 0,
+    created_by_spell INTEGER NOT NULL DEFAULT 0,
+    level INTEGER NOT NULL DEFAULT 1,
+    xp INTEGER NOT NULL DEFAULT 0,
+    react_state INTEGER NOT NULL DEFAULT 0,
+    command_state INTEGER NOT NULL DEFAULT 0,
+    name TEXT NOT NULL DEFAULT '',
+    rename_time INTEGER NOT NULL DEFAULT 0,
+    health INTEGER NOT NULL DEFAULT 0,
+    mana INTEGER NOT NULL DEFAULT 0,
+    action_bar BLOB NOT NULL DEFAULT X'',
+    is_active INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (owner_guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE IF NOT EXISTS character_pet_spells (
+    guid INTEGER NOT NULL,
+    pet_id INTEGER NOT NULL,
+    spell_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (guid, spell_id),
+    FOREIGN KEY (guid) REFERENCES characters (guid) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (pet_id) REFERENCES character_pets (pet_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
 `
 
 const worldSchema = commonSchema + `
@@ -631,6 +656,19 @@ CREATE TABLE IF NOT EXISTS creature_classlevelstats (
     intellect INTEGER NOT NULL DEFAULT 0,
     spirit INTEGER NOT NULL DEFAULT 0,
     armor INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS pet_levelstats (
+    creature_entry INTEGER NOT NULL,
+    level INTEGER NOT NULL,
+    hp INTEGER NOT NULL DEFAULT 0,
+    mana INTEGER NOT NULL DEFAULT 0,
+    armor INTEGER NOT NULL DEFAULT 0,
+    str INTEGER NOT NULL DEFAULT 0,
+    agi INTEGER NOT NULL DEFAULT 0,
+    sta INTEGER NOT NULL DEFAULT 0,
+    inte INTEGER NOT NULL DEFAULT 0,
+    spi INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (creature_entry, level)
 );
 CREATE TABLE IF NOT EXISTS creature_model_info (
     modelid INTEGER PRIMARY KEY NOT NULL,
