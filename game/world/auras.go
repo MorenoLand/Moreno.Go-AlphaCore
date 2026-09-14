@@ -56,7 +56,7 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 		}
 	}
 	passive := packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributePassive != 0
-	harmful := packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeAuraDebuff != 0
+	harmful := spellAuraHarmful(cast.spell, effect)
 	period := effect.AuraPeriod
 	if period == 0 {
 		switch packet.AuraType(effect.Aura) {

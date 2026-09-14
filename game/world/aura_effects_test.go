@@ -62,6 +62,13 @@ func TestHealthAuraLifecycle(t *testing.T) {
 	if server.unitFlags(active.GUID) != unitFlagPlayer|unitFlagDebugCombatLog {
 		t.Fatalf("flags after aura removal=%x", server.unitFlags(active.GUID))
 	}
+	server.applyAura(&spellCast{caster: active, spell: dbc.Spell{ID: 4}}, active, 0, dbc.SpellEffect{Type: int64(packet.SpellEffectApplyAura), Aura: int64(packet.AuraModStun)})
+	server.auras.mu.Lock()
+	_, harmful := server.auras.active[active.GUID][32]
+	server.auras.mu.Unlock()
+	if !harmful {
+		t.Fatal("control aura was not assigned a harmful slot")
+	}
 }
 
 func TestPeriodicDamageReportsEffectiveAmount(t *testing.T) {
@@ -80,7 +87,12 @@ func TestPeriodicDamageReportsEffectiveAmount(t *testing.T) {
 	client, connection := net.Pipe()
 	defer client.Close()
 	server.attachPlayer(caster.GUID, connection)
-	defer server.removeAura(target, 32)
+	defer func() {
+		server.players.mu.Lock()
+		delete(server.players.connections, caster.GUID)
+		server.players.mu.Unlock()
+		server.removeAura(target, 32)
+	}()
 	packets := make(chan packet.Packet, 1)
 	errors := make(chan error, 1)
 	go func() {

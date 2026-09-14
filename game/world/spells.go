@@ -351,9 +351,25 @@ func spellHarmful(spell dbc.Spell) bool {
 		switch packet.SpellEffect(effect.Type) {
 		case packet.SpellEffectInstantKill, packet.SpellEffectSchoolDamage, packet.SpellEffectPowerBurn, packet.SpellEffectHealthLeech, packet.SpellEffectPowerDrain:
 			return true
+		case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura:
+			if spellAuraHarmful(spell, effect) {
+				return true
+			}
 		}
 	}
 	return false
+}
+
+func spellAuraHarmful(spell dbc.Spell, effect dbc.SpellEffect) bool {
+	if packet.SpellAttributes(spell.Attributes)&packet.SpellAttributeAuraDebuff != 0 {
+		return true
+	}
+	switch packet.AuraType(effect.Aura) {
+	case packet.AuraModStun, packet.AuraModConfuse, packet.AuraModFear, packet.AuraModPacify, packet.AuraModSilence, packet.AuraModRoot, packet.AuraModDisarm, packet.AuraPeriodicDamage, packet.AuraPeriodicLeech, packet.AuraPeriodicManaLeech:
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *WorldServer) finishSpellCast(guid int64, cast *spellCast) {
