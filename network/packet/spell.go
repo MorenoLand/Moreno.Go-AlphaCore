@@ -167,6 +167,8 @@ const (
 	SpellEffectResurrect          SpellEffect = 18
 	SpellEffectCreateItem         SpellEffect = 24
 	SpellEffectSummon             SpellEffect = 28
+	SpellEffectSummonWild         SpellEffect = 41
+	SpellEffectSummonGuardian     SpellEffect = 42
 	SpellEffectEnergize           SpellEffect = 30
 	SpellEffectOpenLock           SpellEffect = 33
 	SpellEffectSummonMount        SpellEffect = 34

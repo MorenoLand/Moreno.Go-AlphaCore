@@ -2,6 +2,7 @@ package world
 
 import (
 	"sync"
+	"time"
 
 	"Moreno.AlphaCore/database/realm"
 	worlddb "Moreno.AlphaCore/database/world"
@@ -25,6 +26,7 @@ type creatureState struct {
 	PetNameTimestamp, PetExperience, PetNextExperience int64
 	Pet                                                bool
 	CombatTarget                                       uint64
+	Timer                                              *time.Timer
 }
 
 func (s *WorldServer) creatureStateAt(active realm.Character, guid uint64, distance float32) (*creatureState, bool, error) {
@@ -79,6 +81,9 @@ func (s *WorldServer) removeCreature(guid uint64) (creatureState, bool) {
 	s.creatures.mu.Lock()
 	state, found := s.creatures.active[guid]
 	if found {
+		if state.Timer != nil {
+			state.Timer.Stop()
+		}
 		delete(s.creatures.active, guid)
 	}
 	s.creatures.mu.Unlock()
