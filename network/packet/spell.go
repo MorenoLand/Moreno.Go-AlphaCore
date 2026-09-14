@@ -40,6 +40,7 @@ const (
 	SpellFailedNotReady        SpellCastResult = 0x25
 	SpellFailedNoPower         SpellCastResult = 0x2c
 	SpellFailedOutOfRange      SpellCastResult = 0x36
+	SpellFailedTooClose        SpellCastResult = 0x4a
 	SpellFailedReagents        SpellCastResult = 0x38
 	SpellFailedSpellProgress   SpellCastResult = 0x3b
 	SpellFailedUnavailable     SpellCastResult = 0x3d

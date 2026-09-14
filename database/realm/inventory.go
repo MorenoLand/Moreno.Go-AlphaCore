@@ -68,6 +68,11 @@ func (s *Store) UpdateItemSpellCharges(guid, owner, slot, charges int64) error {
 	return err
 }
 
+func (s *Store) UpdateItemFlags(guid, owner, flags int64) error {
+	_, err := s.db.Exec(`UPDATE character_inventory SET item_flags = ? WHERE guid = ? AND owner = ?`, flags, guid, owner)
+	return err
+}
+
 func (s *Store) InventoryItems(owner, bag, start, end int64) ([]InventoryItem, error) {
 	rows, err := s.db.Query(`SELECT `+inventoryColumns+` FROM character_inventory WHERE owner = ? AND bag = ? AND slot >= ? AND slot < ? ORDER BY slot, guid`, owner, bag, start, end)
 	if err != nil {

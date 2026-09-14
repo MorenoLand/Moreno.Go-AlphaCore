@@ -76,6 +76,15 @@ func (s *WorldServer) useItemPacket(active realm.Character, data []byte) ([][]by
 	if itemSpell.ID <= 0 || itemSpell.Trigger != 0 {
 		return nil, nil
 	}
+	if template.Bonding == 3 && item.Flags&itemDynBound == 0 {
+		item.Flags |= itemDynBound
+		if err := s.Characters.UpdateItemFlags(item.GUID, item.Owner, item.Flags); err != nil {
+			return nil, err
+		}
+		if update, err := packet.EncodeFieldUpdate(uint64(item.GUID)|0x4000000000000000, itemFieldFlag, encodedItemFlags(template, item.Flags)); err == nil {
+			s.sendPlayer(active.GUID, update)
+		}
+	}
 	targetMask := packet.SpellTargetMask(binary.LittleEndian.Uint16(data[3:]))
 	target, ok := s.spellTarget(active, targetMask, data[5:])
 	if !ok {
@@ -187,6 +196,9 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 		dx, dy, dz := active.PositionX-player.PositionX, active.PositionY-player.PositionY, active.PositionZ-player.PositionZ
 		if spellRange.RangeMax > 0 && dx*dx+dy*dy+dz*dz > spellRange.RangeMax*spellRange.RangeMax {
 			return s.castFailure(active, spellID, packet.SpellFailedOutOfRange)
+		}
+		if spellRange.RangeMin > 0 && dx*dx+dy*dy+dz*dz < spellRange.RangeMin*spellRange.RangeMin {
+			return s.castFailure(active, spellID, packet.SpellFailedTooClose)
 		}
 	}
 	castTime := int64(0)
