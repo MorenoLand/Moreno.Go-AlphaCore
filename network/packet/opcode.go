@@ -14,6 +14,8 @@ const (
 	CMSGCreateItem                Opcode = 0x0013
 	CMSGMakeMonsterAttackMe       Opcode = 0x0015
 	CMSGEnableDebugCombatLogging  Opcode = 0x0017
+	CMSGDebugAIState              Opcode = 0x002e
+	SMSGDebugAIState              Opcode = 0x002f
 	CMSGBeastMaster               Opcode = 0x0021
 	CMSGGodMode                   Opcode = 0x0022
 	SMSGGodMode                   Opcode = 0x0023
@@ -371,6 +373,8 @@ var opcodeNames = map[Opcode]string{
 	CMSGCreateItem:                "CMSG_CREATEITEM",
 	CMSGMakeMonsterAttackMe:       "CMSG_MAKEMONSTERATTACKME",
 	CMSGEnableDebugCombatLogging:  "CMSG_ENABLEDEBUGCOMBATLOGGING",
+	CMSGDebugAIState:              "CMSG_DEBUG_AISTATE",
+	SMSGDebugAIState:              "SMSG_DEBUG_AISTATE",
 	CMSGBeastMaster:               "CMSG_BEASTMASTER",
 	CMSGGodMode:                   "CMSG_GODMODE",
 	SMSGGodMode:                   "SMSG_GODMODE",

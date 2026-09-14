@@ -235,6 +235,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.nameQuery(message.Data)
+		case packet.CMSGDebugAIState:
+			if active == nil {
+				return
+			}
+			response, err = s.debugAIState(*active, message.Data)
 		case packet.CMSGItemQuerySingle:
 			if active == nil {
 				return
