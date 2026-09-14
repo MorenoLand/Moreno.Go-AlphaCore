@@ -178,3 +178,40 @@ func TestTameCreatureCreatesPermanentPet(t *testing.T) {
 		t.Fatalf("pets=%#v err=%v", pets, err)
 	}
 }
+
+func TestLearnPetSpellEffect(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO CreatureFamily (ID, SkillLine_1, SkillLine_2) VALUES (1, 100, 101); INSERT INTO SkillLineAbility (ID, SkillLine, Spell) VALUES (1, 100, 42); INSERT INTO Spell (ID, SpellLevel) VALUES (42, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Owner", Level: 4, Health: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO creature_template (entry, display_id1, name, faction, unit_class, beast_family) VALUES (123, 456, 'Wolf', 1, 1, 1); INSERT INTO pet_levelstats (creature_entry, level, hp, mana) VALUES (123, 4, 80, 20)`); err != nil {
+		t.Fatal(err)
+	}
+	petID, err := characters.CreatePet(realm.Pet{OwnerGUID: guid, CreatureID: 123, CreatedBySpell: 883, Level: 4, Health: 80, Mana: 20, Name: "Wolf", Active: true, ActionBar: defaultPetActionBar()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	owner := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Owner", Level: 4, Health: 100}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases)}
+	server.registerPlayer(owner)
+	if err := server.loadPets(owner); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := server.initialPetPackets(owner); err != nil {
+		t.Fatal(err)
+	}
+	server.applySpellEffects(&spellCast{caster: owner, spell: dbc.Spell{Effects: [3]dbc.SpellEffect{{Type: int64(packet.SpellEffectLearnPetSpell), TriggerSpell: 42}}}, effectTargets: map[int][]realm.Character{0: {owner}}})
+	spells, err := characters.PetSpells(guid, petID)
+	if err != nil || len(spells) != 1 || spells[0] != 42 {
+		t.Fatalf("pet spells=%#v err=%v", spells, err)
+	}
+}
