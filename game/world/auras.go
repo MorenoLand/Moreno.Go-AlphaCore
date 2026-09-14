@@ -133,6 +133,11 @@ func (s *WorldServer) tickAura(guid int64, slot int, aura *auraState, period int
 				_ = s.changePlayerPower(&caster, aura.effect.MiscValue, amount)
 			}
 		}
+	case packet.AuraPeriodicTriggerSpell:
+		caster, casterFound := s.playerByGUID(aura.casterID)
+		if casterFound {
+			s.triggerSpell(caster, aura.effect.TriggerSpell, spellTarget{UnitGUID: uint64(target.GUID)}, packet.SpellTargetUnit)
+		}
 	case packet.AuraPeriodicLeech:
 		if s.changePlayerHealth(&target, -points) == nil {
 			caster, casterFound := s.playerByGUID(aura.casterID)

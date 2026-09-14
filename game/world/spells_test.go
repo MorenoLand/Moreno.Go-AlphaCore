@@ -129,3 +129,62 @@ func TestUseItemConsumesChargedSpell(t *testing.T) {
 		t.Fatalf("consumed item found=%v err=%v", found, err)
 	}
 }
+
+func TestTriggeredSpellAppliesEffect(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, Effect_1, EffectTriggerSpell_1, EffectBasePoints_1) VALUES (42, 64, 43, 2), (43, 10, 2, 4)`); err != nil {
+		t.Fatal(err)
+	}
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Caster", Level: 1, Map: 0, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := characters.AddSpell(guid, 42); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases)}
+	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Caster", Level: 1, Map: 0, Health: 10}
+	if responses, err := server.castSpellPacket(active, append(encodeUint32(42), 0, 0)); err != nil || len(responses) != 0 {
+		t.Fatalf("responses=%d err=%v", len(responses), err)
+	}
+	stored, found, err := characters.Character(guid, 1, 1)
+	if err != nil || !found || stored.Health != 14 {
+		t.Fatalf("stored=%#v found=%v err=%v", stored, found, err)
+	}
+}
+
+func TestSpellCreatesItem(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, Effect_1, EffectItemType_1, EffectBasePoints_1) VALUES (42, 24, 200, 2)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO item_template (entry, name, stackable) VALUES (200, 'Created Item', 20)`); err != nil {
+		t.Fatal(err)
+	}
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Caster", Level: 1, Map: 0, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := characters.AddSpell(guid, 42); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases)}
+	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Caster", Level: 1, Map: 0, Health: 10}
+	if responses, err := server.castSpellPacket(active, append(encodeUint32(42), 0, 0)); err != nil || len(responses) != 0 {
+		t.Fatalf("responses=%d err=%v", len(responses), err)
+	}
+	item, found, err := characters.ItemAt(guid, 23, 23)
+	if err != nil || !found || item.ItemTemplate != 200 || item.StackCount != 2 {
+		t.Fatalf("item=%#v found=%v err=%v", item, found, err)
+	}
+}

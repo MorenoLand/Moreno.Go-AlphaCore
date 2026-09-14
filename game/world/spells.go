@@ -38,6 +38,7 @@ type spellCast struct {
 	sourceItem *realm.InventoryItem
 	source     worlddb.ItemTemplate
 	sourceSlot int
+	triggered  bool
 	started    time.Time
 	timer      *time.Timer
 }
@@ -235,10 +236,6 @@ func (s *WorldServer) finishSpellCast(guid int64, cast *spellCast) {
 }
 
 func (s *WorldServer) performSpellCast(cast *spellCast) {
-	if cast.powerCost > 0 {
-		_ = s.changePlayerPower(&cast.caster, cast.spell.PowerType, -cast.powerCost)
-	}
-	s.setSpellCooldown(cast.caster.GUID, cast.spell)
 	result, err := spellCastResult(cast.spell.ID, packet.SpellNoError)
 	if err == nil {
 		s.sendSpell(cast.caster, result)
@@ -247,8 +244,21 @@ func (s *WorldServer) performSpellCast(cast *spellCast) {
 	if err == nil {
 		s.sendSpell(cast.caster, goPacket)
 	}
-	s.applySpellEffects(cast)
+	s.setSpellCooldown(cast.caster.GUID, cast.spell)
+	if cast.powerCost > 0 {
+		_ = s.changePlayerPower(&cast.caster, cast.spell.PowerType, -cast.powerCost)
+	}
 	s.consumeItemSpell(cast)
+	s.applySpellEffects(cast)
+}
+
+func (s *WorldServer) triggerSpell(caster realm.Character, spellID int64, target spellTarget, targetMask packet.SpellTargetMask) {
+	spell, found, err := s.DBC.Spell(spellID)
+	if err != nil || !found {
+		return
+	}
+	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, triggered: true, started: time.Now()}
+	s.performSpellCast(cast)
 }
 
 func (s *WorldServer) consumeItemSpell(cast *spellCast) {
@@ -319,7 +329,58 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 			}
 		case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura:
 			s.applyAura(cast, target, index, effect)
+		case packet.SpellEffectTriggerSpell:
+			targetMask := packet.SpellTargetSelf
+			if target.GUID != cast.caster.GUID {
+				targetMask = packet.SpellTargetUnit
+			}
+			s.triggerSpell(cast.caster, effect.TriggerSpell, spellTarget{UnitGUID: uint64(target.GUID)}, targetMask)
+		case packet.SpellEffectLearnSpell:
+			if s.Characters == nil || effect.TriggerSpell <= 0 {
+				continue
+			}
+			if err := s.Characters.AddSpell(target.GUID, effect.TriggerSpell); err != nil {
+				continue
+			}
+			learned := append(encodeUint16(effect.TriggerSpell), encodeUint16(0)...)
+			if update, err := packet.Encode(packet.SMSGLearnedSpell, learned); err == nil {
+				s.sendPlayer(target.GUID, update)
+			}
+		case packet.SpellEffectCreateItem:
+			s.createSpellItem(cast, target, effect, points)
 		}
+	}
+}
+
+func (s *WorldServer) createSpellItem(cast *spellCast, target realm.Character, effect dbc.SpellEffect, amount int64) {
+	if s.Characters == nil || s.WorldData == nil || target.GUID == 0 {
+		return
+	}
+	template, found, err := s.WorldData.ItemTemplate(effect.ItemType)
+	if err != nil || !found {
+		return
+	}
+	if amount < 1 {
+		amount = 1
+	}
+	if template.Stackable > 0 && amount > template.Stackable {
+		amount = template.Stackable
+	}
+	slot, err := s.Characters.FirstEmptySlot(target.GUID, 23, 23, 39)
+	if err != nil || slot < 0 {
+		return
+	}
+	item, err := s.Characters.CreateInventoryItem(target.GUID, cast.caster.GUID, 23, slot, effect.ItemType, amount)
+	if err != nil {
+		return
+	}
+	created, err := packet.EncodeItemCreate(uint64(item.GUID)|0x4000000000000000, uint32(item.ItemTemplate), uint64(item.Owner), uint64(item.Creator), uint32(item.StackCount), 0, 0, item.SpellCharges, packet.Movement{X: target.PositionX, Y: target.PositionY, Z: target.PositionZ, O: target.Orientation})
+	if err == nil {
+		s.sendPlayer(target.GUID, created)
+	}
+	push, err := itemPushResult(item, effect.ItemType, 23)
+	if err == nil {
+		s.sendPlayer(target.GUID, push)
 	}
 }
 
@@ -584,6 +645,12 @@ func spellTargetData(caster realm.Character, mask packet.SpellTargetMask, target
 func encodeInt32(value int64) []byte {
 	data := make([]byte, 4)
 	binary.LittleEndian.PutUint32(data, uint32(value))
+	return data
+}
+
+func encodeUint16(value int64) []byte {
+	data := make([]byte, 2)
+	binary.LittleEndian.PutUint16(data, uint16(value))
 	return data
 }
 
