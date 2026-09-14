@@ -24,6 +24,7 @@ type creatureState struct {
 	CreatedBySpell, PetID                              int64
 	PetNameTimestamp, PetExperience, PetNextExperience int64
 	Pet                                                bool
+	CombatTarget                                       uint64
 }
 
 func (s *WorldServer) creatureStateAt(active realm.Character, guid uint64, distance float32) (*creatureState, bool, error) {

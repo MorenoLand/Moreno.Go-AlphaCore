@@ -52,6 +52,8 @@ func (s *WorldServer) gmCheat(active *realm.Character, opcode packet.Opcode, dat
 			return nil, nil
 		}
 		return nil, s.createCreature(*active, int64(binary.LittleEndian.Uint32(data)))
+	case packet.CMSGMakeMonsterAttackMe:
+		return s.makeMonsterAttackMe(*active, data)
 	case packet.CMSGDestroyMonster:
 		if gmLevel < 2 || len(data) < 8 {
 			return nil, nil
