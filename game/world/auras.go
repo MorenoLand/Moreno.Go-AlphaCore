@@ -146,21 +146,28 @@ func (s *WorldServer) tickAura(guid int64, slot int, aura *auraState, period int
 		target = aura.target
 	}
 	s.auras.mu.Unlock()
-	points := spellEffectPoints(aura.effect, 0)
+	points := aura.points
+	caster, casterFound := s.playerByGUID(aura.casterID)
+	if !casterFound {
+		caster = realm.Character{GUID: aura.casterID}
+	}
 	switch packet.AuraType(aura.effect.Aura) {
 	case packet.AuraPeriodicDamage:
+		before := target.Health
 		_ = s.changePlayerHealth(&target, -points)
+		if amount := before - target.Health; amount > 0 {
+			s.sendSpellDamage(caster, target.GUID, amount, aura.spellID)
+		}
 	case packet.AuraPeriodicHeal:
 		_ = s.changePlayerHealth(&target, points)
 	case packet.AuraPeriodicEnergize:
 		_ = s.changePlayerPower(&target, aura.effect.MiscValue, points)
 	case packet.AuraPeriodicManaLeech:
-		amount := minPower(playerPower(target, aura.effect.MiscValue), points)
+		amount := minPower(playerPower(target, 0), points)
 		if amount > 0 {
-			_ = s.changePlayerPower(&target, aura.effect.MiscValue, -amount)
-			caster, casterFound := s.playerByGUID(aura.casterID)
+			_ = s.changePlayerPower(&target, 0, -amount)
 			if casterFound {
-				_ = s.changePlayerPower(&caster, aura.effect.MiscValue, amount)
+				_ = s.changePlayerPower(&caster, 0, amount)
 			}
 		}
 	case packet.AuraPeriodicTriggerSpell:
@@ -169,10 +176,14 @@ func (s *WorldServer) tickAura(guid int64, slot int, aura *auraState, period int
 			s.triggerSpell(caster, aura.effect.TriggerSpell, spellTarget{UnitGUID: uint64(target.GUID)}, packet.SpellTargetUnit)
 		}
 	case packet.AuraPeriodicLeech:
+		before := target.Health
 		if s.changePlayerHealth(&target, -points) == nil {
-			caster, casterFound := s.playerByGUID(aura.casterID)
-			if casterFound {
-				_ = s.changePlayerHealth(&caster, points)
+			amount := before - target.Health
+			if amount > 0 {
+				if casterFound {
+					_ = s.changePlayerHealth(&caster, amount)
+				}
+				s.sendSpellDamage(caster, target.GUID, amount, aura.spellID)
 			}
 		}
 	}

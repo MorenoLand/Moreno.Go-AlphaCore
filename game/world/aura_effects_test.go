@@ -2,12 +2,16 @@ package world
 
 import (
 	"context"
+	"encoding/binary"
+	"net"
 	"testing"
+	"time"
 
 	"Moreno.AlphaCore/database"
 	"Moreno.AlphaCore/database/dbc"
 	"Moreno.AlphaCore/database/realm"
 	"Moreno.AlphaCore/network/packet"
+	"Moreno.AlphaCore/network/sockets"
 )
 
 func TestHealthAuraLifecycle(t *testing.T) {
@@ -57,5 +61,49 @@ func TestHealthAuraLifecycle(t *testing.T) {
 	server.removeAura(active, 0)
 	if server.unitFlags(active.GUID) != unitFlagPlayer|unitFlagDebugCombatLog {
 		t.Fatalf("flags after aura removal=%x", server.unitFlags(active.GUID))
+	}
+}
+
+func TestPeriodicDamageReportsEffectiveAmount(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	server := &WorldServer{DBC: dbc.NewStore(databases)}
+	caster := realm.Character{GUID: 1, Name: "Caster", Health: 100}
+	target := realm.Character{GUID: 2, Name: "Target", Health: 5}
+	server.registerPlayer(caster)
+	server.registerPlayer(target)
+	server.setPlayerMaxHealth(target.GUID, 100)
+	server.applyAura(&spellCast{caster: caster, spell: dbc.Spell{ID: 44}}, target, 0, dbc.SpellEffect{Type: int64(packet.SpellEffectApplyAura), Aura: int64(packet.AuraPeriodicDamage), AuraPeriod: 5, BasePoints: 10})
+	client, connection := net.Pipe()
+	defer client.Close()
+	server.attachPlayer(caster.GUID, connection)
+	defer server.removeAura(target, 32)
+	packets := make(chan packet.Packet, 1)
+	errors := make(chan error, 1)
+	go func() {
+		for {
+			message, readErr := sockets.ReadPacket(client)
+			if readErr != nil {
+				errors <- readErr
+				return
+			}
+			if message.Opcode == packet.SMSGDamageDone {
+				packets <- message
+				return
+			}
+		}
+	}()
+	select {
+	case message := <-packets:
+		if len(message.Data) < 12 || int64(binary.LittleEndian.Uint32(message.Data[8:12])) != 5 {
+			t.Fatalf("damage packet=%#v", message)
+		}
+	case err := <-errors:
+		t.Fatal(err)
+	case <-time.After(time.Second):
+		t.Fatal("periodic damage packet not received")
 	}
 }
