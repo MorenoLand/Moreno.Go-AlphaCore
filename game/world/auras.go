@@ -16,6 +16,7 @@ const (
 	positiveAuraStart  = 0
 	harmfulAuraStart   = 32
 	visibleAuraEnd     = 56
+	auraUnitFlagsMask  = 0x00ea8000
 )
 
 type auraRegistry struct {
@@ -71,11 +72,16 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 	if s.auras.active[target.GUID] == nil {
 		s.auras.active[target.GUID] = make(map[int]*auraState)
 	}
+	var replaced *auraState
 	for slot, current := range s.auras.active[target.GUID] {
 		if current.spellID == aura.spellID {
 			aura.slot = slot
+			replaced = current
 			if current.timer != nil {
 				current.timer.Stop()
+			}
+			if current.periodic != nil {
+				current.periodic.Stop()
 			}
 			break
 		}
@@ -95,6 +101,9 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 	}
 	s.auras.active[target.GUID][aura.slot] = aura
 	s.auras.mu.Unlock()
+	if replaced != nil {
+		s.auraEffectChange(target, replaced, true)
+	}
 	s.auraEffectChange(target, aura, false)
 	if aura.passive {
 		return
@@ -226,7 +235,7 @@ func (s *WorldServer) removeAura(target realm.Character, slot int) {
 }
 
 func (s *WorldServer) refreshAuraUnitFlags(target realm.Character) {
-	flags := uint32(unitFlagPlayer)
+	flags := s.unitFlags(target.GUID) &^ auraUnitFlagsMask
 	s.auras.mu.Lock()
 	for _, aura := range s.auras.active[target.GUID] {
 		switch packet.AuraType(aura.effect.Aura) {

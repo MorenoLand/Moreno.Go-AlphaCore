@@ -24,6 +24,10 @@ func TestHealthAuraLifecycle(t *testing.T) {
 	if max := server.playerMaxHealth(active.GUID); max != 149 {
 		t.Fatalf("max health after apply=%d", max)
 	}
+	server.applyAura(&spellCast{caster: active, spell: dbc.Spell{ID: 1}}, active, 0, effect)
+	if max := server.playerMaxHealth(active.GUID); max != 149 {
+		t.Fatalf("max health after refresh=%d", max)
+	}
 	if err := server.changePlayerHealth(&active, 100); err != nil || active.Health != 149 {
 		t.Fatalf("health after clamp=%d err=%v", active.Health, err)
 	}
@@ -44,5 +48,14 @@ func TestHealthAuraLifecycle(t *testing.T) {
 	current, found = server.playerByGUID(active.GUID)
 	if max := server.playerMaxPower(active.GUID, 0); max != 1000 || !found || current.Power1 != 1000 {
 		t.Fatalf("mana after remove max=%d power=%d found=%v", max, current.Power1, found)
+	}
+	server.setUnitFlags(active, unitFlagPlayer|unitFlagDebugCombatLog)
+	server.applyAura(&spellCast{caster: active, spell: dbc.Spell{ID: 3}}, active, 0, dbc.SpellEffect{Type: int64(packet.SpellEffectApplyAura), Aura: int64(packet.AuraModStealth)})
+	if server.unitFlags(active.GUID)&unitFlagDebugCombatLog == 0 || server.unitFlags(active.GUID)&0x00008000 == 0 {
+		t.Fatalf("flags after aura=%x", server.unitFlags(active.GUID))
+	}
+	server.removeAura(active, 0)
+	if server.unitFlags(active.GUID) != unitFlagPlayer|unitFlagDebugCombatLog {
+		t.Fatalf("flags after aura removal=%x", server.unitFlags(active.GUID))
 	}
 }
