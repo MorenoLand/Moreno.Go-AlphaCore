@@ -21,6 +21,7 @@ type playerRegistry struct {
 	maxHealth      map[int64]int64
 	maxHealthKnown map[int64]bool
 	maxPower       map[int64][5]int64
+	mountDisplay   map[int64]uint32
 	comboPoints    map[int64]int64
 	comboTarget    map[int64]uint64
 	unitFlags      map[int64]uint32
@@ -45,6 +46,7 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.maxHealth = make(map[int64]int64)
 		s.players.maxHealthKnown = make(map[int64]bool)
 		s.players.maxPower = make(map[int64][5]int64)
+		s.players.mountDisplay = make(map[int64]uint32)
 		s.players.comboPoints = make(map[int64]int64)
 		s.players.comboTarget = make(map[int64]uint64)
 		s.players.unitFlags = make(map[int64]uint32)
@@ -65,6 +67,9 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 	}
 	if s.players.maxPower == nil {
 		s.players.maxPower = make(map[int64][5]int64)
+	}
+	if s.players.mountDisplay == nil {
+		s.players.mountDisplay = make(map[int64]uint32)
 	}
 	if s.players.maxHealth == nil {
 		s.players.maxHealth = make(map[int64]int64)
@@ -141,6 +146,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.maxHealth, guid)
 	delete(s.players.maxHealthKnown, guid)
 	delete(s.players.maxPower, guid)
+	delete(s.players.mountDisplay, guid)
 	delete(s.players.comboPoints, guid)
 	delete(s.players.comboTarget, guid)
 	delete(s.players.unitFlags, guid)

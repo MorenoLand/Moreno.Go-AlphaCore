@@ -194,25 +194,27 @@ const (
 type AuraType int64
 
 const (
-	AuraModStun              AuraType = 12
-	AuraModConfuse           AuraType = 5
-	AuraModFear              AuraType = 7
-	AuraModStealth           AuraType = 16
-	AuraModPacify            AuraType = 25
-	AuraModSilence           AuraType = 27
-	AuraModIncreaseHealth    AuraType = 34
-	AuraModIncreaseMana      AuraType = 35
-	AuraModRoot              AuraType = 26
-	AuraModSchoolImmunity    AuraType = 39
-	AuraModDamageImmunity    AuraType = 40
-	AuraModDisarm            AuraType = 67
-	AuraPeriodicDamage       AuraType = 3
-	AuraPeriodicHeal         AuraType = 8
-	AuraPeriodicTriggerSpell AuraType = 23
-	AuraPeriodicEnergize     AuraType = 24
-	AuraPeriodicLeech        AuraType = 53
-	AuraPeriodicManaFunnel   AuraType = 63
-	AuraPeriodicManaLeech    AuraType = 64
+	AuraModStun                 AuraType = 12
+	AuraModConfuse              AuraType = 5
+	AuraModFear                 AuraType = 7
+	AuraModStealth              AuraType = 16
+	AuraModPacify               AuraType = 25
+	AuraModSilence              AuraType = 27
+	AuraModIncreaseHealth       AuraType = 34
+	AuraModIncreaseMana         AuraType = 35
+	AuraModRoot                 AuraType = 26
+	AuraModIncreaseMountedSpeed AuraType = 32
+	AuraModSchoolImmunity       AuraType = 39
+	AuraModDamageImmunity       AuraType = 40
+	AuraModDisarm               AuraType = 67
+	AuraPeriodicDamage          AuraType = 3
+	AuraPeriodicHeal            AuraType = 8
+	AuraPeriodicTriggerSpell    AuraType = 23
+	AuraPeriodicEnergize        AuraType = 24
+	AuraPeriodicLeech           AuraType = 53
+	AuraPeriodicManaFunnel      AuraType = 63
+	AuraPeriodicManaLeech       AuraType = 64
+	AuraModMounted              AuraType = 78
 )
 
 type SpellImplicitTarget int64

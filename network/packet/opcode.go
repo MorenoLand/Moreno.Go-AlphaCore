@@ -249,6 +249,9 @@ const (
 	MSGGMSummon                   Opcode = 0x01da
 	CMSGMountSpecialAnim          Opcode = 0x0164
 	SMSGMountSpecialAnim          Opcode = 0x0165
+	SMSGMountResult               Opcode = 0x0161
+	SMSGDismountResult            Opcode = 0x0162
+	SMSGPureMountCancelled        Opcode = 0x0163
 	SMSGPetTameFailure            Opcode = 0x0166
 	CMSGPetSetAction              Opcode = 0x0167
 	CMSGPetAction                 Opcode = 0x0168
@@ -622,6 +625,9 @@ var opcodeNames = map[Opcode]string{
 	MSGGMSummon:                   "MSG_GM_SUMMON",
 	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",
 	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
+	SMSGMountResult:               "SMSG_MOUNTRESULT",
+	SMSGDismountResult:            "SMSG_DISMOUNTRESULT",
+	SMSGPureMountCancelled:        "SMSG_PUREMOUNT_CANCELLED",
 	SMSGPetTameFailure:            "SMSG_PET_TAME_FAILURE",
 	CMSGPetSetAction:              "CMSG_PET_SET_ACTION",
 	CMSGPetAction:                 "CMSG_PET_ACTION",

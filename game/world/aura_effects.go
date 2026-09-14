@@ -6,6 +6,21 @@ import (
 )
 
 func (s *WorldServer) auraEffectChange(target realm.Character, aura *auraState, remove bool) {
+	switch packet.AuraType(aura.effect.Aura) {
+	case packet.AuraModMounted:
+		if remove {
+			s.unmountPlayer(target, true, false)
+		} else {
+			if s.WorldData != nil {
+				if template, found, err := s.WorldData.CreatureTemplate(aura.effect.MiscValue); err == nil && found {
+					s.mountPlayer(target, uint32(template.DisplayID1), false)
+				}
+			}
+		}
+		return
+	case packet.AuraModIncreaseMountedSpeed:
+		return
+	}
 	if aura.points == 0 {
 		return
 	}

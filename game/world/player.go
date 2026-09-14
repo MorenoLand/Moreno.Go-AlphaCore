@@ -137,6 +137,7 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 		}
 	}
 	values := buildPlayerFields(character, race, inventory)
+	values[152] = s.mountDisplayID(character.GUID)
 	if petGUID != 0 {
 		packet.SetUint64(values, 8, petGUID)
 	}

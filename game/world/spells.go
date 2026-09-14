@@ -655,6 +655,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				s.setSanctuary(cast.caster.GUID, time.Second)
 			case packet.SpellEffectDuel:
 				s.requestDuel(cast, target, effect)
+			case packet.SpellEffectSummonMount:
+				s.summonMount(target, effect.MiscValue)
 			case packet.SpellEffectSummonPlayer:
 				s.summonSpellTarget(cast, target)
 			case packet.SpellEffectSummonPet, packet.SpellEffectSummon:
