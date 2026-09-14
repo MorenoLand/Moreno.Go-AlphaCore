@@ -299,6 +299,7 @@ const (
 	CMSGGetDeathBindZone          Opcode = 0x0149
 	SMSGBindZoneReply             Opcode = 0x014a
 	SMSGPlayerBound               Opcode = 0x014b
+	SMSGResurrectRequest          Opcode = 0x014e
 	CMSGRepopRequest              Opcode = 0x014d
 	CMSGResurrectResponse         Opcode = 0x014f
 	CMSGReclaimCorpse             Opcode = 0x01c3
@@ -631,6 +632,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGGetDeathBindZone:          "CMSG_GETDEATHBINDZONE",
 	SMSGBindZoneReply:             "SMSG_BINDZONEREPLY",
 	SMSGPlayerBound:               "SMSG_PLAYERBOUND",
+	SMSGResurrectRequest:          "SMSG_RESURRECT_REQUEST",
 	CMSGRepopRequest:              "CMSG_REPOP_REQUEST",
 	CMSGResurrectResponse:         "CMSG_RESURRECT_RESPONSE",
 	CMSGReclaimCorpse:             "CMSG_RECLAIM_CORPSE",

@@ -387,8 +387,12 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				if update, err := packet.Encode(packet.SMSGLearnedSpell, learned); err == nil {
 					s.sendPlayer(target.GUID, update)
 				}
-			case packet.SpellEffectCreateItem:
-				s.createSpellItem(cast, target, effect, points)
+		case packet.SpellEffectCreateItem:
+			s.createSpellItem(cast, target, effect, points)
+		case packet.SpellEffectResurrect:
+			if target.Health <= 0 {
+				s.requestResurrection(cast, target, points)
+			}
 			}
 		}
 	}

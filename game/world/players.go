@@ -17,6 +17,7 @@ type playerRegistry struct {
 	weaponMode   map[int64]uint32
 	combatTarget map[int64]uint64
 	pvpSource    map[int64]pvpLocation
+	maxHealth    map[int64]int64
 	connections  map[int64]*playerConnection
 }
 
@@ -31,9 +32,13 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.weaponMode = make(map[int64]uint32)
 		s.players.combatTarget = make(map[int64]uint64)
 		s.players.pvpSource = make(map[int64]pvpLocation)
+		s.players.maxHealth = make(map[int64]int64)
 		s.players.connections = make(map[int64]*playerConnection)
 	}
 	s.players.players[character.GUID] = character
+	if _, found := s.players.maxHealth[character.GUID]; !found {
+		s.players.maxHealth[character.GUID] = maxInt64(character.Health, 1)
+	}
 	s.players.mu.Unlock()
 }
 
@@ -41,6 +46,9 @@ func (s *WorldServer) updatePlayer(character realm.Character) {
 	s.players.mu.Lock()
 	if s.players.players != nil {
 		s.players.players[character.GUID] = character
+		if character.Health > s.players.maxHealth[character.GUID] {
+			s.players.maxHealth[character.GUID] = character.Health
+		}
 	}
 	s.players.mu.Unlock()
 }
@@ -55,6 +63,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.weaponMode, guid)
 	delete(s.players.combatTarget, guid)
 	delete(s.players.pvpSource, guid)
+	delete(s.players.maxHealth, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
 	for _, loot := range s.loots {
@@ -63,6 +72,13 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	s.lootMu.Unlock()
 	delete(s.players.connections, guid)
 	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) playerMaxHealth(guid int64) int64 {
+	s.players.mu.RLock()
+	value := s.players.maxHealth[guid]
+	s.players.mu.RUnlock()
+	return maxInt64(value, 1)
 }
 
 func (s *WorldServer) setCombatTarget(guid int64, target uint64) {

@@ -82,11 +82,39 @@ func (s *WorldServer) repop(active *realm.Character) ([]byte, error) {
 	return s.teleportPlayer(active, bind.Map, bind.X, bind.Y, bind.Z, active.Orientation)
 }
 
-func (s *WorldServer) resurrectResponse(active realm.Character, data []byte) ([][]byte, error) {
-	if len(data) < 9 || active.Health > 0 {
+func (s *WorldServer) resurrectResponse(active *realm.Character, data []byte) ([][]byte, error) {
+	if active == nil || len(data) < 9 || active.Health > 0 || data[8] == 0 {
 		return nil, nil
 	}
-	return nil, nil
+	s.resurrections.mu.Lock()
+	request, found := s.resurrections.requests[active.GUID]
+	if found && request.CasterGUID == int64(binary.LittleEndian.Uint64(data)) {
+		delete(s.resurrections.requests, active.GUID)
+	}
+	s.resurrections.mu.Unlock()
+	if !found || request.CasterGUID != int64(binary.LittleEndian.Uint64(data)) {
+		return nil, nil
+	}
+	health := int64(float64(s.playerMaxHealth(active.GUID)) * request.Recovery / 100)
+	active.Health = maxInt64(health, 1)
+	if s.Characters != nil {
+		if err := s.Characters.UpdateHealth(active.GUID, active.AccountID, active.RealmID, active.Health); err != nil {
+			return nil, err
+		}
+	}
+	newWorld, err := s.teleportPlayer(active, request.Map, request.X, request.Y, request.Z, request.O)
+	if err != nil {
+		return nil, err
+	}
+	updates := make([][]byte, 0, 3)
+	for _, field := range []int{22, 27} {
+		update, err := packet.EncodeFieldUpdate(uint64(active.GUID), field, uint32(active.Health))
+		if err != nil {
+			return nil, err
+		}
+		updates = append(updates, update)
+	}
+	return append(updates, newWorld), nil
 }
 
 func (s *WorldServer) reclaimCorpse(active realm.Character, data []byte) ([][]byte, error) {

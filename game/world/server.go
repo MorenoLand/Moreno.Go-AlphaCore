@@ -45,6 +45,7 @@ type WorldServer struct {
 	spells            spellRegistry
 	auras             auraRegistry
 	creatures         creatureRegistry
+	resurrections     resurrectionRegistry
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -334,7 +335,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 			if active == nil {
 				return
 			}
-			responses, err = s.resurrectResponse(*active, message.Data)
+			responses, err = s.resurrectResponse(active, message.Data)
 		case packet.CMSGReclaimCorpse:
 			if active == nil {
 				return
