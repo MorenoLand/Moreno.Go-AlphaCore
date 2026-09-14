@@ -44,6 +44,7 @@ type WorldServer struct {
 	lootSelections    map[int64]uint64
 	spells            spellRegistry
 	auras             auraRegistry
+	creatures         creatureRegistry
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {

@@ -78,6 +78,7 @@ func (s *WorldServer) nearbyCreaturePackets(player realm.Character) ([][]byte, e
 		minimumDamage := int64(averageDamage - variance)
 		maximumDamage := int64(math.Round(float64(averageDamage + variance)))
 		guid := uint64(spawn.SpawnID) | 0xf130000000000000
+		s.setCreatureState(creatureState{GUID: guid, Spawn: spawn, Template: template, Level: level, Health: health, MaxHealth: health, Mana: mana})
 		fields := make([]uint32, packet.UnitFieldCount)
 		packet.SetUint64(fields, 0, guid)
 		fields[2] = 9

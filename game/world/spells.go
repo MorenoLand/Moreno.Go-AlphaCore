@@ -29,20 +29,21 @@ type spellTarget struct {
 }
 
 type spellCast struct {
-	caster        realm.Character
-	target        spellTarget
-	spell         dbc.Spell
-	targetMask    packet.SpellTargetMask
-	castTime      int64
-	powerCost     int64
-	targets       []realm.Character
-	effectTargets map[int][]realm.Character
-	sourceItem    *realm.InventoryItem
-	source        worlddb.ItemTemplate
-	sourceSlot    int
-	triggered     bool
-	started       time.Time
-	timer         *time.Timer
+	caster         realm.Character
+	target         spellTarget
+	spell          dbc.Spell
+	targetMask     packet.SpellTargetMask
+	castTime       int64
+	powerCost      int64
+	targets        []realm.Character
+	effectTargets  map[int][]realm.Character
+	targetCreature *creatureState
+	sourceItem     *realm.InventoryItem
+	source         worlddb.ItemTemplate
+	sourceSlot     int
+	triggered      bool
+	started        time.Time
+	timer          *time.Timer
 }
 
 func (s *WorldServer) castSpellPacket(active realm.Character, data []byte) ([][]byte, error) {
@@ -130,7 +131,11 @@ func (s *WorldServer) spellTarget(active realm.Character, mask packet.SpellTarge
 			return spellTarget{}, false
 		}
 		player, found := s.playerByGUID(int64(target.UnitGUID))
-		if !found || player.Map != active.Map {
+		if found {
+			if player.Map != active.Map {
+				return spellTarget{}, false
+			}
+		} else if _, creatureFound, err := s.creatureStateAt(active, target.UnitGUID, creatureViewDistance); err != nil || !creatureFound {
 			return spellTarget{}, false
 		}
 		return target, true
@@ -161,7 +166,13 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 	}
 	if target.UnitGUID != 0 && target.UnitGUID != uint64(active.GUID) {
 		player, found := s.playerByGUID(int64(target.UnitGUID))
-		if !found || player.Map != active.Map {
+		if found {
+			if player.Map != active.Map {
+				return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
+			}
+		} else if _, found, err := s.creatureStateAt(active, target.UnitGUID, creatureViewDistance); err != nil {
+			return nil, err
+		} else if !found {
 			return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
 		}
 	}
@@ -194,8 +205,14 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 	if spellRange, rangeFound, rangeErr := s.DBC.SpellRange(spell.RangeIndex); rangeErr != nil {
 		return nil, rangeErr
 	} else if rangeFound && target.UnitGUID != 0 && target.UnitGUID != uint64(active.GUID) {
-		player, _ := s.playerByGUID(int64(target.UnitGUID))
-		dx, dy, dz := active.PositionX-player.PositionX, active.PositionY-player.PositionY, active.PositionZ-player.PositionZ
+		player, playerFound := s.playerByGUID(int64(target.UnitGUID))
+		position := realm.Character{}
+		if playerFound {
+			position = player
+		} else if state, found, stateErr := s.creatureStateAt(active, target.UnitGUID, creatureViewDistance); stateErr == nil && found {
+			position = realm.Character{PositionX: state.Spawn.PositionX, PositionY: state.Spawn.PositionY, PositionZ: state.Spawn.PositionZ}
+		}
+		dx, dy, dz := active.PositionX-position.PositionX, active.PositionY-position.PositionY, active.PositionZ-position.PositionZ
 		if spellRange.RangeMax > 0 && dx*dx+dy*dy+dz*dz > spellRange.RangeMax*spellRange.RangeMax {
 			return s.castFailure(active, spellID, packet.SpellFailedOutOfRange)
 		}
@@ -212,7 +229,16 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 			castTime = value.Minimum
 		}
 	}
-	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, targets: s.spellTargets(active, spell, target), effectTargets: s.spellEffectTargetsAll(active, spell, target), sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now()}
+	var targetCreature *creatureState
+	if target.UnitGUID != 0 && target.UnitGUID != uint64(active.GUID) {
+		if _, found := s.playerByGUID(int64(target.UnitGUID)); !found {
+			targetCreature, _, err = s.creatureStateAt(active, target.UnitGUID, creatureViewDistance)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, targets: s.spellTargets(active, spell, target), effectTargets: s.spellEffectTargetsAll(active, spell, target), targetCreature: targetCreature, sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now()}
 	if castTime <= 0 {
 		s.performSpellCast(cast)
 		return nil, nil
@@ -311,7 +337,11 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 		effectiveLevel = 0
 	}
 	for index, effect := range cast.spell.Effects {
-		for _, target := range cast.effectTargets[index] {
+		targets := cast.effectTargets[index]
+		if len(targets) == 0 && cast.targetCreature != nil {
+			s.applyCreatureSpellEffect(cast, cast.targetCreature, effect, spellEffectPoints(effect, effectiveLevel))
+		}
+		for _, target := range targets {
 			points := spellEffectPoints(effect, effectiveLevel)
 			switch packet.SpellEffect(effect.Type) {
 			case packet.SpellEffectSchoolDamage:
@@ -360,6 +390,28 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 			case packet.SpellEffectCreateItem:
 				s.createSpellItem(cast, target, effect, points)
 			}
+		}
+	}
+}
+
+func (s *WorldServer) applyCreatureSpellEffect(cast *spellCast, target *creatureState, effect dbc.SpellEffect, points int64) {
+	switch packet.SpellEffect(effect.Type) {
+	case packet.SpellEffectSchoolDamage:
+		s.changeCreatureHealth(target, -points)
+	case packet.SpellEffectPowerBurn:
+		amount := minPower(target.Mana, points)
+		if amount > 0 {
+			s.changeCreaturePower(target, effect.MiscValue, -amount)
+			s.changeCreatureHealth(target, -amount)
+		}
+	case packet.SpellEffectHeal:
+		s.changeCreatureHealth(target, points)
+	case packet.SpellEffectPowerDrain:
+		amount := minPower(target.Mana, points)
+		if amount > 0 {
+			s.changeCreaturePower(target, effect.MiscValue, -amount)
+			caster := cast.caster
+			_ = s.changePlayerPower(&caster, effect.MiscValue, amount)
 		}
 	}
 }
@@ -740,7 +792,11 @@ func spellGoPacket(cast *spellCast) ([]byte, error) {
 	data = append(data, 0, 0)
 	targets := cast.targets
 	if len(targets) == 0 {
-		targets = []realm.Character{cast.caster}
+		if cast.target.UnitGUID != 0 {
+			targets = []realm.Character{{GUID: int64(cast.target.UnitGUID)}}
+		} else {
+			targets = []realm.Character{cast.caster}
+		}
 	}
 	data = append(data, byte(len(targets)))
 	for _, target := range targets {
