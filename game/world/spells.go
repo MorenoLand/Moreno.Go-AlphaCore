@@ -434,15 +434,16 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 			points := spellEffectPoints(effect, effectiveLevel)
 			switch packet.SpellEffect(effect.Type) {
 			case packet.SpellEffectInstantKill:
+				s.sendSpellDamage(cast.caster, target.GUID, target.Health, cast.spell.ID)
 				_ = s.changePlayerHealth(&target, -target.Health)
-			case packet.SpellEffectSchoolDamage:
-				_ = s.changePlayerHealth(&target, -points)
-			case packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus:
+			case packet.SpellEffectSchoolDamage, packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus:
+				s.sendSpellDamage(cast.caster, target.GUID, minPower(target.Health, points), cast.spell.ID)
 				_ = s.changePlayerHealth(&target, -points)
 			case packet.SpellEffectPowerBurn:
 				amount := minPower(playerPower(target, effect.MiscValue), points)
 				if amount > 0 {
 					_ = s.changePlayerPower(&target, effect.MiscValue, -amount)
+					s.sendSpellDamage(cast.caster, target.GUID, amount, cast.spell.ID)
 					_ = s.changePlayerHealth(&target, -amount)
 				}
 			case packet.SpellEffectHeal:
@@ -451,6 +452,7 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				_ = s.changePlayerHealth(&target, s.playerMaxHealth(cast.caster.GUID)-target.Health)
 			case packet.SpellEffectHealthLeech:
 				if s.changePlayerHealth(&target, -points) == nil {
+					s.sendSpellDamage(cast.caster, target.GUID, minPower(target.Health+points, points), cast.spell.ID)
 					caster := cast.caster
 					_ = s.changePlayerHealth(&caster, points)
 				}
@@ -496,10 +498,13 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 func (s *WorldServer) applyCreatureSpellEffect(cast *spellCast, target *creatureState, effect dbc.SpellEffect, points int64) {
 	switch packet.SpellEffect(effect.Type) {
 	case packet.SpellEffectSchoolDamage:
+		s.sendSpellDamage(cast.caster, int64(target.GUID), minPower(target.Health, points), cast.spell.ID)
 		s.changeCreatureHealth(target, -points)
 	case packet.SpellEffectInstantKill:
+		s.sendSpellDamage(cast.caster, int64(target.GUID), target.Health, cast.spell.ID)
 		s.changeCreatureHealth(target, -target.Health)
 	case packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus:
+		s.sendSpellDamage(cast.caster, int64(target.GUID), minPower(target.Health, points), cast.spell.ID)
 		s.changeCreatureHealth(target, -points)
 	case packet.SpellEffectPowerBurn:
 		amount := minPower(target.Mana, points)
@@ -768,6 +773,17 @@ func setPlayerPower(player *realm.Character, powerType, value int64) {
 func (s *WorldServer) sendSpell(caster realm.Character, data []byte) {
 	s.broadcastPlayer(caster, data)
 	s.sendPlayer(caster.GUID, data)
+}
+
+func (s *WorldServer) sendSpellDamage(caster realm.Character, target, amount, spellID int64) {
+	data := append(encodeUint64(uint64(target)), encodeUint32(amount)...)
+	data = append(data, encodeUint32(0)...)
+	data = append(data, encodeInt32(0)...)
+	data = append(data, encodeUint32(spellID)...)
+	data = append(data, encodeUint64(uint64(caster.GUID))...)
+	if update, err := packet.Encode(packet.SMSGDamageDone, data); err == nil {
+		s.sendSpell(caster, update)
+	}
 }
 
 func (s *WorldServer) hasAuraType(guid int64, auraType packet.AuraType) bool {
