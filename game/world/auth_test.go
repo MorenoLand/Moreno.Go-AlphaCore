@@ -39,3 +39,23 @@ func TestSRPWorldAuth(t *testing.T) {
 		t.Fatalf("account=%#v code=%x", account, code)
 	}
 }
+
+func TestLegacyWorldAuth(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	accounts := auth.NewStore(databases)
+	if err := accounts.CreateAccount("PLAYER", "PASSWORD", "", 0); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Accounts: accounts, Characters: realm.NewStore(databases), WorldData: worlddb.NewStore(databases), SupportedClient: 3368, ServerSeed: []byte{1, 2, 3, 4}}
+	data := make([]byte, 8)
+	binary.LittleEndian.PutUint32(data, 3368)
+	data = append(data, []byte("PLAYER PASSWORD\x00")...)
+	account, code := server.authenticate(data)
+	if code != packet.AuthOK || account == nil || account.Name != "PLAYER" {
+		t.Fatalf("account=%#v code=%x", account, code)
+	}
+}

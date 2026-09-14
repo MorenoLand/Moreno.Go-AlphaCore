@@ -1011,14 +1011,13 @@ func (s *WorldServer) authenticate(data []byte) (*auth.Account, packet.AuthCode)
 	if binary.LittleEndian.Uint32(data[:4]) != s.SupportedClient {
 		return nil, packet.AuthVersionMismatch
 	}
-	username, err := packet.ReadString(data, 8, 0)
-	if err != nil || strings.TrimSpace(username) == "" {
+	credentials, err := packet.ReadString(data, 8, 0)
+	if err != nil || strings.TrimSpace(credentials) == "" {
 		return nil, packet.AuthUnknownAccount
 	}
-	username = strings.TrimSpace(username)
-	offset := 8 + len(username) + 1
+	offset := 8 + len(credentials) + 1
 	remaining := data[offset:]
-	password, legacy := legacyPassword(remaining)
+	username, password, legacy := legacyCredentials(credentials, remaining)
 	account, err := s.Accounts.Account(username)
 	if err != nil {
 		return nil, packet.AuthFailed
@@ -1050,6 +1049,19 @@ func (s *WorldServer) authenticate(data []byte) (*auth.Account, packet.AuthCode)
 		return nil, packet.AuthIncorrectPassword
 	}
 	return account, packet.AuthOK
+}
+
+func legacyCredentials(value string, remaining []byte) (string, string, bool) {
+	fields := strings.Fields(value)
+	if len(fields) == 2 {
+		return fields[0], fields[1], true
+	}
+	if len(fields) == 1 && len(remaining) < 24 {
+		if password, ok := legacyPassword(remaining); ok {
+			return fields[0], password, true
+		}
+	}
+	return strings.TrimSpace(value), "", false
 }
 
 func legacyPassword(data []byte) (string, bool) {
