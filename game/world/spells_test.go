@@ -214,3 +214,39 @@ func TestSpellCooldownExpiresOnWire(t *testing.T) {
 		t.Fatal("spell cooldown remained after expiry")
 	}
 }
+
+func TestEnemyAreaSpellTargetsNearbyPlayer(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, Effect_1, EffectBasePoints_1, ImplicitTargetA_1, ImplicitTargetB_1, EffectRadiusIndex_1) VALUES (42, 2, 3, 22, 15, 1); INSERT INTO SpellRadius (ID, Radius, RadiusMax) VALUES (1, 10, 10)`); err != nil {
+		t.Fatal(err)
+	}
+	characters := realm.NewStore(databases)
+	casterID, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Caster", Level: 1, Map: 0, PositionX: 0, PositionY: 0, PositionZ: 0, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetID, err := characters.Create(realm.Character{AccountID: 2, RealmID: 1, Name: "Target", Level: 1, Map: 0, PositionX: 3, PositionY: 0, PositionZ: 0, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := characters.AddSpell(casterID, 42); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases)}
+	caster := realm.Character{GUID: casterID, AccountID: 1, RealmID: 1, Name: "Caster", Level: 1, Map: 0, Health: 10}
+	target := realm.Character{GUID: targetID, AccountID: 2, RealmID: 1, Name: "Target", Level: 1, Map: 0, PositionX: 3, Health: 10}
+	server.registerPlayer(caster)
+	server.registerPlayer(target)
+	if responses, err := server.castSpellPacket(caster, append(encodeUint32(42), 0, 0)); err != nil || len(responses) != 0 {
+		t.Fatalf("responses=%d err=%v", len(responses), err)
+	}
+	storedCaster, _, _ := characters.Character(casterID, 1, 1)
+	storedTarget, _, _ := characters.Character(targetID, 2, 1)
+	if storedCaster.Health != 10 || storedTarget.Health != 7 {
+		t.Fatalf("caster health=%d target health=%d", storedCaster.Health, storedTarget.Health)
+	}
+}

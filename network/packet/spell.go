@@ -191,6 +191,13 @@ type SpellImplicitTarget int64
 const (
 	SpellImplicitInitial            SpellImplicitTarget = 0
 	SpellImplicitSelf               SpellImplicitTarget = 1
+	SpellImplicitAroundCasterParty  SpellImplicitTarget = 20
+	SpellImplicitAllAroundCaster    SpellImplicitTarget = 22
+	SpellImplicitAllEnemyInArea     SpellImplicitTarget = 15
+	SpellImplicitAllEnemyInstant    SpellImplicitTarget = 16
+	SpellImplicitAllFriendlyAround  SpellImplicitTarget = 30
+	SpellImplicitAllFriendlyInArea  SpellImplicitTarget = 31
+	SpellImplicitAllParty           SpellImplicitTarget = 33
 	SpellImplicitUnitNearCaster     SpellImplicitTarget = 4
 	SpellImplicitPet                SpellImplicitTarget = 5
 	SpellImplicitEnemyUnit          SpellImplicitTarget = 6
@@ -203,7 +210,6 @@ const (
 	SpellImplicitGameObjectItem     SpellImplicitTarget = 26
 	SpellImplicitMaster             SpellImplicitTarget = 27
 	SpellImplicitPartyAroundCaster  SpellImplicitTarget = 20
-	SpellImplicitAllAroundCaster    SpellImplicitTarget = 22
 	SpellImplicitHostileSelection   SpellImplicitTarget = 36
 	SpellImplicitSelfFishing        SpellImplicitTarget = 39
 )

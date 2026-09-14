@@ -35,6 +35,7 @@ type spellCast struct {
 	targetMask packet.SpellTargetMask
 	castTime   int64
 	powerCost  int64
+	targets    []realm.Character
 	sourceItem *realm.InventoryItem
 	source     worlddb.ItemTemplate
 	sourceSlot int
@@ -210,7 +211,7 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 			castTime = value.Minimum
 		}
 	}
-	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now()}
+	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, targets: s.spellTargets(active, spell, target), sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now()}
 	if castTime <= 0 {
 		s.performSpellCast(cast)
 		return nil, nil
@@ -269,7 +270,7 @@ func (s *WorldServer) triggerSpell(caster realm.Character, spellID int64, target
 	if err != nil || !found {
 		return
 	}
-	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, triggered: true, started: time.Now()}
+	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, targets: s.spellTargets(caster, spell, target), triggered: true, started: time.Now()}
 	s.performSpellCast(cast)
 }
 
@@ -304,64 +305,178 @@ func (s *WorldServer) consumeItemSpell(cast *spellCast) {
 }
 
 func (s *WorldServer) applySpellEffects(cast *spellCast) {
-	target, found := s.spellPlayerTarget(cast)
-	if !found {
-		return
+	targets := cast.targets
+	if len(targets) == 0 {
+		target, found := s.spellPlayerTarget(cast)
+		if !found {
+			return
+		}
+		targets = []realm.Character{target}
 	}
 	effectiveLevel := int64(cast.caster.Level) - cast.spell.BaseLevel
 	if effectiveLevel < 0 {
 		effectiveLevel = 0
 	}
-	for index, effect := range cast.spell.Effects {
-		points := spellEffectPoints(effect, effectiveLevel)
-		switch packet.SpellEffect(effect.Type) {
-		case packet.SpellEffectSchoolDamage:
-			_ = s.changePlayerHealth(&target, -points)
-		case packet.SpellEffectPowerBurn:
-			amount := minPower(playerPower(target, effect.MiscValue), points)
-			if amount > 0 {
-				_ = s.changePlayerPower(&target, effect.MiscValue, -amount)
-				_ = s.changePlayerHealth(&target, -amount)
+	for _, target := range targets {
+		for index, effect := range cast.spell.Effects {
+			points := spellEffectPoints(effect, effectiveLevel)
+			switch packet.SpellEffect(effect.Type) {
+			case packet.SpellEffectSchoolDamage:
+				_ = s.changePlayerHealth(&target, -points)
+			case packet.SpellEffectPowerBurn:
+				amount := minPower(playerPower(target, effect.MiscValue), points)
+				if amount > 0 {
+					_ = s.changePlayerPower(&target, effect.MiscValue, -amount)
+					_ = s.changePlayerHealth(&target, -amount)
+				}
+			case packet.SpellEffectHeal:
+				_ = s.changePlayerHealth(&target, points)
+			case packet.SpellEffectHealthLeech:
+				if s.changePlayerHealth(&target, -points) == nil {
+					caster := cast.caster
+					_ = s.changePlayerHealth(&caster, points)
+				}
+			case packet.SpellEffectEnergize:
+				_ = s.changePlayerPower(&target, effect.MiscValue, points)
+			case packet.SpellEffectPowerDrain:
+				amount := minPower(playerPower(target, effect.MiscValue), points)
+				if amount > 0 {
+					_ = s.changePlayerPower(&target, effect.MiscValue, -amount)
+					caster := cast.caster
+					_ = s.changePlayerPower(&caster, effect.MiscValue, amount)
+				}
+			case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura:
+				s.applyAura(cast, target, index, effect)
+			case packet.SpellEffectTriggerSpell:
+				targetMask := packet.SpellTargetSelf
+				if target.GUID != cast.caster.GUID {
+					targetMask = packet.SpellTargetUnit
+				}
+				s.triggerSpell(cast.caster, effect.TriggerSpell, spellTarget{UnitGUID: uint64(target.GUID)}, targetMask)
+			case packet.SpellEffectLearnSpell:
+				if s.Characters == nil || effect.TriggerSpell <= 0 {
+					continue
+				}
+				if err := s.Characters.AddSpell(target.GUID, effect.TriggerSpell); err != nil {
+					continue
+				}
+				learned := append(encodeUint16(effect.TriggerSpell), encodeUint16(0)...)
+				if update, err := packet.Encode(packet.SMSGLearnedSpell, learned); err == nil {
+					s.sendPlayer(target.GUID, update)
+				}
+			case packet.SpellEffectCreateItem:
+				s.createSpellItem(cast, target, effect, points)
 			}
-		case packet.SpellEffectHeal:
-			_ = s.changePlayerHealth(&target, points)
-		case packet.SpellEffectHealthLeech:
-			if s.changePlayerHealth(&target, -points) == nil {
-				caster := cast.caster
-				_ = s.changePlayerHealth(&caster, points)
-			}
-		case packet.SpellEffectEnergize:
-			_ = s.changePlayerPower(&target, effect.MiscValue, points)
-		case packet.SpellEffectPowerDrain:
-			amount := minPower(playerPower(target, effect.MiscValue), points)
-			if amount > 0 {
-				_ = s.changePlayerPower(&target, effect.MiscValue, -amount)
-				caster := cast.caster
-				_ = s.changePlayerPower(&caster, effect.MiscValue, amount)
-			}
-		case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura:
-			s.applyAura(cast, target, index, effect)
-		case packet.SpellEffectTriggerSpell:
-			targetMask := packet.SpellTargetSelf
-			if target.GUID != cast.caster.GUID {
-				targetMask = packet.SpellTargetUnit
-			}
-			s.triggerSpell(cast.caster, effect.TriggerSpell, spellTarget{UnitGUID: uint64(target.GUID)}, targetMask)
-		case packet.SpellEffectLearnSpell:
-			if s.Characters == nil || effect.TriggerSpell <= 0 {
-				continue
-			}
-			if err := s.Characters.AddSpell(target.GUID, effect.TriggerSpell); err != nil {
-				continue
-			}
-			learned := append(encodeUint16(effect.TriggerSpell), encodeUint16(0)...)
-			if update, err := packet.Encode(packet.SMSGLearnedSpell, learned); err == nil {
-				s.sendPlayer(target.GUID, update)
-			}
-		case packet.SpellEffectCreateItem:
-			s.createSpellItem(cast, target, effect, points)
 		}
 	}
+}
+
+func (s *WorldServer) spellTargets(caster realm.Character, spell dbc.Spell, initial spellTarget) []realm.Character {
+	targets := make([]realm.Character, 0, 4)
+	hostileArea := false
+	if initial.UnitGUID != 0 {
+		if target, found := s.playerByGUID(int64(initial.UnitGUID)); found {
+			targets = append(targets, target)
+		} else if initial.UnitGUID == uint64(caster.GUID) {
+			targets = append(targets, caster)
+		}
+	}
+	for _, effect := range spell.Effects {
+		mode := spellAreaMode(effect.ImplicitTargetA, effect.ImplicitTargetB)
+		if mode == 0 || s.DBC == nil {
+			continue
+		}
+		if mode == 2 {
+			hostileArea = true
+		}
+		radiusEntry, found, err := s.DBC.SpellRadius(effect.RadiusIndex)
+		if err != nil || !found {
+			continue
+		}
+		radius := radiusEntry.Radius + radiusEntry.RadiusPerLevel*float32(maxSpellLevel(caster.Level, spell.BaseLevel))
+		if radiusEntry.RadiusMax > 0 && radius > radiusEntry.RadiusMax {
+			radius = radiusEntry.RadiusMax
+		}
+		if radius <= 0 {
+			continue
+		}
+		center := caster
+		if (effect.ImplicitTargetA == int64(packet.SpellImplicitAllEnemyInstant) || effect.ImplicitTargetB == int64(packet.SpellImplicitAllEnemyInstant)) && initial.UnitGUID != 0 {
+			if value, found := s.playerByGUID(int64(initial.UnitGUID)); found {
+				center = value
+			}
+		}
+		for _, player := range s.onlinePlayers() {
+			if player.Map != caster.Map {
+				continue
+			}
+			dx, dy, dz := player.PositionX-center.PositionX, player.PositionY-center.PositionY, player.PositionZ-center.PositionZ
+			if dx*dx+dy*dy+dz*dz > radius*radius || !spellAreaTarget(s, caster, player, mode) {
+				continue
+			}
+			duplicate := false
+			for _, target := range targets {
+				if target.GUID == player.GUID {
+					duplicate = true
+					break
+				}
+			}
+			if !duplicate {
+				targets = append(targets, player)
+			}
+		}
+	}
+	if hostileArea {
+		filtered := targets[:0]
+		for _, target := range targets {
+			if target.GUID != caster.GUID {
+				filtered = append(filtered, target)
+			}
+		}
+		targets = filtered
+	}
+	return targets
+}
+
+func spellAreaMode(first, second int64) byte {
+	if first == int64(packet.SpellImplicitAllEnemyInArea) || first == int64(packet.SpellImplicitAllEnemyInstant) || second == int64(packet.SpellImplicitAllEnemyInArea) || second == int64(packet.SpellImplicitAllEnemyInstant) {
+		return 2
+	}
+	if first == int64(packet.SpellImplicitAllFriendlyAround) || first == int64(packet.SpellImplicitAllFriendlyInArea) || first == int64(packet.SpellImplicitAllParty) || first == int64(packet.SpellImplicitAroundCasterParty) || second == int64(packet.SpellImplicitAllFriendlyAround) || second == int64(packet.SpellImplicitAllFriendlyInArea) || second == int64(packet.SpellImplicitAllParty) {
+		return 1
+	}
+	if first == int64(packet.SpellImplicitAllAroundCaster) {
+		return 3
+	}
+	return 0
+}
+
+func spellAreaTarget(s *WorldServer, caster, target realm.Character, mode byte) bool {
+	if mode == 3 {
+		return true
+	}
+	if target.GUID == caster.GUID {
+		return mode == 1
+	}
+	first, second, err := s.teams(caster, target)
+	if err != nil {
+		return false
+	}
+	if first == 0 && second == 0 {
+		return mode == 2
+	}
+	if mode == 1 {
+		return first == second
+	}
+	return first != second
+}
+
+func maxSpellLevel(level uint8, base int64) int64 {
+	value := int64(level) - base
+	if value < 0 {
+		return 0
+	}
+	return value
 }
 
 func (s *WorldServer) createSpellItem(cast *spellCast, target realm.Character, effect dbc.SpellEffect, amount int64) {
@@ -627,15 +742,13 @@ func spellGoPacket(cast *spellCast) ([]byte, error) {
 	data := append(encodeGUID(source), encodeGUID(cast.caster.GUID)...)
 	data = append(data, encodeUint32(cast.spell.ID)...)
 	data = append(data, 0, 0)
-	hit := cast.target.UnitGUID
-	if hit == 0 && cast.targetMask == packet.SpellTargetSelf {
-		hit = uint64(cast.caster.GUID)
+	targets := cast.targets
+	if len(targets) == 0 {
+		targets = []realm.Character{cast.caster}
 	}
-	if hit != 0 {
-		data = append(data, 1)
-		data = append(data, encodeUint64(hit)...)
-	} else {
-		data = append(data, 0)
+	data = append(data, byte(len(targets)))
+	for _, target := range targets {
+		data = append(data, encodeUint64(uint64(target.GUID))...)
 	}
 	data = append(data, 0, byte(cast.targetMask), byte(cast.targetMask>>8))
 	if cast.targetMask != packet.SpellTargetSelf {
