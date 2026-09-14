@@ -103,6 +103,7 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 		aura.periodic = time.AfterFunc(time.Duration(period)*time.Millisecond, func() { s.tickAura(target.GUID, aura.slot, aura, period) })
 	}
 	s.writeAura(target, aura, false)
+	s.refreshAuraUnitFlags(target)
 }
 
 func (s *WorldServer) tickAura(guid int64, slot int, aura *auraState, period int64) {
@@ -200,6 +201,28 @@ func (s *WorldServer) removeAura(target realm.Character, slot int) {
 		return
 	}
 	s.writeAura(target, aura, true)
+	s.refreshAuraUnitFlags(target)
+}
+
+func (s *WorldServer) refreshAuraUnitFlags(target realm.Character) {
+	flags := uint32(unitFlagPlayer)
+	s.auras.mu.Lock()
+	for _, aura := range s.auras.active[target.GUID] {
+		switch packet.AuraType(aura.effect.Aura) {
+		case packet.AuraModStealth:
+			flags |= 0x00008000
+		case packet.AuraModPacify:
+			flags |= 0x00020000
+		case packet.AuraModDisarm:
+			flags |= 0x00200000
+		case packet.AuraModConfuse:
+			flags |= 0x00400000
+		case packet.AuraModFear:
+			flags |= 0x00800000
+		}
+	}
+	s.auras.mu.Unlock()
+	s.setUnitFlags(target, flags)
 }
 
 func (s *WorldServer) writeAura(target realm.Character, aura *auraState, clear bool) {

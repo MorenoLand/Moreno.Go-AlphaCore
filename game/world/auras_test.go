@@ -91,3 +91,24 @@ func TestPeriodicAuraChangesHealth(t *testing.T) {
 		}
 	}
 }
+
+func TestControlAuraUpdatesUnitFlags(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	server := &WorldServer{DBC: dbc.NewStore(databases)}
+	active := realm.Character{GUID: 1, Map: 0, Health: 10}
+	server.registerPlayer(active)
+	spell := dbc.Spell{ID: 45}
+	effect := dbc.SpellEffect{Type: int64(packet.SpellEffectApplyAura), Aura: int64(packet.AuraModStealth)}
+	server.applyAura(&spellCast{caster: active, spell: spell}, active, 0, effect)
+	if server.unitFlags(active.GUID)&0x00008000 == 0 {
+		t.Fatalf("flags=%x", server.unitFlags(active.GUID))
+	}
+	server.removeAura(active, 0)
+	if server.unitFlags(active.GUID)&0x00008000 != 0 {
+		t.Fatalf("flags after remove=%x", server.unitFlags(active.GUID))
+	}
+}

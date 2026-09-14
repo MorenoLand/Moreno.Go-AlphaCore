@@ -39,6 +39,9 @@ const (
 	SpellFailedNotKnown        SpellCastResult = 0x23
 	SpellFailedNotReady        SpellCastResult = 0x25
 	SpellFailedNoPower         SpellCastResult = 0x2c
+	SpellFailedPacified        SpellCastResult = 0x37
+	SpellFailedSilenced        SpellCastResult = 0x3a
+	SpellFailedStunned         SpellCastResult = 0x3e
 	SpellFailedOutOfRange      SpellCastResult = 0x36
 	SpellFailedTooClose        SpellCastResult = 0x4a
 	SpellFailedReagents        SpellCastResult = 0x38
@@ -177,6 +180,13 @@ const (
 type AuraType int64
 
 const (
+	AuraModStun              AuraType = 12
+	AuraModConfuse           AuraType = 5
+	AuraModFear              AuraType = 7
+	AuraModStealth           AuraType = 16
+	AuraModPacify            AuraType = 25
+	AuraModSilence           AuraType = 27
+	AuraModDisarm            AuraType = 67
 	AuraPeriodicDamage       AuraType = 3
 	AuraPeriodicHeal         AuraType = 8
 	AuraPeriodicTriggerSpell AuraType = 23

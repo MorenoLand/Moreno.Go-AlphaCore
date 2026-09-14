@@ -18,6 +18,7 @@ type playerRegistry struct {
 	combatTarget map[int64]uint64
 	pvpSource    map[int64]pvpLocation
 	maxHealth    map[int64]int64
+	unitFlags    map[int64]uint32
 	connections  map[int64]*playerConnection
 }
 
@@ -33,11 +34,15 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.combatTarget = make(map[int64]uint64)
 		s.players.pvpSource = make(map[int64]pvpLocation)
 		s.players.maxHealth = make(map[int64]int64)
+		s.players.unitFlags = make(map[int64]uint32)
 		s.players.connections = make(map[int64]*playerConnection)
 	}
 	s.players.players[character.GUID] = character
 	if _, found := s.players.maxHealth[character.GUID]; !found {
 		s.players.maxHealth[character.GUID] = maxInt64(character.Health, 1)
+	}
+	if _, found := s.players.unitFlags[character.GUID]; !found {
+		s.players.unitFlags[character.GUID] = unitFlagPlayer
 	}
 	s.players.mu.Unlock()
 }
@@ -64,6 +69,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.combatTarget, guid)
 	delete(s.players.pvpSource, guid)
 	delete(s.players.maxHealth, guid)
+	delete(s.players.unitFlags, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
 	for _, loot := range s.loots {
@@ -79,6 +85,28 @@ func (s *WorldServer) playerMaxHealth(guid int64) int64 {
 	value := s.players.maxHealth[guid]
 	s.players.mu.RUnlock()
 	return maxInt64(value, 1)
+}
+
+func (s *WorldServer) setUnitFlags(character realm.Character, flags uint32) {
+	s.players.mu.Lock()
+	if s.players.unitFlags == nil {
+		s.players.unitFlags = make(map[int64]uint32)
+	}
+	s.players.unitFlags[character.GUID] = flags
+	s.players.mu.Unlock()
+	if update, err := packet.EncodeFieldUpdate(uint64(character.GUID), 54, flags); err == nil {
+		s.sendSpell(character, update)
+	}
+}
+
+func (s *WorldServer) unitFlags(guid int64) uint32 {
+	s.players.mu.RLock()
+	flags := s.players.unitFlags[guid]
+	s.players.mu.RUnlock()
+	if flags == 0 {
+		return unitFlagPlayer
+	}
+	return flags
 }
 
 func (s *WorldServer) setCombatTarget(guid int64, target uint64) {

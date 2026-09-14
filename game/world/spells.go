@@ -195,6 +195,17 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 	if active.Health <= 0 && packet.SpellAttributes(spell.Attributes)&packet.SpellAttributeAllowDead == 0 {
 		return s.castFailure(active, spellID, packet.SpellFailedCasterDead)
 	}
+	if sourceItem == nil {
+		if s.hasAuraType(active.GUID, packet.AuraModStun) {
+			return s.castFailure(active, spellID, packet.SpellFailedStunned)
+		}
+		if s.hasAuraType(active.GUID, packet.AuraModSilence) {
+			return s.castFailure(active, spellID, packet.SpellFailedSilenced)
+		}
+		if s.hasAuraType(active.GUID, packet.AuraModPacify) && spell.School == 0 && packet.SpellAttributes(spell.Attributes)&packet.SpellAttributeAbility != 0 {
+			return s.castFailure(active, spellID, packet.SpellFailedPacified)
+		}
+	}
 	if s.spellOnCooldown(active.GUID, spellID) {
 		return s.castFailure(active, spellID, packet.SpellFailedNotReady)
 	}
@@ -387,12 +398,12 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				if update, err := packet.Encode(packet.SMSGLearnedSpell, learned); err == nil {
 					s.sendPlayer(target.GUID, update)
 				}
-		case packet.SpellEffectCreateItem:
-			s.createSpellItem(cast, target, effect, points)
-		case packet.SpellEffectResurrect:
-			if target.Health <= 0 {
-				s.requestResurrection(cast, target, points)
-			}
+			case packet.SpellEffectCreateItem:
+				s.createSpellItem(cast, target, effect, points)
+			case packet.SpellEffectResurrect:
+				if target.Health <= 0 {
+					s.requestResurrection(cast, target, points)
+				}
 			}
 		}
 	}
@@ -667,6 +678,17 @@ func setPlayerPower(player *realm.Character, powerType, value int64) {
 func (s *WorldServer) sendSpell(caster realm.Character, data []byte) {
 	s.broadcastPlayer(caster, data)
 	s.sendPlayer(caster.GUID, data)
+}
+
+func (s *WorldServer) hasAuraType(guid int64, auraType packet.AuraType) bool {
+	s.auras.mu.Lock()
+	defer s.auras.mu.Unlock()
+	for _, aura := range s.auras.active[guid] {
+		if packet.AuraType(aura.effect.Aura) == auraType {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *WorldServer) spellOnCooldown(guid, spellID int64) bool {
