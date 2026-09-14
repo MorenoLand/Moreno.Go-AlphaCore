@@ -170,6 +170,8 @@ const (
 	SpellEffectStealth          SpellEffect = 48
 	SpellEffectDetect           SpellEffect = 49
 	SpellEffectSummonObject     SpellEffect = 50
+	SpellEffectSummonObjectWild SpellEffect = 76
+	SpellEffectCreateHouse      SpellEffect = 81
 	SpellEffectEnchantPermanent SpellEffect = 53
 	SpellEffectEnchantTemporary SpellEffect = 54
 	SpellEffectTameCreature     SpellEffect = 55

@@ -30,8 +30,27 @@ type gameObjectState struct {
 	cooldown     time.Time
 }
 
+type dynamicGameObject struct {
+	spawn    worlddb.GameObjectSpawn
+	template worlddb.GameObjectTemplate
+	timer    *time.Timer
+}
+
 func (s *WorldServer) gameObjectAt(active realm.Character, guid uint64, distance float32) (worlddb.GameObjectSpawn, worlddb.GameObjectTemplate, bool, error) {
-	if s.WorldData == nil || guid == 0 {
+	if guid == 0 {
+		return worlddb.GameObjectSpawn{}, worlddb.GameObjectTemplate{}, false, nil
+	}
+	s.gameObjectMu.Lock()
+	dynamic, dynamicFound := s.dynamicGameObjects[guid]
+	s.gameObjectMu.Unlock()
+	if dynamicFound {
+		if dynamic.spawn.Map != active.Map {
+			return worlddb.GameObjectSpawn{}, worlddb.GameObjectTemplate{}, false, nil
+		}
+		dx, dy, dz := dynamic.spawn.PositionX-active.PositionX, dynamic.spawn.PositionY-active.PositionY, dynamic.spawn.PositionZ-active.PositionZ
+		return dynamic.spawn, dynamic.template, dx*dx+dy*dy+dz*dz <= distance*distance, nil
+	}
+	if s.WorldData == nil {
 		return worlddb.GameObjectSpawn{}, worlddb.GameObjectTemplate{}, false, nil
 	}
 	spawn, found, err := s.WorldData.GameObjectSpawnByID(int64(uint32(guid)))
@@ -47,6 +66,14 @@ func (s *WorldServer) gameObjectAt(active realm.Character, guid uint64, distance
 		return worlddb.GameObjectSpawn{}, worlddb.GameObjectTemplate{}, false, err
 	}
 	return spawn, template, true, nil
+}
+
+func (s *WorldServer) nextGameObjectGUID() uint64 {
+	s.gameObjectMu.Lock()
+	s.nextGameObject++
+	guid := uint64(0xf110000000000000) | s.nextGameObject
+	s.gameObjectMu.Unlock()
+	return guid
 }
 
 func (s *WorldServer) gameObjectStateFor(guid uint64, spawn worlddb.GameObjectSpawn) gameObjectState {

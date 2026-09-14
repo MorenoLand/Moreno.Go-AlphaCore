@@ -111,6 +111,7 @@ const (
 	CMSGQuestQuery                Opcode = 0x005c
 	SMSGQuestQueryResponse        Opcode = 0x005d
 	CMSGGameObjectQuery           Opcode = 0x005e
+	SMSGGameObjectCustomAnim      Opcode = 0x00b3
 	CMSGGameObjectUse             Opcode = 0x00b1
 	CMSGAutostoreLootItem         Opcode = 0x00fb
 	CMSGInitiateTrade             Opcode = 0x0109
@@ -488,6 +489,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGQuestQuery:                "CMSG_QUEST_QUERY",
 	SMSGQuestQueryResponse:        "SMSG_QUEST_QUERY_RESPONSE",
 	CMSGGameObjectQuery:           "CMSG_GAMEOBJECT_QUERY",
+	SMSGGameObjectCustomAnim:      "SMSG_GAMEOBJECT_CUSTOM_ANIM",
 	CMSGGameObjectUse:             "CMSG_GAMEOBJ_USE",
 	CMSGAutostoreLootItem:         "CMSG_AUTOSTORE_LOOT_ITEM",
 	CMSGInitiateTrade:             "CMSG_INITIATE_TRADE",

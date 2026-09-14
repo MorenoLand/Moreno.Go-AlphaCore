@@ -21,36 +21,38 @@ import (
 )
 
 type WorldServer struct {
-	Address           string
-	Accounts          *auth.Store
-	Characters        *realm.Store
-	DBC               *dbc.Store
-	WorldData         *worlddb.Store
-	SupportedClient   uint32
-	AutoCreateAccount bool
-	ServerSeed        []byte
-	players           playerRegistry
-	groups            groupRegistry
-	channels          channelRegistry
-	guilds            guildRegistry
-	vendorMu          sync.Mutex
-	vendors           map[uint64]*vendorData
-	gameObjectMu      sync.Mutex
-	gameObjects       map[uint64]gameObjectState
-	tradeMu           sync.Mutex
-	trades            map[int64]*tradeState
-	lootMu            sync.Mutex
-	loots             map[uint64]*lootState
-	lootSelections    map[int64]uint64
-	spells            spellRegistry
-	auras             auraRegistry
-	creatures         creatureRegistry
-	resurrections     resurrectionRegistry
-	duelMu            sync.Mutex
-	duels             map[int64]*duelState
-	nextDuel          uint64
-	petMu             sync.Mutex
-	pets              map[int64]*petManagerState
+	Address            string
+	Accounts           *auth.Store
+	Characters         *realm.Store
+	DBC                *dbc.Store
+	WorldData          *worlddb.Store
+	SupportedClient    uint32
+	AutoCreateAccount  bool
+	ServerSeed         []byte
+	players            playerRegistry
+	groups             groupRegistry
+	channels           channelRegistry
+	guilds             guildRegistry
+	vendorMu           sync.Mutex
+	vendors            map[uint64]*vendorData
+	gameObjectMu       sync.Mutex
+	gameObjects        map[uint64]gameObjectState
+	dynamicGameObjects map[uint64]dynamicGameObject
+	nextGameObject     uint64
+	tradeMu            sync.Mutex
+	trades             map[int64]*tradeState
+	lootMu             sync.Mutex
+	loots              map[uint64]*lootState
+	lootSelections     map[int64]uint64
+	spells             spellRegistry
+	auras              auraRegistry
+	creatures          creatureRegistry
+	resurrections      resurrectionRegistry
+	duelMu             sync.Mutex
+	duels              map[int64]*duelState
+	nextDuel           uint64
+	petMu              sync.Mutex
+	pets               map[int64]*petManagerState
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {

@@ -3,6 +3,14 @@ package world
 import "Moreno.AlphaCore/network/packet"
 
 func (s *WorldServer) applySpellObjectEffects(cast *spellCast) {
+	for _, effect := range cast.spell.Effects {
+		switch packet.SpellEffect(effect.Type) {
+		case packet.SpellEffectSummonObject, packet.SpellEffectSummonObjectWild, packet.SpellEffectCreateHouse:
+			s.summonGameObject(cast, effect, packet.SpellEffect(effect.Type) == packet.SpellEffectSummonObjectWild)
+		case packet.SpellEffectActivateObject:
+			s.activateGameObject(cast)
+		}
+	}
 	if cast.target.GameObjectGUID != 0 {
 		for _, effect := range cast.spell.Effects {
 			if packet.SpellEffect(effect.Type) != packet.SpellEffectOpenLock {
