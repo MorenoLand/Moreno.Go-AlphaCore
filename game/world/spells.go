@@ -609,6 +609,9 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 	}
 	s.applySpellObjectEffects(cast)
 	s.applySpellCreatureEffects(cast)
+	if spellHasEffect(cast.spell, packet.SpellEffectLeap) {
+		s.leapSpell(cast)
+	}
 	for index, effect := range cast.spell.Effects {
 		targets := cast.effectTargets[index]
 		if len(targets) == 0 && cast.targetCreature != nil {
