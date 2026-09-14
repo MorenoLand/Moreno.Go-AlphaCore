@@ -433,7 +433,11 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 		for _, target := range targets {
 			points := spellEffectPoints(effect, effectiveLevel)
 			switch packet.SpellEffect(effect.Type) {
+			case packet.SpellEffectInstantKill:
+				_ = s.changePlayerHealth(&target, -target.Health)
 			case packet.SpellEffectSchoolDamage:
+				_ = s.changePlayerHealth(&target, -points)
+			case packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus:
 				_ = s.changePlayerHealth(&target, -points)
 			case packet.SpellEffectPowerBurn:
 				amount := minPower(playerPower(target, effect.MiscValue), points)
@@ -443,6 +447,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				}
 			case packet.SpellEffectHeal:
 				_ = s.changePlayerHealth(&target, points)
+			case packet.SpellEffectHealMaxHealth:
+				_ = s.changePlayerHealth(&target, s.playerMaxHealth(cast.caster.GUID)-target.Health)
 			case packet.SpellEffectHealthLeech:
 				if s.changePlayerHealth(&target, -points) == nil {
 					caster := cast.caster
@@ -491,6 +497,10 @@ func (s *WorldServer) applyCreatureSpellEffect(cast *spellCast, target *creature
 	switch packet.SpellEffect(effect.Type) {
 	case packet.SpellEffectSchoolDamage:
 		s.changeCreatureHealth(target, -points)
+	case packet.SpellEffectInstantKill:
+		s.changeCreatureHealth(target, -target.Health)
+	case packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus:
+		s.changeCreatureHealth(target, -points)
 	case packet.SpellEffectPowerBurn:
 		amount := minPower(target.Mana, points)
 		if amount > 0 {
@@ -499,6 +509,8 @@ func (s *WorldServer) applyCreatureSpellEffect(cast *spellCast, target *creature
 		}
 	case packet.SpellEffectHeal:
 		s.changeCreatureHealth(target, points)
+	case packet.SpellEffectHealMaxHealth:
+		s.changeCreatureHealth(target, target.MaxHealth-target.Health)
 	case packet.SpellEffectPowerDrain:
 		amount := minPower(target.Mana, points)
 		if amount > 0 {

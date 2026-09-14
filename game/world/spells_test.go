@@ -324,3 +324,48 @@ func TestHarmfulSpellRejectsFriendlyTarget(t *testing.T) {
 		t.Fatalf("response=%#v err=%v", response, err)
 	}
 }
+
+func TestSpellHealthEffectsUsePlayerVitals(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, Effect_1, EffectBasePoints_1) VALUES (42, 67, 0), (43, 1, 0)`); err != nil {
+		t.Fatal(err)
+	}
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Caster", Level: 1, Map: 0, Health: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := characters.AddSpell(guid, 42); err != nil {
+		t.Fatal(err)
+	}
+	if err := characters.AddSpell(guid, 43); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases)}
+	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Caster", Level: 1, Map: 0, Health: 100}
+	server.registerPlayer(active)
+	active.Health = 20
+	server.updatePlayer(active)
+	if err := characters.UpdateHealth(guid, 1, 1, 20); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := server.castSpellPacket(active, append(encodeUint32(42), 0, 0)); err != nil {
+		t.Fatal(err)
+	}
+	stored, _, _ := characters.Character(guid, 1, 1)
+	if stored.Health != 100 {
+		t.Fatalf("healed health=%d", stored.Health)
+	}
+	active.Health = 100
+	if _, err := server.castSpellPacket(active, append(encodeUint32(43), 0, 0)); err != nil {
+		t.Fatal(err)
+	}
+	stored, _, _ = characters.Character(guid, 1, 1)
+	if stored.Health != 0 {
+		t.Fatalf("killed health=%d", stored.Health)
+	}
+}

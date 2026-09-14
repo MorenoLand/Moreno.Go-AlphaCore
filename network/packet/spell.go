@@ -147,6 +147,7 @@ const (
 	SpellEffectBind             SpellEffect = 11
 	SpellEffectQuestComplete    SpellEffect = 16
 	SpellEffectWeaponDamage     SpellEffect = 17
+	SpellEffectWeaponDamagePlus SpellEffect = 58
 	SpellEffectResurrect        SpellEffect = 18
 	SpellEffectCreateItem       SpellEffect = 24
 	SpellEffectSummon           SpellEffect = 28
