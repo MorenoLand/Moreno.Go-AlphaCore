@@ -152,9 +152,11 @@ const (
 	SpellEffectDodge              SpellEffect = 20
 	SpellEffectParry              SpellEffect = 22
 	SpellEffectBlock              SpellEffect = 23
+	SpellEffectExtraAttacks       SpellEffect = 19
 	SpellEffectWeapon             SpellEffect = 25
 	SpellEffectDefense            SpellEffect = 26
 	SpellEffectPersistentAreaAura SpellEffect = 27
+	SpellEffectLeap               SpellEffect = 29
 	SpellEffectSkillStep          SpellEffect = 44
 	SpellEffectTeleportUnits      SpellEffect = 5
 	SpellEffectApplyAura          SpellEffect = 6
@@ -175,6 +177,7 @@ const (
 	SpellEffectSummonMount        SpellEffect = 34
 	SpellEffectApplyAreaAura      SpellEffect = 35
 	SpellEffectLearnSpell         SpellEffect = 36
+	SpellEffectSpellDefense       SpellEffect = 37
 	SpellEffectDispel             SpellEffect = 38
 	SpellEffectLanguage           SpellEffect = 39
 	SpellEffectDualWield          SpellEffect = 40

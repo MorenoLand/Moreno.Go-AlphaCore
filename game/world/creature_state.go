@@ -25,6 +25,9 @@ type creatureState struct {
 	CreatedBySpell, PetID                              int64
 	PetNameTimestamp, PetExperience, PetNextExperience int64
 	Pet                                                bool
+	ExtraAttacks                                       int64
+	Threat                                             map[uint64]float64
+	PullUntil                                          time.Time
 	CombatTarget                                       uint64
 	Timer                                              *time.Timer
 }

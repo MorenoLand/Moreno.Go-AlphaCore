@@ -632,6 +632,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				continue
 			}
 			switch packet.SpellEffect(effect.Type) {
+			case packet.SpellEffectExtraAttacks:
+				s.addExtraAttacks(target.GUID, spellEffectSimplePoints(effect), target.Health > 0)
 			case packet.SpellEffectInstantKill:
 				_ = s.changePlayerHealth(&target, -target.Health)
 			case packet.SpellEffectSchoolDamage, packet.SpellEffectWeaponDamage, packet.SpellEffectWeaponDamagePlus:
@@ -787,6 +789,15 @@ func (s *WorldServer) applyCreatureSpellEffect(cast *spellCast, target *creature
 			caster := cast.caster
 			_ = s.changePlayerPower(&caster, effect.MiscValue, amount)
 		}
+	case packet.SpellEffectExtraAttacks:
+		s.addCreatureExtraAttacks(target, spellEffectSimplePoints(effect))
+	case packet.SpellEffectThreat:
+		s.addCreatureThreat(cast, target, float64(spellEffectSimplePoints(effect)), false)
+	case packet.SpellEffectPull:
+		if target.CombatTarget == 0 {
+			s.addCreatureThreat(cast, target, 0, true)
+		}
+	case packet.SpellEffectSpellDefense:
 	case packet.SpellEffectAddComboPoints:
 		s.addComboPoints(cast.caster.GUID, target.GUID, target.Health > 0, points)
 	}
