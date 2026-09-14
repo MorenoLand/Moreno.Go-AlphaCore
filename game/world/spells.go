@@ -22,10 +22,11 @@ type spellRegistry struct {
 type spellVector struct{ X, Y, Z float32 }
 
 type spellTarget struct {
-	UnitGUID uint64
-	ItemGUID uint64
-	Source   *spellVector
-	Dest     *spellVector
+	UnitGUID       uint64
+	GameObjectGUID uint64
+	ItemGUID       uint64
+	Source         *spellVector
+	Dest           *spellVector
 }
 
 type spellCast struct {
@@ -99,14 +100,21 @@ func (s *WorldServer) useItemPacket(active realm.Character, data []byte) ([][]by
 func (s *WorldServer) spellTarget(active realm.Character, mask packet.SpellTargetMask, data []byte) (spellTarget, bool) {
 	target := spellTarget{}
 	offset := 0
-	if mask&(packet.SpellTargetUnit|packet.SpellTargetGameObject) != 0 {
+	if mask&packet.SpellTargetUnit != 0 {
 		if len(data) < offset+8 {
 			return spellTarget{}, false
 		}
 		target.UnitGUID = binary.LittleEndian.Uint64(data[offset:])
 		offset += 8
 	}
-	if mask&packet.SpellTargetItemMask != 0 {
+	if mask&packet.SpellTargetGameObject != 0 {
+		if len(data) < offset+8 {
+			return spellTarget{}, false
+		}
+		target.GameObjectGUID = binary.LittleEndian.Uint64(data[offset:])
+		offset += 8
+	}
+	if mask&(packet.SpellTargetItemMask|packet.SpellTargetGameObjectItem) != 0 {
 		if len(data) < offset+8 {
 			return spellTarget{}, false
 		}
@@ -140,10 +148,19 @@ func (s *WorldServer) spellTarget(active realm.Character, mask packet.SpellTarge
 		}
 		return target, true
 	}
-	if mask&packet.SpellTargetItemMask != 0 && mask&packet.SpellTargetTradeItem == 0 && target.ItemGUID == 0 {
+	if mask&packet.SpellTargetGameObject != 0 {
+		if s.WorldData == nil || target.GameObjectGUID == 0 {
+			return spellTarget{}, false
+		}
+		if _, _, found, err := s.gameObjectAt(active, target.GameObjectGUID, gameObjectViewDistance); err != nil || !found {
+			return spellTarget{}, false
+		}
+		return target, true
+	}
+	if mask&(packet.SpellTargetItemMask|packet.SpellTargetGameObjectItem) != 0 && mask&packet.SpellTargetTradeItem == 0 && target.ItemGUID == 0 {
 		return spellTarget{}, false
 	}
-	if mask&(packet.SpellTargetTerrain|packet.SpellTargetItemMask|packet.SpellTargetGameObject) == 0 {
+	if mask&(packet.SpellTargetTerrain|packet.SpellTargetItemMask|packet.SpellTargetGameObjectItem|packet.SpellTargetGameObject) == 0 {
 		target.UnitGUID = uint64(active.GUID)
 	}
 	return target, true
@@ -172,6 +189,16 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 			}
 		} else if _, found, err := s.creatureStateAt(active, target.UnitGUID, creatureViewDistance); err != nil {
 			return nil, err
+		} else if !found {
+			return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
+		}
+	}
+	if target.GameObjectGUID != 0 {
+		if s.WorldData == nil {
+			return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
+		}
+		if _, _, found, stateErr := s.gameObjectAt(active, target.GameObjectGUID, gameObjectViewDistance); stateErr != nil {
+			return nil, stateErr
 		} else if !found {
 			return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
 		}
@@ -291,6 +318,9 @@ func (s *WorldServer) validateSpellTarget(active realm.Character, spell dbc.Spel
 		if spell.Targets&int64(packet.SpellTargetItem) != 0 && target.ItemGUID == 0 {
 			return packet.SpellFailedBadTargets
 		}
+		return packet.SpellNoError
+	}
+	if target.GameObjectGUID != 0 {
 		return packet.SpellNoError
 	}
 	if target.UnitGUID == uint64(active.GUID) {
@@ -444,6 +474,7 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 	if effectiveLevel < 0 {
 		effectiveLevel = 0
 	}
+	s.applySpellObjectEffects(cast)
 	for index, effect := range cast.spell.Effects {
 		targets := cast.effectTargets[index]
 		if len(targets) == 0 && cast.targetCreature != nil {
@@ -1029,6 +1060,10 @@ func spellGoPacket(cast *spellCast) ([]byte, error) {
 	if len(targets) == 0 {
 		if cast.target.UnitGUID != 0 {
 			targets = []realm.Character{{GUID: int64(cast.target.UnitGUID)}}
+		} else if cast.target.GameObjectGUID != 0 {
+			targets = []realm.Character{{GUID: int64(cast.target.GameObjectGUID)}}
+		} else if cast.target.ItemGUID != 0 {
+			targets = []realm.Character{{GUID: int64(cast.target.ItemGUID)}}
 		} else {
 			targets = []realm.Character{cast.caster}
 		}
@@ -1046,14 +1081,17 @@ func spellGoPacket(cast *spellCast) ([]byte, error) {
 
 func spellTargetData(caster realm.Character, mask packet.SpellTargetMask, target spellTarget) []byte {
 	data := make([]byte, 0, 64)
-	if mask&(packet.SpellTargetUnit|packet.SpellTargetGameObject) != 0 {
+	if mask&packet.SpellTargetUnit != 0 {
 		guid := target.UnitGUID
 		if guid == 0 {
 			guid = uint64(caster.GUID)
 		}
 		data = append(data, encodeUint64(guid)...)
 	}
-	if mask&packet.SpellTargetItemMask != 0 {
+	if mask&packet.SpellTargetGameObject != 0 {
+		data = append(data, encodeUint64(target.GameObjectGUID)...)
+	}
+	if mask&(packet.SpellTargetItemMask|packet.SpellTargetGameObjectItem) != 0 {
 		data = append(data, encodeUint64(target.ItemGUID)...)
 	}
 	vector := target.Source

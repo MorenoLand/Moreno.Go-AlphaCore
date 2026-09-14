@@ -22,4 +22,14 @@ func TestSpellGoUsesPrimaryEffectTargets(t *testing.T) {
 	if message.Data[22] != 1 || binary.LittleEndian.Uint64(message.Data[23:31]) != 2 || message.Data[31] != 0 {
 		t.Fatalf("primary target data=%#v", message.Data)
 	}
+	cast.target = spellTarget{GameObjectGUID: 0xf110000000000001}
+	cast.effectTargets = map[int][]realm.Character{0: {}}
+	encoded, err = spellGoPacket(cast)
+	if err != nil {
+		t.Fatal(err)
+	}
+	message, err = packet.Parse(encoded)
+	if err != nil || message.Data[22] != 1 || binary.LittleEndian.Uint64(message.Data[23:31]) != 0xf110000000000001 {
+		t.Fatalf("object target data=%#v err=%v", message.Data, err)
+	}
 }
