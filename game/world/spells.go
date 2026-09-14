@@ -44,6 +44,9 @@ type spellCast struct {
 	sourceSlot     int
 	triggered      bool
 	started        time.Time
+	spellLevel     int64
+	effectLevel    int64
+	ranked         bool
 	timer          *time.Timer
 }
 
@@ -58,6 +61,21 @@ func (s *WorldServer) castSpellPacket(active realm.Character, data []byte) ([][]
 		return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
 	}
 	return s.startSpellCast(active, spellID, target, targetMask)
+}
+
+func (s *WorldServer) spellCasterLevel(caster realm.Character, spell dbc.Spell) (int64, error) {
+	if s.DBC == nil || s.Characters == nil {
+		return int64(caster.Level), nil
+	}
+	skillLine, found, err := s.DBC.SpellSkillLine(spell.ID, caster.Race, caster.Class)
+	if err != nil || !found {
+		return 0, err
+	}
+	value, found, err := s.Characters.SkillValue(caster.GUID, skillLine)
+	if err != nil || !found || value <= 0 {
+		return 0, err
+	}
+	return value / 5, nil
 }
 
 func (s *WorldServer) useItemPacket(active realm.Character, data []byte) ([][]byte, error) {
@@ -239,7 +257,20 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 	if s.spellOnCooldown(active.GUID, spellID) {
 		return s.castFailure(active, spellID, packet.SpellFailedNotReady)
 	}
-	powerCost := spell.ManaCost + spell.ManaCostPerLevel*int64(active.Level)
+	spellLevel := int64(active.Level)
+	ranked := false
+	if s.Characters != nil {
+		spellLevel, err = s.spellCasterLevel(active, spell)
+		if err != nil {
+			return nil, err
+		}
+		ranked = true
+	}
+	effectLevel := spellLevel - spell.BaseLevel
+	if effectLevel < 0 {
+		effectLevel = 0
+	}
+	powerCost := spell.ManaCost + spell.ManaCostPerLevel*spellLevel
 	if packet.SpellAttributesEx(spell.AttributesEx)&packet.SpellAttributeExDrainAllPower != 0 {
 		powerCost = playerPower(active, spell.PowerType)
 	}
@@ -268,7 +299,7 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 	if value, castFound, castErr := s.DBC.SpellCastTime(spell.CastingTimeIndex); castErr != nil {
 		return nil, castErr
 	} else if castFound {
-		castTime = value.Base + value.PerLevel*int64(active.Level)
+		castTime = value.Base + value.PerLevel*spellLevel
 		if castTime < value.Minimum {
 			castTime = value.Minimum
 		}
@@ -282,7 +313,7 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 			}
 		}
 	}
-	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, targets: s.spellTargets(active, spell, target), effectTargets: s.spellEffectTargetsAll(active, spell, target), targetCreature: targetCreature, sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now()}
+	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, targets: s.spellTargets(active, spell, target), effectTargets: s.spellEffectTargetsAll(active, spell, target), targetCreature: targetCreature, sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now(), spellLevel: spellLevel, effectLevel: effectLevel, ranked: ranked}
 	if castTime <= 0 {
 		s.performSpellCast(cast)
 		return nil, nil
@@ -435,7 +466,17 @@ func (s *WorldServer) triggerSpell(caster realm.Character, spellID int64, target
 	if err != nil || !found {
 		return
 	}
-	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, targets: s.spellTargets(caster, spell, target), effectTargets: s.spellEffectTargetsAll(caster, spell, target), triggered: true, started: time.Now()}
+	spellLevel, ranked := int64(caster.Level), false
+	if s.Characters != nil {
+		if value, err := s.spellCasterLevel(caster, spell); err == nil {
+			spellLevel, ranked = value, true
+		}
+	}
+	effectLevel := spellLevel - spell.BaseLevel
+	if effectLevel < 0 {
+		effectLevel = 0
+	}
+	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, targets: s.spellTargets(caster, spell, target), effectTargets: s.spellEffectTargetsAll(caster, spell, target), triggered: true, started: time.Now(), spellLevel: spellLevel, effectLevel: effectLevel, ranked: ranked}
 	s.performSpellCast(cast)
 }
 
@@ -470,9 +511,12 @@ func (s *WorldServer) consumeItemSpell(cast *spellCast) {
 }
 
 func (s *WorldServer) applySpellEffects(cast *spellCast) {
-	effectiveLevel := int64(cast.caster.Level) - cast.spell.BaseLevel
-	if effectiveLevel < 0 {
-		effectiveLevel = 0
+	effectiveLevel := cast.effectLevel
+	if !cast.ranked {
+		effectiveLevel = int64(cast.caster.Level) - cast.spell.BaseLevel
+		if effectiveLevel < 0 {
+			effectiveLevel = 0
+		}
 	}
 	s.applySpellObjectEffects(cast)
 	for index, effect := range cast.spell.Effects {

@@ -103,7 +103,10 @@ func (s *WorldServer) spellDurationMillis(cast *spellCast) int64 {
 	if err != nil || !found {
 		return 0
 	}
-	level := int64(cast.caster.Level) - cast.spell.BaseLevel
+	level := cast.effectLevel
+	if !cast.ranked {
+		level = int64(cast.caster.Level) - cast.spell.BaseLevel
+	}
 	if level < 0 {
 		level = 0
 	}

@@ -44,7 +44,10 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 	duration := int64(-1)
 	if value, found, err := s.DBC.SpellDuration(cast.spell.DurationIndex); err == nil && found {
 		duration = value.Duration
-		level := int64(cast.caster.Level) - cast.spell.BaseLevel
+		level := cast.effectLevel
+		if !cast.ranked {
+			level = int64(cast.caster.Level) - cast.spell.BaseLevel
+		}
 		if level < 0 {
 			level = 0
 		}
@@ -64,7 +67,11 @@ func (s *WorldServer) applyAura(cast *spellCast, target realm.Character, effectI
 			period = 5000
 		}
 	}
-	aura := &auraState{spellID: cast.spell.ID, casterID: cast.caster.GUID, slot: -1, effectIndex: effectIndex, duration: duration, passive: passive, harmful: harmful, cancelable: !harmful && packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeCantCancel == 0, points: spellEffectPoints(effect, maxSpellLevel(cast.caster.Level, cast.spell.BaseLevel)), target: target, effect: effect, interruptFlags: cast.spell.AuraInterruptFlags}
+	pointsLevel := cast.effectLevel
+	if !cast.ranked {
+		pointsLevel = maxSpellLevel(cast.caster.Level, cast.spell.BaseLevel)
+	}
+	aura := &auraState{spellID: cast.spell.ID, casterID: cast.caster.GUID, slot: -1, effectIndex: effectIndex, duration: duration, passive: passive, harmful: harmful, cancelable: !harmful && packet.SpellAttributes(cast.spell.Attributes)&packet.SpellAttributeCantCancel == 0, points: spellEffectPoints(effect, pointsLevel), target: target, effect: effect, interruptFlags: cast.spell.AuraInterruptFlags}
 	s.auras.mu.Lock()
 	if s.auras.active == nil {
 		s.auras.active = make(map[int64]map[int]*auraState)

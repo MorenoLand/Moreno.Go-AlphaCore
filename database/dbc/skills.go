@@ -15,6 +15,42 @@ type SkillLine struct {
 	ID, RaceMask, ClassMask, ExcludeRace, ExcludeClass int64
 }
 
+func (s *Store) SpellSkillLine(spell int64, race, class uint8) (int64, bool, error) {
+	rows, err := s.db.Query(`SELECT SkillLine, RaceMask, ClassMask, ExcludeRace, ExcludeClass FROM SkillLineAbility WHERE Spell = ? ORDER BY ID`, spell)
+	if err != nil {
+		return 0, false, fmt.Errorf("query spell skill line: %w", err)
+	}
+	defer rows.Close()
+	var races, classes int64
+	if race > 0 && race <= 63 {
+		races = int64(1) << (race - 1)
+	}
+	if class > 0 && class <= 63 {
+		classes = int64(1) << (class - 1)
+	}
+	for rows.Next() {
+		var skillLine, raceMask, classMask, excludeRace, excludeClass int64
+		if err := rows.Scan(&skillLine, &raceMask, &classMask, &excludeRace, &excludeClass); err != nil {
+			return 0, false, fmt.Errorf("scan spell skill line: %w", err)
+		}
+		if excludeRace != 0 {
+			raceMask = ^raceMask
+		}
+		if excludeClass != 0 {
+			classMask = ^classMask
+		}
+		if raceMask == 0 || raceMask&races != 0 {
+			if classMask == 0 || classMask&classes != 0 {
+				return skillLine, true, nil
+			}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return 0, false, fmt.Errorf("read spell skill line: %w", err)
+	}
+	return 0, false, nil
+}
+
 func (s *Store) SpellAllowedForRaceClass(spell int64, race, class uint8) (bool, error) {
 	rows, err := s.db.Query(`SELECT SkillLine, RaceMask, ClassMask, ExcludeRace, ExcludeClass FROM SkillLineAbility WHERE Spell = ? ORDER BY ID`, spell)
 	if err != nil {
