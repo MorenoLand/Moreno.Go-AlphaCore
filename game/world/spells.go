@@ -591,6 +591,9 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 		targets := cast.effectTargets[index]
 		if len(targets) == 0 && cast.targetCreature != nil {
 			s.applyCreatureSpellEffect(cast, cast.targetCreature, effect, spellEffectPoints(effect, effectiveLevel))
+			if packet.SpellEffect(effect.Type) == packet.SpellEffectTameCreature {
+				s.tameCreature(cast, cast.targetCreature)
+			}
 			if packet.SpellEffect(effect.Type) == packet.SpellEffectQuestComplete {
 				s.completeSpellQuest(cast, realm.Character{}, effect)
 			}

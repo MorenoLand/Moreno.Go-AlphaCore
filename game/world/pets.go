@@ -194,6 +194,20 @@ func (s *WorldServer) petCreatureStats(entry, class, level int64) (worlddb.Creat
 	} else if found {
 		return worlddb.CreatureClassLevelStats{Health: stats.Health, BaseHealth: stats.Health, Mana: stats.Mana, BaseMana: stats.Mana, Strength: stats.Strength, Agility: stats.Agility, Stamina: stats.Stamina, Intellect: stats.Intellect, Spirit: stats.Spirit, Armor: stats.Armor}, nil
 	}
+	if fallbackLevel := minInt64(level, 60); fallbackLevel != level {
+		if stats, found, err := s.WorldData.PetLevelStats(entry, fallbackLevel); err != nil {
+			return worlddb.CreatureClassLevelStats{}, err
+		} else if found {
+			return worlddb.CreatureClassLevelStats{Health: stats.Health, BaseHealth: stats.Health, Mana: stats.Mana, BaseMana: stats.Mana, Strength: stats.Strength, Agility: stats.Agility, Stamina: stats.Stamina, Intellect: stats.Intellect, Spirit: stats.Spirit, Armor: stats.Armor}, nil
+		}
+	}
+	if entry != 1 {
+		if stats, found, err := s.WorldData.PetLevelStats(1, minInt64(level, 60)); err != nil {
+			return worlddb.CreatureClassLevelStats{}, err
+		} else if found {
+			return worlddb.CreatureClassLevelStats{Health: stats.Health, BaseHealth: stats.Health, Mana: stats.Mana, BaseMana: stats.Mana, Strength: stats.Strength, Agility: stats.Agility, Stamina: stats.Stamina, Intellect: stats.Intellect, Spirit: stats.Spirit, Armor: stats.Armor}, nil
+		}
+	}
 	if stats, found, err := s.WorldData.CreatureClassLevelStats(class, level); err != nil {
 		return worlddb.CreatureClassLevelStats{}, err
 	} else if found {
@@ -323,6 +337,7 @@ func (s *WorldServer) summonPermanentPet(owner realm.Character, spellID, creatur
 	if create, err := s.petCreatePacket(*state); err == nil {
 		s.sendSpell(owner, create)
 	}
+	s.sendPetOwnerField(owner, state.GUID)
 	if info, err := petSpellsPacket(state.GUID, record, false); err == nil {
 		s.sendPlayer(owner.GUID, info)
 	}
@@ -342,6 +357,7 @@ func (s *WorldServer) petAction(owner realm.Character, data []byte) error {
 	if actionID > petCommandDismiss {
 		for _, spell := range record.spells {
 			if spell == actionID {
+				s.castPetSpell(owner, active, record, actionID, target)
 				return nil
 			}
 		}
@@ -504,7 +520,7 @@ func (s *WorldServer) petLevelCheat(owner realm.Character, data []byte) error {
 	if err != nil {
 		return err
 	}
-	record, active, _, err = s.updateActivePet(owner.GUID, active.GUID, func(pet *realm.Pet) {
+	_, active, _, err = s.updateActivePet(owner.GUID, active.GUID, func(pet *realm.Pet) {
 		pet.Level, pet.XP, pet.Health, pet.Mana = level, 0, stats.Health, stats.Mana
 	})
 	if err != nil {
@@ -522,7 +538,6 @@ func (s *WorldServer) petLevelCheat(owner realm.Character, data []byte) error {
 	s.updatePetCreatureField(active.GUID, 27, uint32(stats.Health))
 	s.updatePetCreatureField(active.GUID, 23, uint32(stats.Mana))
 	s.updatePetCreatureField(active.GUID, 28, uint32(stats.Mana))
-	_ = record
 	return nil
 }
 
@@ -531,7 +546,7 @@ func (s *WorldServer) updatePetCreatureField(guid uint64, field int, value uint3
 	if err != nil {
 		return
 	}
-	ownerGUID, _, active, found := s.findActivePet(guid)
+	ownerGUID, _, _, found := s.findActivePet(guid)
 	if !found {
 		return
 	}
@@ -540,7 +555,6 @@ func (s *WorldServer) updatePetCreatureField(guid uint64, field int, value uint3
 		s.broadcastPlayer(owner, update)
 	}
 	s.sendPlayer(ownerGUID, update)
-	_ = active
 }
 
 func (s *WorldServer) detachPet(ownerGUID int64, petGUID uint64, clearActive bool) error {
@@ -564,6 +578,9 @@ func (s *WorldServer) detachPet(ownerGUID int64, petGUID uint64, clearActive boo
 		}
 	}
 	s.removeCreature(active.GUID)
+	if owner, found := s.playerByGUID(ownerGUID); found {
+		s.sendPetOwnerField(owner, 0)
+	}
 	if owner, found := s.playerByGUID(ownerGUID); found {
 		if destroy, err := packet.Encode(packet.SMSGDestroyObject, encodeGUID(int64(active.GUID))); err == nil {
 			s.sendSpell(owner, destroy)
@@ -657,4 +674,128 @@ func (s *WorldServer) sendPetSpells(ownerGUID int64) {
 	if err == nil {
 		s.sendPlayer(ownerGUID, data)
 	}
+}
+
+func (s *WorldServer) sendPetOwnerField(owner realm.Character, guid uint64) {
+	for field, value := range map[int]uint32{8: uint32(guid), 9: uint32(guid >> 32)} {
+		update, err := packet.EncodeFieldUpdate(uint64(owner.GUID), field, value)
+		if err != nil {
+			continue
+		}
+		s.broadcastPlayer(owner, update)
+		s.sendPlayer(owner.GUID, update)
+	}
+}
+
+func (s *WorldServer) castPetSpell(owner realm.Character, active activePetState, record petRecord, spellID int64, targetGUID uint64) {
+	if s.DBC == nil {
+		return
+	}
+	spell, found, err := s.DBC.Spell(spellID)
+	if err != nil || !found {
+		return
+	}
+	caster := owner
+	caster.GUID = int64(active.GUID)
+	caster.Name = record.data.Name
+	caster.Level = uint8(record.data.Level)
+	caster.Health, caster.Power1 = active.Creature.Health, active.Creature.Mana
+	caster.PositionX, caster.PositionY, caster.PositionZ, caster.Orientation = active.Creature.Spawn.PositionX, active.Creature.Spawn.PositionY, active.Creature.Spawn.PositionZ, active.Creature.Spawn.Orientation
+	if targetGUID == 0 {
+		targetGUID = uint64(owner.GUID)
+	}
+	target := spellTarget{UnitGUID: targetGUID}
+	if result := s.validateSpellTarget(caster, spell, target, packet.SpellTargetUnit); result != packet.SpellNoError {
+		return
+	}
+	var targetCreature *creatureState
+	if targetGUID != uint64(owner.GUID) {
+		if _, playerFound := s.playerByGUID(int64(targetGUID)); !playerFound {
+			targetCreature, _, err = s.creatureStateAt(owner, targetGUID, creatureViewDistance)
+			if err != nil || targetCreature == nil {
+				return
+			}
+		}
+	}
+	castTime := int64(0)
+	if value, found, err := s.DBC.SpellCastTime(spell.CastingTimeIndex); err == nil && found {
+		castTime = value.Base + value.PerLevel*int64(caster.Level)
+		if castTime < value.Minimum {
+			castTime = value.Minimum
+		}
+	}
+	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: packet.SpellTargetUnit, castTime: castTime, targets: s.spellTargets(caster, spell, target), effectTargets: s.spellEffectTargetsAll(caster, spell, target), targetCreature: targetCreature, spellLevel: int64(caster.Level), effectLevel: maxSpellLevel(caster.Level, spell.BaseLevel), started: time.Now()}
+	if castTime <= 0 {
+		s.performSpellCast(cast)
+		return
+	}
+	s.spells.mu.Lock()
+	if s.spells.casts == nil {
+		s.spells.casts = make(map[int64]*spellCast)
+	}
+	if previous := s.spells.casts[caster.GUID]; previous != nil && previous.timer != nil {
+		previous.timer.Stop()
+	}
+	s.spells.casts[caster.GUID] = cast
+	cast.timer = time.AfterFunc(time.Duration(castTime)*time.Millisecond, func() { s.finishSpellCast(caster.GUID, cast) })
+	s.spells.mu.Unlock()
+	if start, err := spellStartPacket(cast); err == nil {
+		s.sendSpell(caster, start)
+	}
+}
+
+func (s *WorldServer) tameCreature(cast *spellCast, target *creatureState) {
+	if cast == nil || target == nil || s.WorldData == nil || cast.caster.GUID == 0 {
+		return
+	}
+	manager := s.ensurePetManager(cast.caster)
+	if target.Level > int64(cast.caster.Level) {
+		s.sendPetTameFailure(cast.caster.GUID, 9)
+		return
+	}
+	s.petMu.Lock()
+	if len(manager.permanent) > 0 || manager.active != nil {
+		s.petMu.Unlock()
+		s.sendPetTameFailure(cast.caster.GUID, 2)
+		return
+	}
+	s.petMu.Unlock()
+	if target.Template.StaticFlags&16 == 0 {
+		s.sendPetTameFailure(cast.caster.GUID, 4)
+		return
+	}
+	pet := realm.Pet{OwnerGUID: cast.caster.GUID, CreatureID: target.Template.Entry, CreatedBySpell: petSummonSpellID, Level: target.Level, Health: target.Health, Mana: target.Mana, Name: target.Template.Name, Active: true, ActionBar: defaultPetActionBar()}
+	if s.Characters != nil {
+		id, err := s.Characters.CreatePet(pet)
+		if err != nil {
+			s.sendPetTameFailure(cast.caster.GUID, 8)
+			return
+		}
+		pet.ID = id
+	}
+	s.petMu.Lock()
+	manager.permanent = append(manager.permanent, petRecord{data: pet})
+	manager.active = &activePetState{GUID: target.GUID, Index: len(manager.permanent) - 1, Creature: target}
+	s.petMu.Unlock()
+	target.OwnerGUID, target.CreatedBySpell, target.PetID, target.PetNameTimestamp, target.PetExperience, target.PetNextExperience, target.Pet = uint64(cast.caster.GUID), petSummonSpellID, pet.ID, 0, 0, petExperienceForLevel(pet.Level), true
+	if s.DBC != nil {
+		if race, found, err := s.DBC.Race(cast.caster.Race); err == nil && found {
+			target.Template.Faction = race.FactionID
+		}
+	}
+	s.sendPetOwnerField(cast.caster, target.GUID)
+	s.sendPetSpells(cast.caster.GUID)
+}
+
+func (s *WorldServer) sendPetTameFailure(guid int64, result byte) {
+	if packet, err := packet.Encode(packet.SMSGPetTameFailure, []byte{result}); err == nil {
+		s.sendPlayer(guid, packet)
+	}
+}
+
+func minInt64(first, second int64) int64 {
+	if first < second {
+		return first
+	}
+	return second
 }

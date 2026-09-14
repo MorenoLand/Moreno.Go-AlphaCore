@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"Moreno.AlphaCore/database"
+	"Moreno.AlphaCore/database/dbc"
 	"Moreno.AlphaCore/database/realm"
 	worlddb "Moreno.AlphaCore/database/world"
 	"Moreno.AlphaCore/network/packet"
@@ -91,5 +92,89 @@ func TestPetRuntimeLifecycle(t *testing.T) {
 	ownerGUID, _, _, activeFound := server.findActivePet(petGUID)
 	if err != nil || !found || loaded.Active || activeFound || ownerGUID != 0 {
 		t.Fatalf("dismissed pet=%#v found=%v err=%v", loaded, found, err)
+	}
+}
+
+func TestPetSpellAction(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Owner", Level: 4, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO creature_template (entry, display_id1, name, faction, unit_class) VALUES (123, 456, 'Wolf', 1, 1); INSERT INTO pet_levelstats (creature_entry, level, hp, mana) VALUES (123, 4, 80, 20)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, Effect_1, EffectBasePoints_1) VALUES (42, 10, 5)`); err != nil {
+		t.Fatal(err)
+	}
+	pet := realm.Pet{OwnerGUID: guid, CreatureID: 123, CreatedBySpell: 883, Level: 4, Health: 80, Mana: 20, Name: "Wolf", Active: true, ActionBar: defaultPetActionBar()}
+	pet.ID, err = characters.CreatePet(pet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := characters.AddPetSpell(guid, pet.ID, 42); err != nil {
+		t.Fatal(err)
+	}
+	owner := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Owner", Level: 4, Health: 10}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases)}
+	server.registerPlayer(owner)
+	if err := server.loadPets(owner); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := server.initialPetPackets(owner); err != nil {
+		t.Fatal(err)
+	}
+	data := make([]byte, 20)
+	_, _, activeFound := server.activePetSnapshot(owner.GUID, 0)
+	if !activeFound {
+		t.Fatal("active pet not spawned")
+	}
+	server.petMu.Lock()
+	petGUID := server.pets[owner.GUID].active.GUID
+	server.petMu.Unlock()
+	binary.LittleEndian.PutUint64(data, petGUID)
+	binary.LittleEndian.PutUint32(data[8:], 42)
+	if err := server.petAction(owner, data); err != nil {
+		t.Fatal(err)
+	}
+	stored, found, err := characters.Character(guid, 1, 1)
+	if err != nil || !found || stored.Health != 15 {
+		t.Fatalf("owner=%#v found=%v err=%v", stored, found, err)
+	}
+}
+
+func TestTameCreatureCreatesPermanentPet(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Hunter", Level: 4, Health: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO creature_template (entry, display_id1, name, static_flags, faction, unit_class, beast_family) VALUES (123, 456, 'Wolf', 16, 1, 1, 1); INSERT INTO pet_levelstats (creature_entry, level, hp, mana) VALUES (123, 2, 40, 10)`); err != nil {
+		t.Fatal(err)
+	}
+	owner := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Hunter", Level: 4, Health: 100}
+	server := &WorldServer{Characters: characters, WorldData: worlddb.NewStore(databases)}
+	server.registerPlayer(owner)
+	server.setCreatureState(creatureState{GUID: 0xf130000000000001, Spawn: worlddb.CreatureSpawn{Entry: 123, Map: 0}, Template: worlddb.CreatureTemplate{Entry: 123, Name: "Wolf", StaticFlags: 16, UnitClass: 1}, Level: 2, Health: 40, MaxHealth: 40, Mana: 10})
+	server.creatures.mu.Lock()
+	target := server.creatures.active[0xf130000000000001]
+	server.creatures.mu.Unlock()
+	server.tameCreature(&spellCast{caster: owner}, target)
+	if _, _, _, found := server.findActivePet(target.GUID); !found {
+		t.Fatal("tamed pet is not active")
+	}
+	pets, err := characters.Pets(guid)
+	if err != nil || len(pets) != 1 || pets[0].CreatureID != 123 || !pets[0].Active {
+		t.Fatalf("pets=%#v err=%v", pets, err)
 	}
 }
