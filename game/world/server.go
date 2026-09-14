@@ -42,6 +42,7 @@ type WorldServer struct {
 	lootMu            sync.Mutex
 	loots             map[uint64]*lootState
 	lootSelections    map[int64]uint64
+	spells            spellRegistry
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -667,6 +668,21 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			err = s.newSpellSlot(*active, message.Data)
+		case packet.CMSGCastSpell:
+			if active == nil {
+				return
+			}
+			responses, err = s.castSpellPacket(*active, message.Data)
+		case packet.CMSGCancelCast:
+			if active == nil {
+				return
+			}
+			responses, err = s.cancelSpell(*active, message.Data)
+		case packet.CMSGCancelChannelling:
+			if active == nil {
+				return
+			}
+			responses, err = s.cancelSpell(*active, message.Data)
 		case packet.CMSGMountSpecialAnim:
 			if active == nil {
 				return

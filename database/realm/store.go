@@ -174,6 +174,22 @@ func (s *Store) UpdateHealth(guid, accountID, realmID, health int64) error {
 	return err
 }
 
+func (s *Store) UpdatePower(guid, accountID, realmID, powerType, power int64) error {
+	column := "power1"
+	switch powerType {
+	case 1:
+		column = "power2"
+	case 2:
+		column = "power3"
+	case 3:
+		column = "power4"
+	case 4:
+		column = "power5"
+	}
+	_, err := s.db.Exec(`UPDATE characters SET `+column+` = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, power, guid, accountID, realmID)
+	return err
+}
+
 func (s *Store) UpdateBankslots(guid, accountID, realmID int64, slots uint8) error {
 	_, err := s.db.Exec(`UPDATE characters SET bankslots = ? WHERE guid = ? AND account_id = ? AND realm_id = ?`, slots, guid, accountID, realmID)
 	return err
