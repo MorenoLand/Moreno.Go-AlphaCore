@@ -20,7 +20,7 @@ func TestSpellObjectTargets(t *testing.T) {
 	if _, err := databases.DB(database.World).Exec(`INSERT INTO gameobject_template (entry, type, displayId, name, flags, size) VALUES (300, 0, 10, 'Door', 0, 1); INSERT INTO spawns_gameobjects (spawn_id, spawn_entry, spawn_map, spawn_positionX, spawn_positionY, spawn_positionZ) VALUES (1, 300, 0, 0, 0, 0); INSERT INTO item_template (entry, name) VALUES (400, 'Locked Box')`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, Effect_1) VALUES (42, 33), (43, 33)`); err != nil {
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, Effect_1) VALUES (42, 33), (43, 59)`); err != nil {
 		t.Fatal(err)
 	}
 	characters := realm.NewStore(databases)

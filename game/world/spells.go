@@ -644,7 +644,7 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 					caster := cast.caster
 					_ = s.changePlayerPower(&caster, effect.MiscValue, amount)
 				}
-			case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura:
+			case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura, packet.SpellEffectPersistentAreaAura:
 				s.applyAura(cast, target, index, effect)
 			case packet.SpellEffectAddComboPoints:
 				s.addComboPoints(cast.caster.GUID, uint64(target.GUID), target.Health > 0, points)
