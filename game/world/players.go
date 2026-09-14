@@ -25,6 +25,7 @@ type playerRegistry struct {
 	godMode        map[int64]bool
 	beastMaster    map[int64]bool
 	sanctuary      map[int64]time.Time
+	speeds         map[int64][4]float32
 	connections    map[int64]*playerConnection
 }
 
@@ -46,6 +47,7 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.godMode = make(map[int64]bool)
 		s.players.beastMaster = make(map[int64]bool)
 		s.players.sanctuary = make(map[int64]time.Time)
+		s.players.speeds = make(map[int64][4]float32)
 		s.players.connections = make(map[int64]*playerConnection)
 	}
 	if s.players.godMode == nil {
@@ -65,6 +67,9 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 	}
 	if s.players.maxHealthKnown == nil {
 		s.players.maxHealthKnown = make(map[int64]bool)
+	}
+	if s.players.speeds == nil {
+		s.players.speeds = make(map[int64][4]float32)
 	}
 	s.players.players[character.GUID] = character
 	if _, found := s.players.maxHealth[character.GUID]; !found {
@@ -100,6 +105,9 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		}
 		s.players.maxPower[character.GUID] = values
 	}
+	if _, found := s.players.speeds[character.GUID]; !found {
+		s.players.speeds[character.GUID] = defaultPlayerSpeeds()
+	}
 	s.players.mu.Unlock()
 }
 
@@ -131,6 +139,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.godMode, guid)
 	delete(s.players.beastMaster, guid)
 	delete(s.players.sanctuary, guid)
+	delete(s.players.speeds, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
 	for _, loot := range s.loots {
@@ -180,6 +189,16 @@ func (s *WorldServer) setPlayerMaxPower(guid, powerType, value int64) {
 	values[powerType] = maxInt64(value, 1)
 	s.players.maxPower[guid] = values
 	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) playerSpeeds(guid int64) [4]float32 {
+	s.players.mu.RLock()
+	values, found := s.players.speeds[guid]
+	s.players.mu.RUnlock()
+	if !found {
+		return defaultPlayerSpeeds()
+	}
+	return values
 }
 
 func (s *WorldServer) setPlayerMaxHealth(guid, value int64) {

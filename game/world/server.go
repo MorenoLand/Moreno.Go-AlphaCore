@@ -240,6 +240,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.debugAIState(*active, message.Data)
+		case packet.MSGMoveSetRunSpeedCheat, packet.MSGMoveSetSwimSpeedCheat, packet.MSGMoveSetWalkSpeedCheat, packet.MSGMoveSetTurnRateCheat:
+			if active == nil {
+				return
+			}
+			err = s.movementSpeedCheat(active, message.Opcode, message.Data, account.GMLevel)
 		case packet.CMSGItemQuerySingle:
 			if active == nil {
 				return
