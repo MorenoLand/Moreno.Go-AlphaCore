@@ -290,7 +290,7 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 	if effectiveLevel < 0 {
 		effectiveLevel = 0
 	}
-	for _, effect := range cast.spell.Effects {
+	for index, effect := range cast.spell.Effects {
 		points := spellEffectPoints(effect, effectiveLevel)
 		switch packet.SpellEffect(effect.Type) {
 		case packet.SpellEffectSchoolDamage:
@@ -317,6 +317,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				caster := cast.caster
 				_ = s.changePlayerPower(&caster, effect.MiscValue, amount)
 			}
+		case packet.SpellEffectApplyAura, packet.SpellEffectApplyAreaAura:
+			s.applyAura(cast, target, index, effect)
 		}
 	}
 }

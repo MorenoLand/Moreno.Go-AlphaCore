@@ -43,6 +43,7 @@ type WorldServer struct {
 	loots             map[uint64]*lootState
 	lootSelections    map[int64]uint64
 	spells            spellRegistry
+	auras             auraRegistry
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -683,6 +684,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.cancelSpell(*active, message.Data)
+		case packet.CMSGCancelAura:
+			if active == nil {
+				return
+			}
+			responses, err = s.cancelAura(*active, message.Data)
 		case packet.CMSGMountSpecialAnim:
 			if active == nil {
 				return

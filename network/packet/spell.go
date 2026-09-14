@@ -116,6 +116,15 @@ const (
 	SpellCastFlagHasAmmo SpellCastFlags = 0x10
 )
 
+const (
+	AuraFlagCancelable AuraFlags = 0x01
+	AuraFlagEffect2    AuraFlags = 0x02
+	AuraFlagEffect1    AuraFlags = 0x04
+	AuraFlagEffect0    AuraFlags = 0x08
+)
+
+type AuraFlags byte
+
 type SpellEffect int64
 
 const (
