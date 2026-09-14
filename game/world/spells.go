@@ -682,6 +682,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				}
 			case packet.SpellEffectLearnPetSpell:
 				s.learnPetSpell(target, effect.TriggerSpell)
+			case packet.SpellEffectScript:
+				s.scriptSpellEffect(cast, target)
 			case packet.SpellEffectDummy:
 				s.dummySpellEffect(cast, target)
 			case packet.SpellEffectQuestComplete:
