@@ -15,11 +15,15 @@ type creatureRegistry struct {
 }
 
 type creatureState struct {
-	GUID                           uint64
-	Spawn                          worlddb.CreatureSpawn
-	Template                       worlddb.CreatureTemplate
-	Stats                          worlddb.CreatureClassLevelStats
-	Level, Health, MaxHealth, Mana int64
+	GUID                                               uint64
+	Spawn                                              worlddb.CreatureSpawn
+	Template                                           worlddb.CreatureTemplate
+	Stats                                              worlddb.CreatureClassLevelStats
+	Level, Health, MaxHealth, Mana                     int64
+	OwnerGUID                                          uint64
+	CreatedBySpell, PetID                              int64
+	PetNameTimestamp, PetExperience, PetNextExperience int64
+	Pet                                                bool
 }
 
 func (s *WorldServer) creatureStateAt(active realm.Character, guid uint64, distance float32) (*creatureState, bool, error) {

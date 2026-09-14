@@ -35,6 +35,8 @@ func (s *WorldServer) gmCheat(active *realm.Character, opcode packet.Opcode, dat
 		return s.cheatLevel(active, binary.LittleEndian.Uint32(data), gmLevel > 0)
 	case packet.CMSGLevelUpCheat:
 		return s.cheatLevel(active, uint32(active.Level)+1, gmLevel > 0)
+	case packet.CMSGPetLevelCheat:
+		return nil, s.petLevelCheat(*active, data)
 	case packet.CMSGLearnSpell:
 		if len(data) < 4 {
 			return nil, nil

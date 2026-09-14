@@ -21,6 +21,7 @@ const (
 	SMSGGodMode                   Opcode = 0x0023
 	CMSGCheatSetMoney             Opcode = 0x0024
 	CMSGLevelCheat                Opcode = 0x0025
+	CMSGPetLevelCheat             Opcode = 0x0026
 	CMSGLevelUpCheat              Opcode = 0x0027
 	CMSGCooldownCheat             Opcode = 0x0028
 	CMSGEnablePVP                 Opcode = 0x0030
@@ -99,6 +100,8 @@ const (
 	SMSGLogoutCancelAck           Opcode = 0x004f
 	CMSGNameQuery                 Opcode = 0x0050
 	SMSGNameQueryResponse         Opcode = 0x0051
+	CMSGPetNameQuery              Opcode = 0x0052
+	SMSGPetNameQueryResponse      Opcode = 0x0053
 	CMSGItemQuerySingle           Opcode = 0x0056
 	CMSGItemQueryMultiple         Opcode = 0x0057
 	SMSGItemQuerySingleResponse   Opcode = 0x0058
@@ -246,6 +249,13 @@ const (
 	MSGGMSummon                   Opcode = 0x01da
 	CMSGMountSpecialAnim          Opcode = 0x0164
 	SMSGMountSpecialAnim          Opcode = 0x0165
+	SMSGPetTameFailure            Opcode = 0x0166
+	CMSGPetSetAction              Opcode = 0x0167
+	CMSGPetAction                 Opcode = 0x0168
+	CMSGPetAbandon                Opcode = 0x0169
+	CMSGPetRename                 Opcode = 0x016a
+	SMSGPetNameInvalid            Opcode = 0x016b
+	SMSGPetSpells                 Opcode = 0x016c
 	CMSGListInventory             Opcode = 0x016e
 	SMSGListInventory             Opcode = 0x016f
 	SMSGItemPushResult            Opcode = 0x0159
@@ -387,6 +397,7 @@ var opcodeNames = map[Opcode]string{
 	SMSGGodMode:                   "SMSG_GODMODE",
 	CMSGCheatSetMoney:             "CMSG_CHEAT_SETMONEY",
 	CMSGLevelCheat:                "CMSG_LEVEL_CHEAT",
+	CMSGPetLevelCheat:             "CMSG_PET_LEVEL_CHEAT",
 	CMSGLevelUpCheat:              "CMSG_LEVELUP_CHEAT",
 	CMSGCooldownCheat:             "CMSG_COOLDOWN_CHEAT",
 	CMSGEnablePVP:                 "CMSG_ENABLE_PVP",
@@ -463,6 +474,8 @@ var opcodeNames = map[Opcode]string{
 	CMSGLogoutRequest:             "CMSG_LOGOUT_REQUEST",
 	CMSGNameQuery:                 "CMSG_NAME_QUERY",
 	SMSGNameQueryResponse:         "SMSG_NAME_QUERY_RESPONSE",
+	CMSGPetNameQuery:              "CMSG_PET_NAME_QUERY",
+	SMSGPetNameQueryResponse:      "SMSG_PET_NAME_QUERY_RESPONSE",
 	CMSGItemQuerySingle:           "CMSG_ITEM_QUERY_SINGLE",
 	CMSGItemQueryMultiple:         "CMSG_ITEM_QUERY_MULTIPLE",
 	SMSGItemQuerySingleResponse:   "SMSG_ITEM_QUERY_SINGLE_RESPONSE",
@@ -609,6 +622,13 @@ var opcodeNames = map[Opcode]string{
 	MSGGMSummon:                   "MSG_GM_SUMMON",
 	CMSGMountSpecialAnim:          "CMSG_MOUNTSPECIAL_ANIM",
 	SMSGMountSpecialAnim:          "SMSG_MOUNTSPECIAL_ANIM",
+	SMSGPetTameFailure:            "SMSG_PET_TAME_FAILURE",
+	CMSGPetSetAction:              "CMSG_PET_SET_ACTION",
+	CMSGPetAction:                 "CMSG_PET_ACTION",
+	CMSGPetAbandon:                "CMSG_PET_ABANDON",
+	CMSGPetRename:                 "CMSG_PET_RENAME",
+	SMSGPetNameInvalid:            "SMSG_PET_NAME_INVALID",
+	SMSGPetSpells:                 "SMSG_PET_SPELLS",
 	CMSGListInventory:             "CMSG_LIST_INVENTORY",
 	SMSGListInventory:             "SMSG_LIST_INVENTORY",
 	SMSGItemPushResult:            "SMSG_ITEM_PUSH_RESULT",

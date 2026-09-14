@@ -654,6 +654,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				s.requestDuel(cast, target, effect)
 			case packet.SpellEffectSummonPlayer:
 				s.summonSpellTarget(cast, target)
+			case packet.SpellEffectSummonPet, packet.SpellEffectSummon:
+				s.summonPermanentPet(cast.caster, cast.spell.ID, effect.MiscValue)
 			case packet.SpellEffectTriggerSpell:
 				targetMask := packet.SpellTargetSelf
 				if target.GUID != cast.caster.GUID {

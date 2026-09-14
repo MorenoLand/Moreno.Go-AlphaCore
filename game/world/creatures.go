@@ -133,6 +133,15 @@ func (s *WorldServer) creatureCreatePacket(state creatureState, scale, boundingR
 	fields[151] = uint32(state.Template.DisplayID1)
 	fields[153] = uint32(maximumDamage)<<16 | uint32(minimumDamage)
 	fields[172] = byteValue(1, 0, uint8(state.Template.NPCFlags), 0)
+	if state.Pet {
+		packet.SetUint64(fields, 12, state.OwnerGUID)
+		packet.SetUint64(fields, 14, state.OwnerGUID)
+		fields[173] = uint32(state.PetID)
+		fields[174] = uint32(state.PetNameTimestamp)
+		fields[175] = uint32(state.PetExperience)
+		fields[176] = uint32(state.PetNextExperience)
+		fields[181] = uint32(state.CreatedBySpell)
+	}
 	return packet.EncodeUnitCreate(state.GUID, fields, packet.Movement{X: state.Spawn.PositionX, Y: state.Spawn.PositionY, Z: state.Spawn.PositionZ, O: state.Spawn.Orientation, WalkSpeed: 2.5, RunSpeed: 7, SwimSpeed: 4.722222, TurnRate: 3.141594})
 }
 

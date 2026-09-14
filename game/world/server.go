@@ -49,6 +49,8 @@ type WorldServer struct {
 	duelMu            sync.Mutex
 	duels             map[int64]*duelState
 	nextDuel          uint64
+	petMu             sync.Mutex
+	pets              map[int64]*petManagerState
 }
 
 func (s *WorldServer) Start(ctx context.Context) (net.Listener, error) {
@@ -134,6 +136,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 			response, err = s.characterCreate(account.ID, message.Data)
 		case packet.CMSGCharDelete:
 			response, err = s.characterDelete(account.ID, message.Data)
+		case packet.CMSGPetNameQuery:
+			if active == nil {
+				return
+			}
+			response, err = s.petNameQuery(*active, message.Data)
 		case packet.CMSGPlayerLogin:
 			response, err = s.playerLogin(account.ID, message.Data)
 			if err == nil && len(message.Data) >= 8 {
@@ -149,7 +156,10 @@ func (s *WorldServer) handle(connection net.Conn) {
 					}
 					if err == nil {
 						writer = s.attachPlayer(character.GUID, connection)
-						err = s.loadGroup(character)
+						err = s.loadPets(character)
+						if err == nil {
+							err = s.loadGroup(character)
+						}
 						if err == nil {
 							err = s.loadGuild(character)
 						}
@@ -730,11 +740,31 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.cancelAura(*active, message.Data)
-		case packet.CMSGRecharge, packet.CMSGLearnSpell, packet.CMSGCreateMonster, packet.CMSGDestroyMonster, packet.CMSGCreateItem, packet.CMSGEnableDebugCombatLogging, packet.CMSGBeastMaster, packet.CMSGGodMode, packet.CMSGCheatSetMoney, packet.CMSGLevelCheat, packet.CMSGLevelUpCheat, packet.CMSGCooldownCheat, packet.CMSGTriggerCinematicCheat, packet.CMSGTeleportToPlayer, packet.MSGGMSummon:
+		case packet.CMSGRecharge, packet.CMSGLearnSpell, packet.CMSGCreateMonster, packet.CMSGDestroyMonster, packet.CMSGCreateItem, packet.CMSGEnableDebugCombatLogging, packet.CMSGBeastMaster, packet.CMSGGodMode, packet.CMSGCheatSetMoney, packet.CMSGLevelCheat, packet.CMSGLevelUpCheat, packet.CMSGPetLevelCheat, packet.CMSGCooldownCheat, packet.CMSGTriggerCinematicCheat, packet.CMSGTeleportToPlayer, packet.MSGGMSummon:
 			if active == nil {
 				return
 			}
 			responses, err = s.gmCheat(active, message.Opcode, message.Data, account.GMLevel)
+		case packet.CMSGPetAction:
+			if active == nil {
+				return
+			}
+			err = s.petAction(*active, message.Data)
+		case packet.CMSGPetSetAction:
+			if active == nil {
+				return
+			}
+			err = s.petSetAction(*active, message.Data)
+		case packet.CMSGPetAbandon:
+			if active == nil {
+				return
+			}
+			err = s.petAbandon(*active, message.Data)
+		case packet.CMSGPetRename:
+			if active == nil {
+				return
+			}
+			response, err = s.petRename(*active, message.Data)
 		case packet.CMSGMountSpecialAnim:
 			if active == nil {
 				return

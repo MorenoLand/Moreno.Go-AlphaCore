@@ -37,6 +37,10 @@ func (s *WorldServer) playerLogin(accountID int64, data []byte) ([]byte, error) 
 }
 
 func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, error) {
+	petPackets, petGUID, err := s.initialPetPackets(character)
+	if err != nil {
+		return nil, err
+	}
 	spells, err := s.Characters.Spells(character.GUID)
 	if err != nil {
 		return nil, err
@@ -133,6 +137,9 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 		}
 	}
 	values := buildPlayerFields(character, race, inventory)
+	if petGUID != 0 {
+		packet.SetUint64(values, 8, petGUID)
+	}
 	values[27] = uint32(maxInt64(s.playerMaxHealth(character.GUID), int64(values[27])))
 	values[28] = uint32(s.playerMaxPower(character.GUID, 0))
 	values[29] = uint32(s.playerMaxPower(character.GUID, 1))
@@ -145,6 +152,7 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 		return nil, err
 	}
 	packets = append(packets, createPacket)
+	packets = append(packets, petPackets...)
 	creaturePackets, err := s.nearbyCreaturePackets(character)
 	if err != nil {
 		return nil, err
