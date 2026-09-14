@@ -612,12 +612,20 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 	if spellHasEffect(cast.spell, packet.SpellEffectLeap) {
 		s.leapSpell(cast)
 	}
+	for _, effect := range cast.spell.Effects {
+		if packet.SpellEffect(effect.Type) == packet.SpellEffectAddFarsight {
+			s.farsightSpell(cast, effect)
+		}
+	}
 	for index, effect := range cast.spell.Effects {
 		targets := cast.effectTargets[index]
 		if len(targets) == 0 && cast.targetCreature != nil {
 			s.applyCreatureSpellEffect(cast, cast.targetCreature, effect, spellEffectPoints(effect, effectiveLevel))
 			if packet.SpellEffect(effect.Type) == packet.SpellEffectPickpocket {
 				s.pickpocketSpell(cast, cast.targetCreature)
+			}
+			if packet.SpellEffect(effect.Type) == packet.SpellEffectDistract {
+				s.distractSpell(cast, cast.targetCreature)
 			}
 			if packet.SpellEffect(effect.Type) == packet.SpellEffectTameCreature {
 				s.tameCreature(cast, cast.targetCreature)

@@ -28,6 +28,8 @@ type creatureState struct {
 	ExtraAttacks                                       int64
 	Threat                                             map[uint64]float64
 	PullUntil                                          time.Time
+	DistractedUntil                                    time.Time
+	DistractedAngle                                    float32
 	CombatTarget                                       uint64
 	Timer                                              *time.Timer
 }

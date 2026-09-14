@@ -25,6 +25,7 @@ type playerRegistry struct {
 	comboPoints    map[int64]int64
 	comboTarget    map[int64]uint64
 	extraAttacks   map[int64]int64
+	farSight       map[int64]uint64
 	passiveSkills  map[int64]uint32
 	displayIDs     map[int64]int64
 	unitFlags      map[int64]uint32
@@ -53,6 +54,7 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.comboPoints = make(map[int64]int64)
 		s.players.comboTarget = make(map[int64]uint64)
 		s.players.extraAttacks = make(map[int64]int64)
+		s.players.farSight = make(map[int64]uint64)
 		s.players.passiveSkills = make(map[int64]uint32)
 		s.players.displayIDs = make(map[int64]int64)
 		s.players.unitFlags = make(map[int64]uint32)
@@ -76,6 +78,9 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 	}
 	if s.players.extraAttacks == nil {
 		s.players.extraAttacks = make(map[int64]int64)
+	}
+	if s.players.farSight == nil {
+		s.players.farSight = make(map[int64]uint64)
 	}
 	if s.players.mountDisplay == nil {
 		s.players.mountDisplay = make(map[int64]uint32)
@@ -166,6 +171,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.sanctuary, guid)
 	delete(s.players.speeds, guid)
 	delete(s.players.extraAttacks, guid)
+	delete(s.players.farSight, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
 	delete(s.lootSelectionTypes, guid)

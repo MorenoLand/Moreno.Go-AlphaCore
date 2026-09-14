@@ -39,6 +39,9 @@ type WorldServer struct {
 	gameObjects        map[uint64]gameObjectState
 	dynamicGameObjects map[uint64]dynamicGameObject
 	nextGameObject     uint64
+	dynamicMu          sync.Mutex
+	dynamicObjects     map[uint64]dynamicObject
+	nextDynamicObject  uint64
 	tradeMu            sync.Mutex
 	trades             map[int64]*tradeState
 	lootMu             sync.Mutex
