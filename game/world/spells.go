@@ -644,6 +644,8 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				s.applyAura(cast, target, index, effect)
 			case packet.SpellEffectAddComboPoints:
 				s.addComboPoints(cast.caster.GUID, uint64(target.GUID), target.Health > 0, points)
+			case packet.SpellEffectSkillStep:
+				s.skillStep(target, effect, points)
 			case packet.SpellEffectDispel:
 				s.dispelSpellAuras(cast, target, points)
 			case packet.SpellEffectInterruptCast:

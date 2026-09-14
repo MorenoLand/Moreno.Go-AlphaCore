@@ -34,8 +34,13 @@ func (s *WorldServer) initializePassiveSpells(character realm.Character) error {
 		}
 		cast := &spellCast{caster: character, spell: spell, spellLevel: spellLevel, effectLevel: effectLevel, ranked: true}
 		for index, effect := range spell.Effects {
-			if packet.SpellEffect(effect.Type) == packet.SpellEffectApplyAura {
+			switch packet.SpellEffect(effect.Type) {
+			case packet.SpellEffectApplyAura:
 				s.applyAura(cast, character, index, effect)
+			case packet.SpellEffectBlock, packet.SpellEffectParry, packet.SpellEffectDodge, packet.SpellEffectWeapon, packet.SpellEffectDefense, packet.SpellEffectDualWield, packet.SpellEffectProficiency, packet.SpellEffectLanguage:
+				if err := s.applyPassiveSkill(character, spell, effect); err != nil {
+					return err
+				}
 			}
 		}
 	}

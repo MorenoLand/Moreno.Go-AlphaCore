@@ -24,6 +24,7 @@ type playerRegistry struct {
 	mountDisplay   map[int64]uint32
 	comboPoints    map[int64]int64
 	comboTarget    map[int64]uint64
+	passiveSkills  map[int64]uint32
 	unitFlags      map[int64]uint32
 	godMode        map[int64]bool
 	beastMaster    map[int64]bool
@@ -49,6 +50,7 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.mountDisplay = make(map[int64]uint32)
 		s.players.comboPoints = make(map[int64]int64)
 		s.players.comboTarget = make(map[int64]uint64)
+		s.players.passiveSkills = make(map[int64]uint32)
 		s.players.unitFlags = make(map[int64]uint32)
 		s.players.godMode = make(map[int64]bool)
 		s.players.beastMaster = make(map[int64]bool)
@@ -149,6 +151,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.mountDisplay, guid)
 	delete(s.players.comboPoints, guid)
 	delete(s.players.comboTarget, guid)
+	delete(s.players.passiveSkills, guid)
 	delete(s.players.unitFlags, guid)
 	delete(s.players.godMode, guid)
 	delete(s.players.beastMaster, guid)

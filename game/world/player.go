@@ -138,6 +138,11 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 	}
 	values := buildPlayerFields(character, race, inventory)
 	values[152] = s.mountDisplayID(character.GUID)
+	if skills, err := s.Characters.Skills(character.GUID); err != nil {
+		return nil, err
+	} else {
+		setPlayerSkillFields(values, skills)
+	}
 	if petGUID != 0 {
 		packet.SetUint64(values, 8, petGUID)
 	}
@@ -214,6 +219,17 @@ func buildPlayerFields(character realm.Character, race dbc.Race, inventory []rea
 		}
 	}
 	return values
+}
+
+func setPlayerSkillFields(values []uint32, skills []realm.Skill) {
+	for index, skill := range skills {
+		base := 334 + index*3
+		if base+2 >= len(values) || index >= 64 {
+			break
+		}
+		values[base] = uint32(skill.Value&0xffff)<<16 | uint32(skill.ID&0xffff)
+		values[base+1] = uint32(skill.Max&0xffff) << 16
+	}
 }
 
 func newWorldPacket(character realm.Character) ([]byte, error) {
