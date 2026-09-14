@@ -15,6 +15,49 @@ type SkillLine struct {
 	ID, RaceMask, ClassMask, ExcludeRace, ExcludeClass int64
 }
 
+type CreatureFamily struct {
+	ID, SkillLine1, SkillLine2 int64
+}
+
+func (s *Store) SkillLineAbilitiesByLines(lines []int64) ([]SkillLineAbility, error) {
+	if len(lines) == 0 {
+		return nil, nil
+	}
+	rows, err := s.db.Query(`SELECT ID, SkillLine, Spell, RaceMask, ClassMask, ExcludeRace, ExcludeClass, MinSkillLineRank, SupercededBySpell, TrivialSkillLineRankHigh, TrivialSkillLineRankLow, Abandonable FROM SkillLineAbility WHERE SkillLine IN (?, ?) ORDER BY ID`, lines[0], valueAt(lines, 1))
+	if err != nil {
+		return nil, fmt.Errorf("query skill line abilities: %w", err)
+	}
+	defer rows.Close()
+	abilities := make([]SkillLineAbility, 0)
+	for rows.Next() {
+		var ability SkillLineAbility
+		if err := rows.Scan(&ability.ID, &ability.SkillLine, &ability.Spell, &ability.RaceMask, &ability.ClassMask, &ability.ExcludeRace, &ability.ExcludeClass, &ability.MinSkillLineRank, &ability.SupercededBySpell, &ability.TrivialSkillLineRankHigh, &ability.TrivialSkillLineRankLow, &ability.Abandonable); err != nil {
+			return nil, fmt.Errorf("scan skill line ability: %w", err)
+		}
+		abilities = append(abilities, ability)
+	}
+	return abilities, rows.Err()
+}
+
+func valueAt(values []int64, index int) int64 {
+	if index >= len(values) {
+		return 0
+	}
+	return values[index]
+}
+
+func (s *Store) CreatureFamily(id int64) (CreatureFamily, bool, error) {
+	var family CreatureFamily
+	err := s.db.QueryRow(`SELECT ID, SkillLine_1, SkillLine_2 FROM CreatureFamily WHERE ID = ?`, id).Scan(&family.ID, &family.SkillLine1, &family.SkillLine2)
+	if err == sql.ErrNoRows {
+		return CreatureFamily{}, false, nil
+	}
+	if err != nil {
+		return CreatureFamily{}, false, fmt.Errorf("query creature family: %w", err)
+	}
+	return family, true, nil
+}
+
 func (s *Store) SpellSkillLine(spell int64, race, class uint8) (int64, bool, error) {
 	rows, err := s.db.Query(`SELECT SkillLine, RaceMask, ClassMask, ExcludeRace, ExcludeClass FROM SkillLineAbility WHERE Spell = ? ORDER BY ID`, spell)
 	if err != nil {

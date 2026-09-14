@@ -676,6 +676,56 @@ func (s *WorldServer) sendPetSpells(ownerGUID int64) {
 	}
 }
 
+func (s *WorldServer) learnPetSpell(owner realm.Character, spellID int64) {
+	if s.DBC == nil || s.WorldData == nil || spellID <= 0 {
+		return
+	}
+	record, active, found := s.activePetSnapshot(owner.GUID, 0)
+	if !found || petHasSpell(record, spellID) {
+		return
+	}
+	template, found, err := s.WorldData.CreatureTemplate(record.data.CreatureID)
+	if err != nil || !found || template.BeastFamily == 0 {
+		return
+	}
+	family, found, err := s.DBC.CreatureFamily(template.BeastFamily)
+	if err != nil || !found {
+		return
+	}
+	lines := []int64{family.SkillLine1}
+	if record.data.CreatedBySpell == petSummonSpellID {
+		lines = append(lines, family.SkillLine2)
+	}
+	abilities, err := s.DBC.SkillLineAbilitiesByLines(lines)
+	if err != nil {
+		return
+	}
+	spell, found, err := s.DBC.Spell(spellID)
+	if err != nil || !found || spell.SpellLevel == 0 || spell.SpellLevel > record.data.Level {
+		return
+	}
+	available := false
+	for _, ability := range abilities {
+		if ability.Spell == spellID {
+			available = true
+			break
+		}
+	}
+	if !available {
+		return
+	}
+	if s.Characters != nil && s.Characters.AddPetSpell(owner.GUID, record.data.ID, spellID) != nil {
+		return
+	}
+	s.petMu.Lock()
+	manager := s.pets[owner.GUID]
+	if manager != nil && active.Index < len(manager.permanent) && !petHasSpell(manager.permanent[active.Index], spellID) {
+		manager.permanent[active.Index].spells = append(manager.permanent[active.Index].spells, spellID)
+	}
+	s.petMu.Unlock()
+	s.sendPetSpells(owner.GUID)
+}
+
 func (s *WorldServer) sendPetOwnerField(owner realm.Character, guid uint64) {
 	for field, value := range map[int]uint32{8: uint32(guid), 9: uint32(guid >> 32)} {
 		update, err := packet.EncodeFieldUpdate(uint64(owner.GUID), field, value)

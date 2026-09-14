@@ -1,6 +1,9 @@
 package world
 
-import "Moreno.AlphaCore/network/packet"
+import (
+	"Moreno.AlphaCore/database/dbc"
+	"Moreno.AlphaCore/network/packet"
+)
 
 func (s *WorldServer) applySpellObjectEffects(cast *spellCast) {
 	for _, effect := range cast.spell.Effects {
@@ -13,7 +16,7 @@ func (s *WorldServer) applySpellObjectEffects(cast *spellCast) {
 	}
 	if cast.target.GameObjectGUID != 0 {
 		for _, effect := range cast.spell.Effects {
-			if packet.SpellEffect(effect.Type) != packet.SpellEffectOpenLock {
+			if !spellOpenLockEffect(effect) {
 				continue
 			}
 			responses, err := s.gameObjectUse(cast.caster, encodeGUID(int64(cast.target.GameObjectGUID)))
@@ -26,7 +29,7 @@ func (s *WorldServer) applySpellObjectEffects(cast *spellCast) {
 	}
 	if cast.target.ItemGUID != 0 && s.Characters != nil && s.WorldData != nil {
 		for _, effect := range cast.spell.Effects {
-			if packet.SpellEffect(effect.Type) != packet.SpellEffectOpenLock {
+			if !spellOpenLockEffect(effect) {
 				continue
 			}
 			item, found, err := s.Characters.ItemByGUID(cast.caster.GUID, int64(cast.target.ItemGUID))
@@ -46,4 +49,8 @@ func (s *WorldServer) applySpellObjectEffects(cast *spellCast) {
 			}
 		}
 	}
+}
+
+func spellOpenLockEffect(effect dbc.SpellEffect) bool {
+	return packet.SpellEffect(effect.Type) == packet.SpellEffectOpenLock || packet.SpellEffect(effect.Type) == packet.SpellEffectOpenLockItem
 }

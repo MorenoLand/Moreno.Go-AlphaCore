@@ -138,6 +138,9 @@ func (s *WorldServer) initialPlayerPackets(character realm.Character) ([]byte, e
 	}
 	values := buildPlayerFields(character, race, inventory)
 	values[152] = s.mountDisplayID(character.GUID)
+	if display, found := s.playerDisplayID(character.GUID); found {
+		values[151] = uint32(display)
+	}
 	if skills, err := s.Characters.Skills(character.GUID); err != nil {
 		return nil, err
 	} else {

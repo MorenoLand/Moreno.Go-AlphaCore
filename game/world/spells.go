@@ -594,6 +594,9 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 			if packet.SpellEffect(effect.Type) == packet.SpellEffectTameCreature {
 				s.tameCreature(cast, cast.targetCreature)
 			}
+			if packet.SpellEffect(effect.Type) == packet.SpellEffectDummy {
+				s.dummyCreatureSpellEffect(cast, cast.targetCreature)
+			}
 			if packet.SpellEffect(effect.Type) == packet.SpellEffectQuestComplete {
 				s.completeSpellQuest(cast, realm.Character{}, effect)
 			}
@@ -676,6 +679,10 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 						s.sendPlayer(target.GUID, update)
 					}
 				}
+			case packet.SpellEffectLearnPetSpell:
+				s.learnPetSpell(target, effect.TriggerSpell)
+			case packet.SpellEffectDummy:
+				s.dummySpellEffect(cast, target)
 			case packet.SpellEffectQuestComplete:
 				s.completeSpellQuest(cast, target, effect)
 			case packet.SpellEffectCreateItem:
