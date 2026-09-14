@@ -490,8 +490,42 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 				if target.Health <= 0 {
 					s.requestResurrection(cast, target, points)
 				}
+			case packet.SpellEffectBind:
+				s.bindSpellTarget(cast, target)
+			case packet.SpellEffectStuck:
+				s.stuckSpellTarget(target)
 			}
 		}
+	}
+}
+
+func (s *WorldServer) bindSpellTarget(cast *spellCast, target realm.Character) {
+	if s.Characters == nil || target.GUID == 0 {
+		return
+	}
+	bind := realm.Deathbind{PlayerGUID: target.GUID, Map: target.Map, Zone: target.Zone, X: target.PositionX, Y: target.PositionY, Z: target.PositionZ}
+	if err := s.Characters.SaveDeathbind(bind); err != nil {
+		return
+	}
+	if point, err := deathbindPointPacket(bind); err == nil {
+		s.sendPlayer(target.GUID, point)
+	}
+	if bound, err := packet.Encode(packet.SMSGPlayerBound, encodeGUID(cast.caster.GUID)); err == nil {
+		s.sendPlayer(target.GUID, bound)
+	}
+}
+
+func (s *WorldServer) stuckSpellTarget(target realm.Character) {
+	if s.Characters == nil {
+		return
+	}
+	bind, found, err := s.Characters.Deathbind(target.GUID)
+	if err != nil || !found {
+		return
+	}
+	teleport := target
+	if response, err := s.teleportPlayer(&teleport, bind.Map, bind.X, bind.Y, bind.Z, target.Orientation); err == nil {
+		s.sendPlayer(target.GUID, response)
 	}
 }
 

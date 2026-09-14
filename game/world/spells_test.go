@@ -369,3 +369,32 @@ func TestSpellHealthEffectsUsePlayerVitals(t *testing.T) {
 		t.Fatalf("killed health=%d", stored.Health)
 	}
 }
+
+func TestSpellBindAndStuckUseDeathbind(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Caster", Map: 1, PositionX: 10, PositionY: 20, PositionZ: 30, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters}
+	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Caster", Map: 1, PositionX: 10, PositionY: 20, PositionZ: 30, Health: 10}
+	server.bindSpellTarget(&spellCast{caster: active}, active)
+	bind, found, err := characters.Deathbind(guid)
+	if err != nil || !found || bind.Map != 1 || bind.X != 10 || bind.Y != 20 || bind.Z != 30 {
+		t.Fatalf("bind=%#v found=%v err=%v", bind, found, err)
+	}
+	active.Map, active.PositionX, active.PositionY, active.PositionZ = 2, 1, 2, 3
+	if err := characters.UpdateLocation(guid, 1, 1, active.Map, active.PositionX, active.PositionY, active.PositionZ, active.Orientation); err != nil {
+		t.Fatal(err)
+	}
+	server.stuckSpellTarget(active)
+	stored, found, err := characters.Character(guid, 1, 1)
+	if err != nil || !found || stored.Map != 1 || stored.PositionX != 10 || stored.PositionY != 20 || stored.PositionZ != 30 {
+		t.Fatalf("stored=%#v found=%v err=%v", stored, found, err)
+	}
+}

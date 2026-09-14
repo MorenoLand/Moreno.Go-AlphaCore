@@ -44,7 +44,7 @@ func (s *WorldServer) areaTrigger(active *realm.Character, data []byte) ([]byte,
 func (s *WorldServer) teleportPlayer(active *realm.Character, mapID int64, x, y, z, o float32) ([]byte, error) {
 	active.Map, active.PositionX, active.PositionY, active.PositionZ, active.Orientation = mapID, x, y, z, o
 	if s.Characters != nil {
-		if err := s.Characters.UpdatePosition(active.GUID, active.AccountID, active.RealmID, x, y, z, o); err != nil {
+		if err := s.Characters.UpdateLocation(active.GUID, active.AccountID, active.RealmID, mapID, x, y, z, o); err != nil {
 			return nil, err
 		}
 	}
