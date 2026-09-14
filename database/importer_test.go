@@ -2,38 +2,30 @@ package database
 
 import (
 	"context"
-	"database/sql"
+	"path/filepath"
+	"runtime"
 	"testing"
-
-	_ "modernc.org/sqlite"
 )
 
-func TestImportSQLNormalizesMariaDBDump(t *testing.T) {
-	db, err := sql.Open("sqlite", ":memory:")
+func TestImportIntoSQLiteSchema(t *testing.T) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("locate importer test")
+	}
+	databases, err := OpenMemory(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
-	data := `/*!40101 SET NAMES utf8mb4 */;
-CREATE TABLE "things" (
-  "id" int(11) unsigned NOT NULL AUTO_INCREMENT,
-  "name" varchar(255) NOT NULL COMMENT 'thing',
-  "value" int NOT NULL DEFAULT 0,
-  PRIMARY KEY ("id"),
-		KEY "idx_name" ("name")
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-LOCK TABLES "things" WRITE;
-INSERT INTO "things" VALUES (1,'A\'B',4);
-	UNLOCK TABLES;`
-	if err := importSQL(context.Background(), db, data, "fixture"); err != nil {
+	defer databases.Close()
+	root := filepath.Join(filepath.Dir(file), "..", "etc", "databases")
+	if err := Import(context.Background(), databases, root); err != nil {
 		t.Fatal(err)
 	}
-	var name string
-	var value int
-	if err := db.QueryRow("SELECT name, value FROM things WHERE id = 1").Scan(&name, &value); err != nil {
+	var spells int
+	if err := databases.DB(DBC).QueryRow("SELECT count(*) FROM Spell").Scan(&spells); err != nil {
 		t.Fatal(err)
 	}
-	if name != "A'B" || value != 4 {
-		t.Fatalf("name=%q value=%d", name, value)
+	if spells == 0 {
+		t.Fatal("imported DBC contains no spells")
 	}
 }
