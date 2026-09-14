@@ -29,19 +29,20 @@ type spellTarget struct {
 }
 
 type spellCast struct {
-	caster     realm.Character
-	target     spellTarget
-	spell      dbc.Spell
-	targetMask packet.SpellTargetMask
-	castTime   int64
-	powerCost  int64
-	targets    []realm.Character
-	sourceItem *realm.InventoryItem
-	source     worlddb.ItemTemplate
-	sourceSlot int
-	triggered  bool
-	started    time.Time
-	timer      *time.Timer
+	caster        realm.Character
+	target        spellTarget
+	spell         dbc.Spell
+	targetMask    packet.SpellTargetMask
+	castTime      int64
+	powerCost     int64
+	targets       []realm.Character
+	effectTargets map[int][]realm.Character
+	sourceItem    *realm.InventoryItem
+	source        worlddb.ItemTemplate
+	sourceSlot    int
+	triggered     bool
+	started       time.Time
+	timer         *time.Timer
 }
 
 func (s *WorldServer) castSpellPacket(active realm.Character, data []byte) ([][]byte, error) {
@@ -211,7 +212,7 @@ func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int
 			castTime = value.Minimum
 		}
 	}
-	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, targets: s.spellTargets(active, spell, target), sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now()}
+	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, targets: s.spellTargets(active, spell, target), effectTargets: s.spellEffectTargetsAll(active, spell, target), sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now()}
 	if castTime <= 0 {
 		s.performSpellCast(cast)
 		return nil, nil
@@ -270,7 +271,7 @@ func (s *WorldServer) triggerSpell(caster realm.Character, spellID int64, target
 	if err != nil || !found {
 		return
 	}
-	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, targets: s.spellTargets(caster, spell, target), triggered: true, started: time.Now()}
+	cast := &spellCast{caster: caster, target: target, spell: spell, targetMask: targetMask, targets: s.spellTargets(caster, spell, target), effectTargets: s.spellEffectTargetsAll(caster, spell, target), triggered: true, started: time.Now()}
 	s.performSpellCast(cast)
 }
 
@@ -305,20 +306,12 @@ func (s *WorldServer) consumeItemSpell(cast *spellCast) {
 }
 
 func (s *WorldServer) applySpellEffects(cast *spellCast) {
-	targets := cast.targets
-	if len(targets) == 0 {
-		target, found := s.spellPlayerTarget(cast)
-		if !found {
-			return
-		}
-		targets = []realm.Character{target}
-	}
 	effectiveLevel := int64(cast.caster.Level) - cast.spell.BaseLevel
 	if effectiveLevel < 0 {
 		effectiveLevel = 0
 	}
-	for _, target := range targets {
-		for index, effect := range cast.spell.Effects {
+	for index, effect := range cast.spell.Effects {
+		for _, target := range cast.effectTargets[index] {
 			points := spellEffectPoints(effect, effectiveLevel)
 			switch packet.SpellEffect(effect.Type) {
 			case packet.SpellEffectSchoolDamage:
@@ -373,67 +366,70 @@ func (s *WorldServer) applySpellEffects(cast *spellCast) {
 
 func (s *WorldServer) spellTargets(caster realm.Character, spell dbc.Spell, initial spellTarget) []realm.Character {
 	targets := make([]realm.Character, 0, 4)
-	hostileArea := false
-	if initial.UnitGUID != 0 {
-		if target, found := s.playerByGUID(int64(initial.UnitGUID)); found {
-			targets = append(targets, target)
-		} else if initial.UnitGUID == uint64(caster.GUID) {
-			targets = append(targets, caster)
-		}
-	}
 	for _, effect := range spell.Effects {
-		mode := spellAreaMode(effect.ImplicitTargetA, effect.ImplicitTargetB)
-		if mode == 0 || s.DBC == nil {
-			continue
-		}
-		if mode == 2 {
-			hostileArea = true
-		}
-		radiusEntry, found, err := s.DBC.SpellRadius(effect.RadiusIndex)
-		if err != nil || !found {
-			continue
-		}
-		radius := radiusEntry.Radius + radiusEntry.RadiusPerLevel*float32(maxSpellLevel(caster.Level, spell.BaseLevel))
-		if radiusEntry.RadiusMax > 0 && radius > radiusEntry.RadiusMax {
-			radius = radiusEntry.RadiusMax
-		}
-		if radius <= 0 {
-			continue
-		}
-		center := caster
-		if (effect.ImplicitTargetA == int64(packet.SpellImplicitAllEnemyInstant) || effect.ImplicitTargetB == int64(packet.SpellImplicitAllEnemyInstant)) && initial.UnitGUID != 0 {
-			if value, found := s.playerByGUID(int64(initial.UnitGUID)); found {
-				center = value
-			}
-		}
-		for _, player := range s.onlinePlayers() {
-			if player.Map != caster.Map {
-				continue
-			}
-			dx, dy, dz := player.PositionX-center.PositionX, player.PositionY-center.PositionY, player.PositionZ-center.PositionZ
-			if dx*dx+dy*dy+dz*dz > radius*radius || !spellAreaTarget(s, caster, player, mode) {
-				continue
-			}
+		for _, target := range s.spellEffectTargets(caster, spell, initial, effect) {
 			duplicate := false
-			for _, target := range targets {
-				if target.GUID == player.GUID {
+			for _, current := range targets {
+				if current.GUID == target.GUID {
 					duplicate = true
 					break
 				}
 			}
 			if !duplicate {
-				targets = append(targets, player)
+				targets = append(targets, target)
 			}
 		}
 	}
-	if hostileArea {
-		filtered := targets[:0]
-		for _, target := range targets {
-			if target.GUID != caster.GUID {
-				filtered = append(filtered, target)
-			}
+	return targets
+}
+
+func (s *WorldServer) spellEffectTargetsAll(caster realm.Character, spell dbc.Spell, initial spellTarget) map[int][]realm.Character {
+	targets := make(map[int][]realm.Character, len(spell.Effects))
+	for index, effect := range spell.Effects {
+		targets[index] = s.spellEffectTargets(caster, spell, initial, effect)
+	}
+	return targets
+}
+
+func (s *WorldServer) spellEffectTargets(caster realm.Character, spell dbc.Spell, initial spellTarget, effect dbc.SpellEffect) []realm.Character {
+	initialTargets := make([]realm.Character, 0, 1)
+	if initial.UnitGUID != 0 {
+		if target, found := s.playerByGUID(int64(initial.UnitGUID)); found {
+			initialTargets = append(initialTargets, target)
+		} else if initial.UnitGUID == uint64(caster.GUID) {
+			initialTargets = append(initialTargets, caster)
 		}
-		targets = filtered
+	}
+	mode := spellAreaMode(effect.ImplicitTargetA, effect.ImplicitTargetB)
+	if mode == 0 || s.DBC == nil {
+		return initialTargets
+	}
+	radiusEntry, found, err := s.DBC.SpellRadius(effect.RadiusIndex)
+	if err != nil || !found {
+		return nil
+	}
+	radius := radiusEntry.Radius + radiusEntry.RadiusPerLevel*float32(maxSpellLevel(caster.Level, spell.BaseLevel))
+	if radiusEntry.RadiusMax > 0 && radius > radiusEntry.RadiusMax {
+		radius = radiusEntry.RadiusMax
+	}
+	if radius <= 0 {
+		return nil
+	}
+	center := caster
+	if (effect.ImplicitTargetA == int64(packet.SpellImplicitAllEnemyInstant) || effect.ImplicitTargetB == int64(packet.SpellImplicitAllEnemyInstant)) && initial.UnitGUID != 0 {
+		if value, found := s.playerByGUID(int64(initial.UnitGUID)); found {
+			center = value
+		}
+	}
+	targets := make([]realm.Character, 0, 4)
+	for _, player := range s.onlinePlayers() {
+		if player.Map != caster.Map {
+			continue
+		}
+		dx, dy, dz := player.PositionX-center.PositionX, player.PositionY-center.PositionY, player.PositionZ-center.PositionZ
+		if dx*dx+dy*dy+dz*dz <= radius*radius && spellAreaTarget(s, caster, player, mode) {
+			targets = append(targets, player)
+		}
 	}
 	return targets
 }
