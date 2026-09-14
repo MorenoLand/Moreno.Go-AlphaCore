@@ -9,6 +9,7 @@ import (
 
 	"Moreno.AlphaCore/database/dbc"
 	"Moreno.AlphaCore/database/realm"
+	worlddb "Moreno.AlphaCore/database/world"
 	"Moreno.AlphaCore/network/packet"
 )
 
@@ -34,6 +35,9 @@ type spellCast struct {
 	targetMask packet.SpellTargetMask
 	castTime   int64
 	powerCost  int64
+	sourceItem *realm.InventoryItem
+	source     worlddb.ItemTemplate
+	sourceSlot int
 	started    time.Time
 	timer      *time.Timer
 }
@@ -49,6 +53,34 @@ func (s *WorldServer) castSpellPacket(active realm.Character, data []byte) ([][]
 		return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
 	}
 	return s.startSpellCast(active, spellID, target, targetMask)
+}
+
+func (s *WorldServer) useItemPacket(active realm.Character, data []byte) ([][]byte, error) {
+	if len(data) < 5 || s.Characters == nil || s.WorldData == nil {
+		return nil, nil
+	}
+	item, found, err := s.Characters.ItemAt(active.GUID, inventoryBag(data[0]), int64(data[1]))
+	if err != nil || !found {
+		return nil, err
+	}
+	template, found, err := s.WorldData.ItemTemplate(item.ItemTemplate)
+	if err != nil || !found {
+		return nil, err
+	}
+	slot := int(data[2])
+	if slot >= len(template.Spells) {
+		return nil, nil
+	}
+	itemSpell := template.Spells[slot]
+	if itemSpell.ID <= 0 || itemSpell.Trigger != 0 {
+		return nil, nil
+	}
+	targetMask := packet.SpellTargetMask(binary.LittleEndian.Uint16(data[3:]))
+	target, ok := s.spellTarget(active, targetMask, data[5:])
+	if !ok {
+		return nil, nil
+	}
+	return s.startSpellCastWithItem(active, itemSpell.ID, target, targetMask, &item, slot, template)
 }
 
 func (s *WorldServer) spellTarget(active realm.Character, mask packet.SpellTargetMask, data []byte) (spellTarget, bool) {
@@ -101,6 +133,10 @@ func (s *WorldServer) spellTarget(active realm.Character, mask packet.SpellTarge
 }
 
 func (s *WorldServer) startSpellCast(active realm.Character, spellID int64, target spellTarget, targetMask packet.SpellTargetMask) ([][]byte, error) {
+	return s.startSpellCastWithItem(active, spellID, target, targetMask, nil, -1, worlddb.ItemTemplate{})
+}
+
+func (s *WorldServer) startSpellCastWithItem(active realm.Character, spellID int64, target spellTarget, targetMask packet.SpellTargetMask, sourceItem *realm.InventoryItem, sourceSlot int, source worlddb.ItemTemplate) ([][]byte, error) {
 	if s.DBC == nil {
 		return s.castFailure(active, spellID, packet.SpellFailedUnavailable)
 	}
@@ -117,7 +153,7 @@ func (s *WorldServer) startSpellCast(active realm.Character, spellID int64, targ
 			return s.castFailure(active, spellID, packet.SpellFailedBadTargets)
 		}
 	}
-	if s.Characters != nil {
+	if s.Characters != nil && sourceItem == nil {
 		known, err := s.Characters.Spells(active.GUID)
 		if err != nil {
 			return nil, err
@@ -161,7 +197,7 @@ func (s *WorldServer) startSpellCast(active realm.Character, spellID int64, targ
 			castTime = value.Minimum
 		}
 	}
-	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, started: time.Now()}
+	cast := &spellCast{caster: active, target: target, spell: spell, targetMask: targetMask, castTime: castTime, powerCost: powerCost, sourceItem: sourceItem, sourceSlot: sourceSlot, source: source, started: time.Now()}
 	if castTime <= 0 {
 		s.performSpellCast(cast)
 		return nil, nil
@@ -212,6 +248,37 @@ func (s *WorldServer) performSpellCast(cast *spellCast) {
 		s.sendSpell(cast.caster, goPacket)
 	}
 	s.applySpellEffects(cast)
+	s.consumeItemSpell(cast)
+}
+
+func (s *WorldServer) consumeItemSpell(cast *spellCast) {
+	if cast.sourceItem == nil || s.Characters == nil {
+		return
+	}
+	stat := cast.source.Spells[cast.sourceSlot]
+	charges := cast.sourceItem.SpellCharges[cast.sourceSlot]
+	hadCharges := charges != 0
+	if hadCharges && stat.Charges != -1 {
+		if charges > 0 {
+			charges--
+		} else {
+			charges++
+		}
+		if s.Characters.UpdateItemSpellCharges(cast.sourceItem.GUID, cast.sourceItem.Owner, int64(cast.sourceSlot), charges) != nil {
+			return
+		}
+		guid := uint64(cast.sourceItem.GUID) | 0x4000000000000000
+		if update, err := packet.EncodeFieldUpdate(guid, 14+cast.sourceSlot, uint32(charges)); err == nil {
+			s.sendSpell(cast.caster, update)
+		}
+	}
+	if hadCharges && (charges == 0 || stat.Charges == -1) {
+		if err := s.Characters.DeleteItem(cast.sourceItem.GUID, cast.sourceItem.Owner); err == nil {
+			if update, err := packet.Encode(packet.SMSGDestroyObject, encodeGUID(int64(uint64(cast.sourceItem.GUID)|0x4000000000000000))); err == nil {
+				s.sendSpell(cast.caster, update)
+			}
+		}
+	}
 }
 
 func (s *WorldServer) applySpellEffects(cast *spellCast) {
@@ -436,7 +503,11 @@ func spellCastResult(spellID int64, result packet.SpellCastResult) ([]byte, erro
 }
 
 func spellStartPacket(cast *spellCast) ([]byte, error) {
-	data := append(encodeGUID(cast.caster.GUID), encodeGUID(cast.caster.GUID)...)
+	source := cast.caster.GUID
+	if cast.sourceItem != nil {
+		source = cast.sourceItem.GUID
+	}
+	data := append(encodeGUID(source), encodeGUID(cast.caster.GUID)...)
 	data = append(data, encodeUint32(cast.spell.ID)...)
 	data = append(data, 0, 0)
 	data = append(data, encodeInt32(cast.castTime)...)
@@ -448,7 +519,11 @@ func spellStartPacket(cast *spellCast) ([]byte, error) {
 }
 
 func spellGoPacket(cast *spellCast) ([]byte, error) {
-	data := append(encodeGUID(cast.caster.GUID), encodeGUID(cast.caster.GUID)...)
+	source := cast.caster.GUID
+	if cast.sourceItem != nil {
+		source = cast.sourceItem.GUID
+	}
+	data := append(encodeGUID(source), encodeGUID(cast.caster.GUID)...)
 	data = append(data, encodeUint32(cast.spell.ID)...)
 	data = append(data, 0, 0)
 	hit := cast.target.UnitGUID

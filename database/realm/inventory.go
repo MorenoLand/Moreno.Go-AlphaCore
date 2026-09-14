@@ -59,6 +59,15 @@ func (s *Store) UpdateItemStack(guid, owner, stack int64) error {
 	return err
 }
 
+func (s *Store) UpdateItemSpellCharges(guid, owner, slot, charges int64) error {
+	if slot < 0 || slot >= 5 {
+		return fmt.Errorf("invalid item spell slot: %d", slot)
+	}
+	column := fmt.Sprintf("SpellCharges%d", slot+1)
+	_, err := s.db.Exec(`UPDATE character_inventory SET `+column+` = ? WHERE guid = ? AND owner = ?`, charges, guid, owner)
+	return err
+}
+
 func (s *Store) InventoryItems(owner, bag, start, end int64) ([]InventoryItem, error) {
 	rows, err := s.db.Query(`SELECT `+inventoryColumns+` FROM character_inventory WHERE owner = ? AND bag = ? AND slot >= ? AND slot < ? ORDER BY slot, guid`, owner, bag, start, end)
 	if err != nil {

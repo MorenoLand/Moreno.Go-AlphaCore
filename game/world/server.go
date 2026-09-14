@@ -760,6 +760,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.openItem(*active, message.Data)
+		case packet.CMSGUseItem:
+			if active == nil {
+				return
+			}
+			responses, err = s.useItemPacket(*active, message.Data)
 		case packet.CMSGWrapItem:
 			if active == nil {
 				return

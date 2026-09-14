@@ -90,3 +90,42 @@ func TestCastSpellRejectsUnknownSpell(t *testing.T) {
 		t.Fatalf("response=%#v err=%v", response, err)
 	}
 }
+
+func TestUseItemConsumesChargedSpell(t *testing.T) {
+	databases, err := database.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer databases.Close()
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID, BaseLevel, Effect_1, EffectBasePoints_1) VALUES (100, 1, 10, 3)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.World).Exec(`INSERT INTO item_template (entry, name, spellid_1, spelltrigger_1, spellcharges_1) VALUES (200, 'Healing Potion', 100, 0, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	characters := realm.NewStore(databases)
+	guid, err := characters.Create(realm.Character{AccountID: 1, RealmID: 1, Name: "Caster", Level: 5, Map: 0, Health: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	item, err := characters.CreateInventoryItem(guid, 0, 23, 0, 200, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := databases.DB(database.Realm).Exec(`UPDATE character_inventory SET SpellCharges1 = 1 WHERE guid = ?`, item.GUID); err != nil {
+		t.Fatal(err)
+	}
+	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases)}
+	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "Caster", Level: 5, Map: 0, Health: 10}
+	data := []byte{0xff, 0, 0, 0, 0}
+	if responses, err := server.useItemPacket(active, data); err != nil || len(responses) != 0 {
+		t.Fatalf("responses=%d err=%v", len(responses), err)
+	}
+	stored, found, err := characters.Character(guid, 1, 1)
+	if err != nil || !found || stored.Health != 13 {
+		t.Fatalf("stored=%#v found=%v err=%v", stored, found, err)
+	}
+	if _, found, err := characters.ItemAt(guid, 23, 0); err != nil || found {
+		t.Fatalf("consumed item found=%v err=%v", found, err)
+	}
+}
