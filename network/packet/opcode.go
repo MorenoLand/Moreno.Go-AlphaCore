@@ -3,6 +3,7 @@ package packet
 type Opcode uint32
 
 const (
+	CMSGBootMe                    Opcode = 0x0001
 	CMSGWorldTeleport             Opcode = 0x0008
 	CMSGTeleportToPlayer          Opcode = 0x0009
 	CMSGZoneMap                   Opcode = 0x000a
@@ -10,6 +11,7 @@ const (
 	CMSGLearnSpell                Opcode = 0x0010
 	CMSGCreateItem                Opcode = 0x0013
 	CMSGEnableDebugCombatLogging  Opcode = 0x0017
+	CMSGBeastMaster               Opcode = 0x0021
 	CMSGGodMode                   Opcode = 0x0022
 	SMSGGodMode                   Opcode = 0x0023
 	CMSGCheatSetMoney             Opcode = 0x0024
@@ -79,6 +81,8 @@ const (
 	MSGMoveRoot                   Opcode = 0x00e7
 	MSGMoveUnroot                 Opcode = 0x00e8
 	MSGMoveHeartbeat              Opcode = 0x00e9
+	CMSGTriggerCinematicCheat     Opcode = 0x00eb
+	SMSGTriggerCinematic          Opcode = 0x00ed
 	SMSGCharacterLoginFailed      Opcode = 0x0041
 	SMSGLoginSetTimeSpeed         Opcode = 0x0042
 	SMSGAuthChallenge             Opcode = 0x01dd
@@ -353,6 +357,7 @@ const (
 )
 
 var opcodeNames = map[Opcode]string{
+	CMSGBootMe:                    "CMSG_BOOTME",
 	CMSGWorldTeleport:             "CMSG_WORLD_TELEPORT",
 	CMSGTeleportToPlayer:          "CMSG_TELEPORT_TO_PLAYER",
 	CMSGZoneMap:                   "CMSG_ZONE_MAP",
@@ -360,6 +365,7 @@ var opcodeNames = map[Opcode]string{
 	CMSGLearnSpell:                "CMSG_LEARN_SPELL",
 	CMSGCreateItem:                "CMSG_CREATEITEM",
 	CMSGEnableDebugCombatLogging:  "CMSG_ENABLEDEBUGCOMBATLOGGING",
+	CMSGBeastMaster:               "CMSG_BEASTMASTER",
 	CMSGGodMode:                   "CMSG_GODMODE",
 	SMSGGodMode:                   "SMSG_GODMODE",
 	CMSGCheatSetMoney:             "CMSG_CHEAT_SETMONEY",
@@ -431,6 +437,8 @@ var opcodeNames = map[Opcode]string{
 	MSGMoveRoot:                   "MSG_MOVE_ROOT",
 	MSGMoveUnroot:                 "MSG_MOVE_UNROOT",
 	MSGMoveHeartbeat:              "MSG_MOVE_HEARTBEAT",
+	CMSGTriggerCinematicCheat:     "CMSG_TRIGGER_CINEMATIC_CHEAT",
+	SMSGTriggerCinematic:          "SMSG_TRIGGER_CINEMATIC",
 	SMSGCharacterLoginFailed:      "SMSG_CHARACTER_LOGIN_FAILED",
 	SMSGLoginSetTimeSpeed:         "SMSG_LOGIN_SETTIMESPEED",
 	SMSGAuthChallenge:             "SMSG_AUTH_CHALLENGE",

@@ -21,6 +21,7 @@ type playerRegistry struct {
 	maxHealth    map[int64]int64
 	unitFlags    map[int64]uint32
 	godMode      map[int64]bool
+	beastMaster  map[int64]bool
 	sanctuary    map[int64]time.Time
 	connections  map[int64]*playerConnection
 }
@@ -39,11 +40,15 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.maxHealth = make(map[int64]int64)
 		s.players.unitFlags = make(map[int64]uint32)
 		s.players.godMode = make(map[int64]bool)
+		s.players.beastMaster = make(map[int64]bool)
 		s.players.sanctuary = make(map[int64]time.Time)
 		s.players.connections = make(map[int64]*playerConnection)
 	}
 	if s.players.godMode == nil {
 		s.players.godMode = make(map[int64]bool)
+	}
+	if s.players.beastMaster == nil {
+		s.players.beastMaster = make(map[int64]bool)
 	}
 	if s.players.sanctuary == nil {
 		s.players.sanctuary = make(map[int64]time.Time)
@@ -82,6 +87,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.maxHealth, guid)
 	delete(s.players.unitFlags, guid)
 	delete(s.players.godMode, guid)
+	delete(s.players.beastMaster, guid)
 	delete(s.players.sanctuary, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
@@ -121,6 +127,22 @@ func (s *WorldServer) setGodMode(guid int64, enabled bool) {
 func (s *WorldServer) isGodMode(guid int64) bool {
 	s.players.mu.RLock()
 	enabled := s.players.godMode[guid]
+	s.players.mu.RUnlock()
+	return enabled
+}
+
+func (s *WorldServer) setBeastMaster(guid int64, enabled bool) {
+	s.players.mu.Lock()
+	if s.players.beastMaster == nil {
+		s.players.beastMaster = make(map[int64]bool)
+	}
+	s.players.beastMaster[guid] = enabled
+	s.players.mu.Unlock()
+}
+
+func (s *WorldServer) isBeastMaster(guid int64) bool {
+	s.players.mu.RLock()
+	enabled := s.players.beastMaster[guid]
 	s.players.mu.RUnlock()
 	return enabled
 }

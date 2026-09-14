@@ -34,6 +34,9 @@ func TestGMCheats(t *testing.T) {
 	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO Spell (ID) VALUES (9001)`); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := databases.DB(database.DBC).Exec(`INSERT INTO CinematicSequences (ID) VALUES (12)`); err != nil {
+		t.Fatal(err)
+	}
 	server := &WorldServer{Characters: characters, DBC: dbc.NewStore(databases), WorldData: worlddb.NewStore(databases)}
 	active := realm.Character{GUID: guid, AccountID: 1, RealmID: 1, Name: "GM", Class: 1, Level: 1, Money: 10, Health: 100, Power1: 50}
 	server.registerPlayer(active)
@@ -53,6 +56,11 @@ func TestGMCheats(t *testing.T) {
 		t.Fatalf("learn responses=%d err=%v", len(responses), err)
 	} else if learned, parseErr := packet.Parse(responses[0]); parseErr != nil || learned.Opcode != packet.SMSGLearnedSpell || binary.LittleEndian.Uint16(learned.Data) != 9001 {
 		t.Fatalf("learn packet=%#v err=%v", learned, parseErr)
+	}
+	if responses, err := server.gmCheat(&active, packet.CMSGTriggerCinematicCheat, cheatUint32(12), 1); err != nil || len(responses) != 1 {
+		t.Fatalf("cinematic responses=%d err=%v", len(responses), err)
+	} else if cinematic, parseErr := packet.Parse(responses[0]); parseErr != nil || cinematic.Opcode != packet.SMSGTriggerCinematic || binary.LittleEndian.Uint32(cinematic.Data) != 12 {
+		t.Fatalf("cinematic packet=%#v err=%v", cinematic, parseErr)
 	}
 	if responses, err := server.gmCheat(&active, packet.CMSGCreateItem, cheatUint32(700), 1); err != nil || len(responses) != 2 {
 		t.Fatalf("item responses=%d err=%v", len(responses), err)
@@ -88,6 +96,9 @@ func TestGMCheats(t *testing.T) {
 	}
 	if _, err := server.gmCheat(&active, packet.CMSGGodMode, []byte{0}, 1); err != nil || server.isGodMode(guid) {
 		t.Fatalf("disable godmode err=%v enabled=%v", err, server.isGodMode(guid))
+	}
+	if responses, err := server.gmCheat(&active, packet.CMSGBeastMaster, []byte{1}, 1); err != nil || len(responses) != 1 || !server.isBeastMaster(guid) || !server.isSanctuary(guid) {
+		t.Fatalf("beastmaster responses=%d err=%v enabled=%v sanctuary=%v", len(responses), err, server.isBeastMaster(guid), server.isSanctuary(guid))
 	}
 	if err := server.changePlayerHealth(&active, -10); err != nil || active.Health != health-10 {
 		t.Fatalf("normal health=%d want=%d err=%v", active.Health, health-10, err)

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strings"
+	"time"
 
 	"Moreno.AlphaCore/database/realm"
 	"Moreno.AlphaCore/network/packet"
@@ -64,6 +65,25 @@ func (s *WorldServer) gmCheat(active *realm.Character, opcode packet.Opcode, dat
 			flags &^= unitFlagDebugCombatLog
 		}
 		s.setUnitFlags(*active, flags)
+	case packet.CMSGBeastMaster:
+		if len(data) < 1 {
+			return nil, nil
+		}
+		enabled := data[0] >= 1
+		s.setBeastMaster(active.GUID, enabled)
+		if enabled {
+			s.setSanctuary(active.GUID, 3*time.Second)
+		}
+		message, err := messageChatPacket(chatMessageSystem, 0, active.GUID, fmt.Sprintf("Beastmaster %s", map[bool]string{true: "enabled", false: "disabled"}[enabled]))
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{message}, nil
+	case packet.CMSGTriggerCinematicCheat:
+		if len(data) < 4 {
+			return nil, nil
+		}
+		return s.cheatCinematic(*active, int64(binary.LittleEndian.Uint32(data)))
 	case packet.CMSGTeleportToPlayer:
 		return s.cheatGoPlayer(active, data)
 	case packet.MSGGMSummon:
@@ -391,6 +411,21 @@ func (s *WorldServer) cheatRecharge(active *realm.Character) ([][]byte, error) {
 		return nil, err
 	}
 	return [][]byte{update}, nil
+}
+
+func (s *WorldServer) cheatCinematic(active realm.Character, id int64) ([][]byte, error) {
+	if s.DBC == nil || id <= 0 {
+		return nil, nil
+	}
+	found, err := s.DBC.CinematicSequenceExists(id)
+	if err != nil || !found {
+		return nil, err
+	}
+	response, err := packet.Encode(packet.SMSGTriggerCinematic, encodeUint32(id))
+	if err != nil {
+		return nil, err
+	}
+	return [][]byte{response}, nil
 }
 
 func (s *WorldServer) cheatGoPlayer(active *realm.Character, data []byte) ([][]byte, error) {

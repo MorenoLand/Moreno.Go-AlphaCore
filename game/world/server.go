@@ -112,6 +112,19 @@ func (s *WorldServer) handle(connection net.Conn) {
 		response = nil
 		responses := make([][]byte, 0, 1)
 		switch message.Opcode {
+		case packet.CMSGBootMe:
+			if active == nil {
+				return
+			}
+			s.unregisterPlayer(active.GUID)
+			if s.Characters != nil {
+				err = s.Characters.SetOnline(active.GUID, active.AccountID, active.RealmID, false)
+			}
+			active = nil
+			if err != nil {
+				return
+			}
+			return
 		case packet.CMSGCharEnum:
 			response, err = s.characterList(account.ID)
 		case packet.CMSGCharCreate:
@@ -691,7 +704,7 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			responses, err = s.cancelAura(*active, message.Data)
-		case packet.CMSGRecharge, packet.CMSGLearnSpell, packet.CMSGCreateItem, packet.CMSGEnableDebugCombatLogging, packet.CMSGGodMode, packet.CMSGCheatSetMoney, packet.CMSGLevelCheat, packet.CMSGLevelUpCheat, packet.CMSGCooldownCheat, packet.CMSGTeleportToPlayer, packet.MSGGMSummon:
+		case packet.CMSGRecharge, packet.CMSGLearnSpell, packet.CMSGCreateItem, packet.CMSGEnableDebugCombatLogging, packet.CMSGBeastMaster, packet.CMSGGodMode, packet.CMSGCheatSetMoney, packet.CMSGLevelCheat, packet.CMSGLevelUpCheat, packet.CMSGCooldownCheat, packet.CMSGTriggerCinematicCheat, packet.CMSGTeleportToPlayer, packet.MSGGMSummon:
 			if active == nil {
 				return
 			}
