@@ -16,6 +16,7 @@ type playerRegistry struct {
 	standState   map[int64]uint32
 	weaponMode   map[int64]uint32
 	combatTarget map[int64]uint64
+	pvpSource    map[int64]pvpLocation
 	connections  map[int64]*playerConnection
 }
 
@@ -29,6 +30,7 @@ func (s *WorldServer) registerPlayer(character realm.Character) {
 		s.players.standState = make(map[int64]uint32)
 		s.players.weaponMode = make(map[int64]uint32)
 		s.players.combatTarget = make(map[int64]uint64)
+		s.players.pvpSource = make(map[int64]pvpLocation)
 		s.players.connections = make(map[int64]*playerConnection)
 	}
 	s.players.players[character.GUID] = character
@@ -52,6 +54,7 @@ func (s *WorldServer) unregisterPlayer(guid int64) {
 	delete(s.players.standState, guid)
 	delete(s.players.weaponMode, guid)
 	delete(s.players.combatTarget, guid)
+	delete(s.players.pvpSource, guid)
 	s.lootMu.Lock()
 	delete(s.lootSelections, guid)
 	for _, loot := range s.loots {

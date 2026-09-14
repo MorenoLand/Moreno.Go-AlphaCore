@@ -108,6 +108,18 @@ func (s *Store) MapExists(id int64) (bool, error) {
 	return err == nil, err
 }
 
+func (s *Store) MapIsPVP(id int64) (bool, error) {
+	var value int
+	err := s.db.QueryRow(`SELECT PVP FROM Map WHERE ID = ?`, id).Scan(&value)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("query map pvp flag: %w", err)
+	}
+	return value != 0, nil
+}
+
 func (s *Store) TaxiNodesByMap(mapID int64) ([]TaxiNode, error) {
 	rows, err := s.db.Query(`SELECT ID, ContinentID, X, Y, Z, custom_Team FROM TaxiNodes WHERE ContinentID = ? ORDER BY ID`, mapID)
 	if err != nil {

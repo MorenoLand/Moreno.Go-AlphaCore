@@ -158,6 +158,11 @@ func (s *WorldServer) handle(connection net.Conn) {
 				return
 			}
 			response, err = s.areaTrigger(active, message.Data)
+		case packet.CMSGPVPPort:
+			if active == nil {
+				return
+			}
+			response, err = s.pvpPort(active)
 		case packet.CMSGListInventory:
 			if active == nil {
 				return

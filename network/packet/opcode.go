@@ -5,6 +5,8 @@ type Opcode uint32
 const (
 	CMSGWorldTeleport             Opcode = 0x0008
 	CMSGZoneMap                   Opcode = 0x000a
+	CMSGEnablePVP                 Opcode = 0x0030
+	CMSGPVPPort                   Opcode = 0x0032
 	CMSGAuthSRP6Begin             Opcode = 0x0033
 	CMSGAuthSRP6Proof             Opcode = 0x0034
 	CMSGAuthSRP6Recode            Opcode = 0x0035
@@ -320,6 +322,8 @@ const (
 var opcodeNames = map[Opcode]string{
 	CMSGWorldTeleport:             "CMSG_WORLD_TELEPORT",
 	CMSGZoneMap:                   "CMSG_ZONE_MAP",
+	CMSGEnablePVP:                 "CMSG_ENABLE_PVP",
+	CMSGPVPPort:                   "CMSG_PVP_PORT",
 	CMSGAuthSRP6Begin:             "CMSG_AUTH_SRP6_BEGIN",
 	CMSGAuthSRP6Proof:             "CMSG_AUTH_SRP6_PROOF",
 	CMSGAuthSRP6Recode:            "CMSG_AUTH_SRP6_RECODE",
