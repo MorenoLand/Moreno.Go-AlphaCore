@@ -134,7 +134,28 @@ func (s *WorldServer) lootTemplates(sourceType byte, entry int64, object worlddb
 	case lootPickpocketSource:
 		return s.WorldData.PickpocketLootTemplates(entry)
 	default:
-		return s.WorldData.CreatureLootTemplates(entry)
+		creature, found, err := s.WorldData.CreatureTemplate(entry)
+		if err != nil || !found || creature.LootID <= 0 {
+			return nil, err
+		}
+		templates, err := s.WorldData.CreatureLootTemplates(creature.LootID)
+		if err != nil || len(templates) == 0 || creature.SkinningLootID <= 0 {
+			return templates, err
+		}
+		skinning, err := s.WorldData.SkinningLootTemplates(creature.SkinningLootID)
+		if err != nil {
+			return nil, err
+		}
+		maxGroup := int64(0)
+		for _, item := range templates {
+			if item.GroupID > maxGroup {
+				maxGroup = item.GroupID
+			}
+		}
+		for index := range skinning {
+			skinning[index].GroupID = maxGroup + 1
+		}
+		return append(templates, skinning...), nil
 	}
 }
 
@@ -159,7 +180,17 @@ func (s *WorldServer) generateLoot(state *lootState, sourceType byte, entry int6
 		}
 		state.items = append(state.items, lootItem{entry: item.Item, quantity: quantity})
 	}
-	if sourceType == lootGameObjectSource && object.MaxGold > object.MinGold {
+	if sourceType == lootCreatureSource {
+		if creature, found, err := s.WorldData.CreatureTemplate(entry); err != nil {
+			return err
+		} else if found {
+			if creature.GoldMax > creature.GoldMin {
+				state.money = creature.GoldMin + int64(rand.Intn(int(creature.GoldMax-creature.GoldMin+1)))
+			} else {
+				state.money = creature.GoldMin
+			}
+		}
+	} else if sourceType == lootGameObjectSource && object.MaxGold > object.MinGold {
 		state.money = object.MinGold + int64(rand.Intn(int(object.MaxGold-object.MinGold+1)))
 	} else if sourceType == lootGameObjectSource {
 		state.money = object.MinGold

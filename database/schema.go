@@ -437,7 +437,9 @@ CREATE TABLE IF NOT EXISTS creature_template (
     unit_flags INTEGER NOT NULL DEFAULT 0,
     npc_flags INTEGER NOT NULL DEFAULT 0,
     type INTEGER NOT NULL DEFAULT 0,
+    loot_id INTEGER NOT NULL DEFAULT 0,
     pickpocket_loot_id INTEGER NOT NULL DEFAULT 0,
+    skinning_loot_id INTEGER NOT NULL DEFAULT 0,
     beast_family INTEGER NOT NULL DEFAULT 0,
     health_multiplier REAL NOT NULL DEFAULT 1,
     mana_multiplier REAL NOT NULL DEFAULT 1,
@@ -450,7 +452,9 @@ CREATE TABLE IF NOT EXISTS creature_template (
     trainer_id INTEGER NOT NULL DEFAULT 0,
     trainer_class INTEGER NOT NULL DEFAULT 0,
     trainer_type INTEGER NOT NULL DEFAULT 0,
-    spell_list_id INTEGER NOT NULL DEFAULT 0
+    spell_list_id INTEGER NOT NULL DEFAULT 0,
+    gold_min INTEGER NOT NULL DEFAULT 0,
+    gold_max INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS creature_spells (
     entry INTEGER PRIMARY KEY NOT NULL,
@@ -533,6 +537,16 @@ CREATE TABLE IF NOT EXISTS item_loot_template (
     PRIMARY KEY (entry, item)
 );
 CREATE TABLE IF NOT EXISTS creature_loot_template (
+    entry INTEGER NOT NULL DEFAULT 0,
+    item INTEGER NOT NULL DEFAULT 0,
+    ChanceOrQuestChance REAL NOT NULL DEFAULT 100,
+    groupid INTEGER NOT NULL DEFAULT 0,
+    mincountOrRef INTEGER NOT NULL DEFAULT 1,
+    maxcount INTEGER NOT NULL DEFAULT 1,
+    condition_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (entry, item)
+);
+CREATE TABLE IF NOT EXISTS skinning_loot_template (
     entry INTEGER NOT NULL DEFAULT 0,
     item INTEGER NOT NULL DEFAULT 0,
     ChanceOrQuestChance REAL NOT NULL DEFAULT 100,
