@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"Moreno.AlphaCore/database/dbc"
+	"Moreno.AlphaCore/database/realm"
 	worlddb "Moreno.AlphaCore/database/world"
 	"Moreno.AlphaCore/network/packet"
 )
@@ -16,13 +17,44 @@ func (s *WorldServer) sendEventSpell(cast *spellCast, effect dbc.SpellEffect) {
 	if err != nil {
 		return
 	}
+	s.runEventScripts(cast, scripts)
+}
+
+func (s *WorldServer) runEventScripts(cast *spellCast, scripts []worlddb.EventScript) {
 	for _, script := range scripts {
+		script := script
 		if script.Delay <= 0 {
 			s.executeEventScript(cast, script)
 		} else {
 			time.AfterFunc(time.Duration(script.Delay)*time.Second, func() { s.executeEventScript(cast, script) })
 		}
 	}
+}
+
+func (s *WorldServer) startQuestScript(active realm.Character, giverGUID, scriptID int64, start bool) {
+	if scriptID <= 0 || s.WorldData == nil {
+		return
+	}
+	scripts, err := s.WorldData.QuestStartScripts(scriptID)
+	if !start {
+		scripts, err = s.WorldData.QuestEndScripts(scriptID)
+	}
+	if err != nil || len(scripts) == 0 {
+		return
+	}
+	source := active
+	if player, found := s.playerByGUID(giverGUID); found {
+		source = player
+	} else if spawn, _, found, sourceErr := s.creatureAt(active, uint64(giverGUID), creatureViewDistance); sourceErr == nil && found {
+		source = realm.Character{GUID: giverGUID, Map: spawn.Map, PositionX: spawn.PositionX, PositionY: spawn.PositionY, PositionZ: spawn.PositionZ, Orientation: spawn.Orientation, Health: 1}
+	} else if spawn, _, found, sourceErr := s.gameObjectAt(active, uint64(giverGUID), gameObjectViewDistance); sourceErr == nil && found {
+		source = realm.Character{GUID: giverGUID, Map: spawn.Map, PositionX: spawn.PositionX, PositionY: spawn.PositionY, PositionZ: spawn.PositionZ, Orientation: spawn.Orientation, Health: 1}
+	}
+	mask := packet.SpellTargetUnit
+	if source.GUID == active.GUID {
+		mask = packet.SpellTargetSelf
+	}
+	s.runEventScripts(&spellCast{caster: source, target: spellTarget{UnitGUID: uint64(active.GUID)}, targetMask: mask}, scripts)
 }
 
 func (s *WorldServer) executeEventScript(cast *spellCast, script worlddb.EventScript) {
@@ -82,23 +114,29 @@ func (s *WorldServer) createEventItem(cast *spellCast, script worlddb.EventScrip
 	if amount <= 0 {
 		amount = 1
 	}
+	owner := cast.caster
+	if _, found := s.playerByGUID(owner.GUID); !found {
+		if player, targetFound := s.playerByGUID(int64(cast.target.UnitGUID)); targetFound {
+			owner = player
+		}
+	}
 	template, found, err := s.WorldData.ItemTemplate(script.DataLong[0])
 	if err != nil || !found {
 		return
 	}
-	slot, err := s.Characters.FirstEmptySlot(cast.caster.GUID, 23, 0, 39)
+	slot, err := s.Characters.FirstEmptySlot(owner.GUID, 23, 0, 39)
 	if err != nil || slot < 0 {
 		return
 	}
-	item, err := s.Characters.CreateInventoryItem(cast.caster.GUID, cast.caster.GUID, 23, slot, template.Entry, amount)
+	item, err := s.Characters.CreateInventoryItem(owner.GUID, owner.GUID, 23, slot, template.Entry, amount)
 	if err != nil {
 		return
 	}
 	if create, err := packet.EncodeItemCreate(uint64(item.GUID)|0x4000000000000000, uint32(item.ItemTemplate), uint64(item.Owner), uint64(item.Creator), uint32(item.StackCount), 0, encodedItemFlags(template, item.Flags), item.SpellCharges, packet.Movement{X: cast.caster.PositionX, Y: cast.caster.PositionY, Z: cast.caster.PositionZ, O: cast.caster.Orientation}); err == nil {
-		s.sendPlayer(cast.caster.GUID, create)
+		s.sendPlayer(owner.GUID, create)
 	}
 	if push, err := itemPushResult(item, template.Entry, 23); err == nil {
-		s.sendPlayer(cast.caster.GUID, push)
+		s.sendPlayer(owner.GUID, push)
 	}
 }
 

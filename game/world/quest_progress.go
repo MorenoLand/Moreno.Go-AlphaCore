@@ -57,6 +57,7 @@ func (s *WorldServer) questAccept(active realm.Character, data []byte) ([][]byte
 	if err := s.Characters.SaveQuestState(stateToSave); err != nil {
 		return nil, err
 	}
+	s.startQuestScript(active, int64(giverGUID), quest.StartScript, true)
 	return s.questQuery(encodeUint32(questID))
 }
 
@@ -177,6 +178,7 @@ func (s *WorldServer) questChooseReward(active *realm.Character, data []byte) ([
 		return nil, err
 	}
 	s.updatePlayer(*active)
+	s.startQuestScript(*active, int64(giverGUID), quest.CompleteScript, false)
 	body := append(encodeUint32(questID), make([]byte, 12)...)
 	binary.LittleEndian.PutUint32(body[8:], uint32(quest.RewXP))
 	binary.LittleEndian.PutUint32(body[12:], uint32(maxInt64(quest.RewOrReqMoney, -quest.RewOrReqMoney)))
