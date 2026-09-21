@@ -53,13 +53,13 @@ type Page struct {
 }
 
 type CreatureTemplate struct {
-	Entry, DisplayID1, LevelMin, LevelMax, Faction, StaticFlags int64
-	Name, Subname                                               string
-	Scale, HealthMultiplier, ManaMultiplier, ArmorMultiplier    float32
+	Entry, DisplayID1, LevelMin, LevelMax, Faction, StaticFlags         int64
+	Name, Subname                                                       string
+	Scale, HealthMultiplier, ManaMultiplier, ArmorMultiplier            float32
 	UnitClass, UnitFlags, NPCFlags, Type, PickpocketLootID, BeastFamily int64
-	BaseAttackTime, RangedAttackTime                            int64
-	VendorID, TrainerID, TrainerClass, TrainerType              int64
-	DamageMultiplier, DamageVariance                            float32
+	BaseAttackTime, RangedAttackTime                                    int64
+	VendorID, TrainerID, TrainerClass, TrainerType, SpellListID         int64
+	DamageMultiplier, DamageVariance                                    float32
 }
 
 type GameObjectTemplate struct {
@@ -137,7 +137,7 @@ func (s *Store) PageText(entry int64) (Page, bool, error) {
 
 func (s *Store) CreatureTemplate(entry int64) (CreatureTemplate, bool, error) {
 	var creature CreatureTemplate
-	err := s.db.QueryRow(`SELECT entry, display_id1, name, COALESCE(subname, ''), static_flags, level_min, level_max, faction, scale, unit_class, unit_flags, npc_flags, type, pickpocket_loot_id, beast_family, health_multiplier, mana_multiplier, armor_multiplier, damage_multiplier, damage_variance, base_attack_time, ranged_attack_time, COALESCE(vendor_id, 0), COALESCE(trainer_id, 0), COALESCE(trainer_class, 0), COALESCE(trainer_type, 0) FROM creature_template WHERE entry = ?`, entry).Scan(&creature.Entry, &creature.DisplayID1, &creature.Name, &creature.Subname, &creature.StaticFlags, &creature.LevelMin, &creature.LevelMax, &creature.Faction, &creature.Scale, &creature.UnitClass, &creature.UnitFlags, &creature.NPCFlags, &creature.Type, &creature.PickpocketLootID, &creature.BeastFamily, &creature.HealthMultiplier, &creature.ManaMultiplier, &creature.ArmorMultiplier, &creature.DamageMultiplier, &creature.DamageVariance, &creature.BaseAttackTime, &creature.RangedAttackTime, &creature.VendorID, &creature.TrainerID, &creature.TrainerClass, &creature.TrainerType)
+	err := s.db.QueryRow(`SELECT entry, display_id1, name, COALESCE(subname, ''), static_flags, level_min, level_max, faction, scale, unit_class, unit_flags, npc_flags, type, pickpocket_loot_id, beast_family, health_multiplier, mana_multiplier, armor_multiplier, damage_multiplier, damage_variance, base_attack_time, ranged_attack_time, COALESCE(vendor_id, 0), COALESCE(trainer_id, 0), COALESCE(trainer_class, 0), COALESCE(trainer_type, 0), COALESCE(spell_list_id, 0) FROM creature_template WHERE entry = ?`, entry).Scan(&creature.Entry, &creature.DisplayID1, &creature.Name, &creature.Subname, &creature.StaticFlags, &creature.LevelMin, &creature.LevelMax, &creature.Faction, &creature.Scale, &creature.UnitClass, &creature.UnitFlags, &creature.NPCFlags, &creature.Type, &creature.PickpocketLootID, &creature.BeastFamily, &creature.HealthMultiplier, &creature.ManaMultiplier, &creature.ArmorMultiplier, &creature.DamageMultiplier, &creature.DamageVariance, &creature.BaseAttackTime, &creature.RangedAttackTime, &creature.VendorID, &creature.TrainerID, &creature.TrainerClass, &creature.TrainerType, &creature.SpellListID)
 	if err == sql.ErrNoRows {
 		return CreatureTemplate{}, false, nil
 	}
