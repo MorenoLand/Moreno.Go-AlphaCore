@@ -21,6 +21,7 @@ func (s *WorldServer) makeMonsterAttackMe(active realm.Character, data []byte) (
 		current.CombatTarget = uint64(active.GUID)
 	}
 	s.creatures.mu.Unlock()
+	s.startCreatureSpells(state)
 	body := append(encodeGUID(int64(state.GUID)), encodeGUID(active.GUID)...)
 	start, err := packet.Encode(packet.SMSGAttackStart, body)
 	if err != nil {

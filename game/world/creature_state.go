@@ -31,6 +31,7 @@ type creatureState struct {
 	DistractedUntil                                    time.Time
 	DistractedAngle                                    float32
 	CombatTarget                                       uint64
+	SpellTimers                                        [8]*time.Timer
 	Timer                                              *time.Timer
 }
 
@@ -88,6 +89,11 @@ func (s *WorldServer) removeCreature(guid uint64) (creatureState, bool) {
 	if found {
 		if state.Timer != nil {
 			state.Timer.Stop()
+		}
+		for _, timer := range state.SpellTimers {
+			if timer != nil {
+				timer.Stop()
+			}
 		}
 		delete(s.creatures.active, guid)
 	}
