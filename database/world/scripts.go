@@ -13,8 +13,11 @@ type EventScript struct {
 	Comments                     string
 }
 
-func (s *Store) EventScripts(id int64) ([]EventScript, error) {
-	rows, err := s.db.Query(`SELECT id, delay, priority, command, datalong, datalong2, datalong3, datalong4, target_param1, target_param2, target_type, data_flags, dataint, dataint2, dataint3, dataint4, x, y, z, o, condition_id, comments FROM event_scripts WHERE id = ? ORDER BY delay, priority`, id)
+func (s *Store) scripts(table string, id int64) ([]EventScript, error) {
+	if table != "event_scripts" && table != "quest_start_scripts" && table != "quest_end_scripts" {
+		return nil, fmt.Errorf("unknown script table %q", table)
+	}
+	rows, err := s.db.Query(`SELECT id, delay, priority, command, datalong, datalong2, datalong3, datalong4, target_param1, target_param2, target_type, data_flags, dataint, dataint2, dataint3, dataint4, x, y, z, o, condition_id, comments FROM `+table+` WHERE id = ? ORDER BY delay, priority`, id)
 	if err != nil {
 		return nil, fmt.Errorf("query event scripts: %w", err)
 	}
@@ -43,4 +46,12 @@ func (s *Store) EventScripts(id int64) ([]EventScript, error) {
 		return nil, fmt.Errorf("read event scripts: %w", err)
 	}
 	return scripts, nil
+}
+
+func (s *Store) EventScripts(id int64) ([]EventScript, error) { return s.scripts("event_scripts", id) }
+func (s *Store) QuestStartScripts(id int64) ([]EventScript, error) {
+	return s.scripts("quest_start_scripts", id)
+}
+func (s *Store) QuestEndScripts(id int64) ([]EventScript, error) {
+	return s.scripts("quest_end_scripts", id)
 }

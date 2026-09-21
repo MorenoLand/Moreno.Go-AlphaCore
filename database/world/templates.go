@@ -85,6 +85,7 @@ type QuestTemplate struct {
 	PointMapID, PointOpt                                                                    int64
 	PointX, PointY                                                                          float32
 	ReqCreatureOrGOIDs, ReqCreatureOrGOCounts, ReqItemIDs, ReqItemCounts                    [4]int64
+	StartScript, CompleteScript                                                             int64
 }
 
 const itemTemplateColumns = `entry, "class", subclass, name, description, display_id, quality, flags, buy_price, sell_price, inventory_type, allowable_class, allowable_race, item_level, required_level, required_skill, required_skill_rank, max_count, stackable, container_slots,
@@ -206,6 +207,7 @@ func (s *Store) QuestTemplate(entry int64) (QuestTemplate, bool, error) {
 	for index := range quest.OfferRewardEmoteDelays {
 		values = append(values, &quest.OfferRewardEmoteDelays[index])
 	}
+	values = append(values, &quest.StartScript, &quest.CompleteScript)
 	err := s.db.QueryRow(`SELECT entry, Method, ZoneOrSort, QuestLevel, Type, NextQuestInChain, SrcItemId, RewOrReqMoney,
 RewItemId1, RewItemId2, RewItemId3, RewItemId4, RewItemCount1, RewItemCount2, RewItemCount3, RewItemCount4,
 RewChoiceItemId1, RewChoiceItemId2, RewChoiceItemId3, RewChoiceItemId4, RewChoiceItemId5, RewChoiceItemId6,
@@ -216,7 +218,7 @@ ReqItemId1, ReqItemId2, ReqItemId3, ReqItemId4, ReqItemCount1, ReqItemCount2, Re
 MinLevel, MaxLevel, QuestFlags, SrcItemCount, RewXP, RewSpellCast, COALESCE(OfferRewardText, ''), COALESCE(RequestItemsText, ''),
 DetailsEmote1, DetailsEmote2, DetailsEmote3, DetailsEmote4, DetailsEmoteDelay1, DetailsEmoteDelay2, DetailsEmoteDelay3, DetailsEmoteDelay4,
 IncompleteEmote, CompleteEmote, OfferRewardEmote1, OfferRewardEmote2, OfferRewardEmote3, OfferRewardEmote4,
-OfferRewardEmoteDelay1, OfferRewardEmoteDelay2, OfferRewardEmoteDelay3, OfferRewardEmoteDelay4 FROM quest_template WHERE entry = ?`, entry).Scan(values...)
+OfferRewardEmoteDelay1, OfferRewardEmoteDelay2, OfferRewardEmoteDelay3, OfferRewardEmoteDelay4, COALESCE(StartScript, 0), COALESCE(CompleteScript, 0) FROM quest_template WHERE entry = ?`, entry).Scan(values...)
 	if err == sql.ErrNoRows {
 		return QuestTemplate{}, false, nil
 	}
