@@ -31,6 +31,7 @@ type creatureState struct {
 	DistractedUntil                                    time.Time
 	DistractedAngle                                    float32
 	CombatTarget                                       uint64
+	PassiveSpellsInitialized                           bool
 	SpellTimers                                        [8]*time.Timer
 	Timer                                              *time.Timer
 }
@@ -49,6 +50,7 @@ func (s *WorldServer) creatureStateAt(active realm.Character, guid uint64, dista
 	}
 	if state := s.creatures.active[guid]; state != nil {
 		s.creatures.mu.Unlock()
+		s.initializeCreaturePassiveSpells(state)
 		return state, true, nil
 	}
 	level := template.LevelMin
@@ -65,6 +67,7 @@ func (s *WorldServer) creatureStateAt(active realm.Character, guid uint64, dista
 	state := &creatureState{GUID: guid, Spawn: spawn, Template: template, Stats: stats, Level: level, Health: health, MaxHealth: health, Mana: mana}
 	s.creatures.active[guid] = state
 	s.creatures.mu.Unlock()
+	s.initializeCreaturePassiveSpells(state)
 	return state, true, nil
 }
 
@@ -113,6 +116,7 @@ func (s *WorldServer) setCreatureState(state creatureState) {
 		s.creatures.active[state.GUID] = &state
 	}
 	s.creatures.mu.Unlock()
+	s.initializeCreaturePassiveSpells(&state)
 }
 
 func (s *WorldServer) creatureHealth(guid uint64) (int64, bool) {
